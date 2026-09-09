@@ -4,6 +4,7 @@ async(page)=>{
   const stories=await page.evaluate(()=>Object.keys(MetaBotActivities.THEATERS));
   if(stories.length!==20)throw Error('Expected 20 stories');
   for(const id of stories){
+    await page.evaluate(id=>review.showCatalog('activities',id),id);
     if(await page.locator('#clip-'+id+' figure').count()<5)throw Error('Missing storyboard '+id);
     if(await page.locator('#activitySelect option[value="'+id+'"]').count()!==1)throw Error('Missing playback '+id);
   }

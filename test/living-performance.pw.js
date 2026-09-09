@@ -2,6 +2,7 @@ async(page)=>{
   const errors=[];page.on('pageerror',error=>errors.push(error.message));
   await page.goto('http://127.0.0.1:4187/test/fixtures/m1-visual.html');
   await page.waitForFunction(()=>Boolean(window.review));
+  await page.evaluate(()=>review.showCatalog('eyeStyles'));
   if(await page.locator('#eyeStyles figure').count()!==9)throw Error('Missing eye styles');
   await page.locator('#eyeStyles').screenshot({path:'output/playwright/living-eyes.png'});
   await page.evaluate(()=>{

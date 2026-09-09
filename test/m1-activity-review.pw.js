@@ -8,6 +8,7 @@ async page => {
   const names = await page.evaluate(() => Object.keys(MetaBotActivities.CLIPS));
   let samples = 0;
   for (const name of names) {
+    await page.evaluate(name=>review.showCatalog('activities',name),name);
     await page.evaluate(name => review.play(name), name);
     const duration = await page.evaluate(name => MetaBotActivities.duration(name), name);
     await page.evaluate(() => {
@@ -26,6 +27,7 @@ async page => {
     samples += results.length;
     await page.locator('#clip-' + name).screenshot({ path: 'output/playwright/clip-' + name + '.png' });
   }
+  await page.evaluate(()=>review.showCatalog('symbols'));
   await page.locator('#symbols').screenshot({ path: 'output/playwright/special-eyes-final.png' });
   await page.setViewportSize({ width: 390, height: 844 });
   await page.evaluate(() => window.scrollTo(0, 0));
