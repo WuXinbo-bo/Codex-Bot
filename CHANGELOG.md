@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.5.0
+
+- Refresh the README with expression, skin and shape galleries.
+- Integrate twenty long performances with fair rotation and completion-based cooldowns.
+- Keep performances available while panels are open or the pointer is nearby.
+- Resume after brief clicks; preserve task notification and drag priority.
+- Coordinate masks, shapes and props, with three subtle acting variants per story.
+- Unify the native launcher executable path.
+
 ## 0.3.0
 
 - GitHub Releases signed updates with automatic checks and optional background downloads.
