@@ -7,7 +7,7 @@ test('automatic defaults and legacy migration preserve deliberate overrides and 
   const a=A.migrate({artStyle:'classic',skin:'lemon',motion:'reduced'});
   assert.equal(a.artStyle,'auto');assert.equal(a.eyeStyle,'auto');assert.equal(a.skin,'lemon');assert.equal(a.reducedMotion,true);
   assert.deepEqual(A.migrate(a),a);
-  assert.equal(A.migrate({artStyle:'paper',eyeStyle:'anime',shape:'star'}).artStyle,'paper');
+  assert.equal(A.migrate({artStyle:'clay',eyeStyle:'anime',shape:'star'}).artStyle,'clay');
   assert.equal(A.migrate({schemaVersion:2,artStyle:'classic'}).artStyle,'classic');
   for(const companionMode of Object.keys(A.COMPANION_MODES)){
     const p=A.normalize({companionMode});assert.equal(p.personality,A.COMPANION_MODES[companionMode].personality);
@@ -34,13 +34,13 @@ test('weighted coverage visits every automatic style, base eye, shape and skin w
     if(event&&event!==before&&event.at===time){assert.notEqual(last[event.key],event.value);last[event.key]=event.value;}
   }
   const counts=d.snapshot().counts;
-  assert.equal(Object.keys(counts.artStyle).length,7);assert.equal(Object.keys(counts.eyeStyle).length,10);
+  assert.equal(Object.keys(counts.artStyle).length,5);assert.equal(Object.keys(counts.eyeStyle).length,10);
   assert.equal(Object.keys(counts.shape).length,18);assert.equal(Object.keys(counts.skin).length,8);
   assert.equal(d.snapshot().preferences.artStyle,'auto');assert.equal(d.snapshot().preferences.skin,'auto');
 });
 
 test('fixed choices remain stable but base eye drawings still express task emotions',()=>{
-  const fixed={artStyle:'paper',eyeStyle:'anime',shape:'star',skin:'pink'};
+  const fixed={artStyle:'clay',eyeStyle:'anime',shape:'star',skin:'pink'};
   const d=A.createDirector(fixed,{random:createSeededRandom(1)});
   for(let i=0;i<50;i++){const resolved=d.sample({force:true});for(const key of Object.keys(fixed))assert.equal(resolved[key],fixed[key]);}
   assert.equal(A.eyeConfig('deep_focus',fixed).baseId,'anime');assert.equal(A.eyeConfig('deep_focus',fixed).emotion,'focus');

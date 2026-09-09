@@ -5,30 +5,6 @@
   let view = { tasks: [], sources: {}, sourceHealth: {}, activeCount: 0, unreadCount: 0 };
   let selected = null, refreshing = false;
   const rows = new Map();
-  let libraryItems=[],libraryPage=1;
-  function renderLibrary(){
-    const query=$('librarySearch').value.toLowerCase();
-    const items=libraryItems.filter(item=>(item.name+' '+item.label).toLowerCase().includes(query)&&(!$('libraryFavorites').checked||item.favorite));
-    const pages=Math.max(1,Math.ceil(items.length/8));libraryPage=Math.min(pages,Math.max(1,libraryPage));
-    $('libraryList').replaceChildren();
-    for(const item of items.slice((libraryPage-1)*8,libraryPage*8)){
-      const row=document.createElement('div'),label=document.createElement('span');row.className='library-row';label.textContent=item.label;label.title=item.name;row.append(label);
-      for(const [icon,title,action] of [['play',item.seen?'回放':'尚未遇到',()=>window.metaBot.replayPerformance(item.name)],['star',item.favorite?'取消收藏':'收藏',()=>window.metaBot.setPerformancePreference(item.name,{favorite:!item.favorite})],['volume-1',item.frequency==='less'?'恢复频率':'减少自动出现',()=>window.metaBot.setPerformancePreference(item.name,{frequency:item.frequency==='less'?'normal':'less'})]]){
-        const button=document.createElement('button');button.className='icon-button';button.title=title;button.setAttribute('aria-label',title);button.innerHTML=`<i data-lucide="${icon}"></i>`;
-        if(icon==='play')button.disabled=!item.seen;
-        if(icon==='star')button.setAttribute('aria-pressed',String(item.favorite));
-        if(icon==='volume-1')button.setAttribute('aria-pressed',String(item.frequency==='less'));
-        button.onclick=async()=>{button.disabled=true;try{const result=await action();if(!result?.ok)throw Error(result?.error||'操作失败');if(icon==='play')feedback('已请求回放');}catch(error){feedback(error.message,true);}finally{button.disabled=icon==='play'&&!item.seen;}};row.append(button);
-      }
-      $('libraryList').append(row);
-    }
-    $('libraryCount').textContent=`已遇到 ${libraryItems.filter(item=>item.seen).length} / ${libraryItems.length}`;
-    $('libraryPage').textContent=`${libraryPage} / ${pages}`;$('libraryPrev').disabled=libraryPage===1;$('libraryNext').disabled=libraryPage===pages;icons();
-  }
-  window.metaBot?.onPerformanceLibrary?.(value=>{libraryItems=value.items||[];if(!document.querySelector('[data-settings-section="library"]').hidden)renderLibrary();});
-  for(const id of ['librarySearch','libraryFavorites'])$(id).oninput=()=>{libraryPage=1;renderLibrary();};
-  $('libraryPrev').onclick=()=>{libraryPage--;renderLibrary();};$('libraryNext').onclick=()=>{libraryPage++;renderLibrary();};
-  document.querySelector('[data-settings-tab="library"]').addEventListener('click',async()=>{try{const value=await window.metaBot?.getPerformanceLibrary?.();libraryItems=value?.items||[];renderLibrary();}catch(error){feedback(error.message,true);}});
   window.metaBot?.getNotificationSettings?.().then(settings => {
     if (!settings) return;
     $('retainCompletions').checked = settings.retainCompletions;

@@ -26,7 +26,7 @@ Suggested holds, followed by the next safe boundary:
 
 | Dimension | Hold | Selection |
 | --- | --- | --- |
-| Art style | 2-5 minutes | Weighted coverage of all seven styles |
+| Art style | 2-5 minutes | Weighted coverage of all five styles |
 | Eye drawing | 30-90 seconds | Ten base designs; contextual emotions overlay them |
 | Body shape | 10-20 seconds | Emotional pool or all eighteen shapes |
 | Skin, when automatic | 3-8 minutes | All eight colors |
@@ -69,3 +69,23 @@ The paginated gallery uses the same preference contract and expression controlle
 Runtime diagnostics: `__metaBotDebug.getPerformanceState().appearance` includes
 preferences, current identity, next deadlines, bounded history and coverage counts.
 These diagnostics are local and contain no task content.
+
+## Rounded Appearance Revision
+
+Paper and doodle art styles have been retired. Both old and schema-v2 saved
+selections migrate to automatic art; other preferences remain unchanged. Paper
+mask materials and paper-related activities are separate features and remain.
+
+All eighteen body outlines share cached periodic smoothing and a closed quadratic
+spline with matching endpoint tangents. The same topology is used during morphs.
+Pixel art is deliberately different: it quantizes that rounded source silhouette
+onto a five-unit square grid with horizontal/vertical steps, including during
+morphs. It retains blocky edges, pixel eyes and cadence. The no-sharp-corner rule
+applies to the underlying body shape, not to individual pixel cells. This does
+not change any action, expression or accessory registry.
+
+The performance collection UI, bridge endpoints, recording writes and collection
+frequency filters are removed. Existing collection data in old config files is
+left inert for recovery; it is not read by the scheduler. Automatic coverage,
+recent-history avoidance, task priorities and the paginated developer gallery
+remain independent of that removed feature.

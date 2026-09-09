@@ -49,8 +49,6 @@
     classic:{label:'经典',eye:null,shape:null,tempo:1,amplitude:1},
     mime:{label:'无声默剧',eye:'bean',shape:null,tempo:1.15,amplitude:.7},
     clay:{label:'黏土软团',eye:'classic',shape:'blob',tempo:1.2,amplitude:.8},
-    paper:{label:'折纸伙伴',eye:'almond',shape:'diamond',tempo:1.1,amplitude:.7},
-    doodle:{label:'手绘涂鸦',eye:'manga',shape:null,tempo:1.05,amplitude:.9},
     pixel:{label:'像素掌机',eye:'pixel',shape:'square',tempo:1.1,amplitude:.8},
     rubber:{label:'橡皮管',eye:'retro',shape:null,tempo:1.1,amplitude:1.15}
   };
@@ -109,13 +107,16 @@
       preferences=next;
     },snapshot:()=>({preferences:{...preferences},current:{...current},due:{...due},history:JSON.parse(JSON.stringify(history)),counts:JSON.parse(JSON.stringify(counts)),events:events.map(e=>({...e}))})};
   }
+  const shapePoints=Object.create(null);
   function points(name) {
-    return Array.from({length:120},(_,i)=>{
+    name=SHAPES.includes(name)?name:'circle';
+    if(shapePoints[name])return shapePoints[name];
+    let outline=Array.from({length:120},(_,i)=>{
       const a = -Math.PI/2+i*Math.PI*2/120;
       let r=1;
       const n={square:4,triangle:3,pentagon:5,hexagon:6,diamond:4}[name];
       if(n) { const angle=((a+Math.PI/2+Math.PI/n)%(2*Math.PI/n)+2*Math.PI/n)%(2*Math.PI/n)-Math.PI/n; r=Math.cos(Math.PI/n)/Math.cos(angle); r=.55+.45*r; }
-      if(name==='star') r=.82+.18*Math.cos(5*(a+Math.PI/2));
+      if(name==='star') r=.86+.14*Math.cos(5*(a+Math.PI/2));
       if(name==='flower') r=.91+.09*Math.cos(6*a);
       if(name==='cloud') r=.91+.09*Math.cos(3*a);
       if(name==='blob') r=.92+.05*Math.sin(3*a)+.03*Math.cos(5*a);
@@ -128,10 +129,33 @@
       if(name==='pancake')return {x:Math.cos(a)*.98,y:Math.sin(a)*.63};
       return {x:Math.cos(a)*r*(name==='capsule'?1:.98),y:Math.sin(a)*r*(name==='capsule'?.78:.98)};
     });
+    // Periodic smoothing rounds both convex tips and concave joins without a seam.
+    for(let pass=0;pass<16;pass++)outline=outline.map((_,i)=>{
+      const point={x:0,y:0};
+      for(let k=-2;k<=2;k++){
+        const weight=[1,4,6,4,1][k+2]/16,p=outline[(i+k+outline.length)%outline.length];
+        point.x+=p.x*weight;point.y+=p.y*weight;
+      }
+      return point;
+    });
+    shapePoints[name]=Object.freeze(outline.map(Object.freeze));
+    return shapePoints[name];
   }
   function path(name,b,from=name,t=1) {
     const p=points(name), q=points(from);
-    return p.map((v,i)=>`${i?'L':'M'} ${(b.cx+b.rx*(q[i].x+(v.x-q[i].x)*t)).toFixed(2)} ${(b.cy+b.ry*(q[i].y+(v.y-q[i].y)*t)).toFixed(2)}`).join(' ')+' Z';
+    const amount=Math.max(0,Math.min(1,Number(t)||0));
+    const outline=p.map((v,i)=>({x:b.cx+b.rx*(q[i].x+(v.x-q[i].x)*amount),y:b.cy+b.ry*(q[i].y+(v.y-q[i].y)*amount)}));
+    const midpoint=(a,b)=>`${((a.x+b.x)/2).toFixed(3)} ${((a.y+b.y)/2).toFixed(3)}`;
+    // Shared midpoint endpoints give every quadratic join matching tangents,
+    // including the closing seam and all intermediate morph frames.
+    return `M ${midpoint(outline.at(-1),outline[0])} `+outline.map((v,i)=>`Q ${v.x.toFixed(3)} ${v.y.toFixed(3)} ${midpoint(v,outline[(i+1)%outline.length])}`).join(' ')+' Z';
+  }
+  function pixelPath(name,b,from=name,t=1) {
+    const p=points(name),q=points(from),amount=Math.max(0,Math.min(1,Number(t)||0));
+    const snap=value=>Math.round(value/5)*5;
+    const outline=p.map((v,i)=>({x:snap(b.cx+b.rx*(q[i].x+(v.x-q[i].x)*amount)),y:snap(b.cy+b.ry*(q[i].y+(v.y-q[i].y)*amount))}));
+    // Pixel art keeps square grid steps, but samples the same rounded silhouette.
+    return `M ${outline[0].x} ${outline[0].y} `+outline.slice(1).concat(outline[0]).map(v=>`H ${v.x} V ${v.y}`).join(' ')+' Z';
   }
   function pool(expression) {
     if(/special_(overload|composed|gingerly|apologetic)/.test(expression))return ['triangle','drop','diamond'];
@@ -148,5 +172,5 @@
     if(/focus|scan|think|steady|code/.test(expression)) return ['square','hexagon','pentagon','capsule'];
     return ['circle','cloud','blob','drop'];
   }
-  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,COMPANION_MODES,normalize,migrate,createDirector,points,path,pool};
+  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,COMPANION_MODES,normalize,migrate,createDirector,points,path,pixelPath,pool};
 });

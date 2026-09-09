@@ -63,12 +63,11 @@
     const intervalMs = Math.max(2500, Number(options.intervalMs || 8500));
     const standbyAfter = Math.max(intervalMs, Number(options.standbyAfter || 60_000));
     const sleepAfter = Math.max(standbyAfter, Number(options.sleepAfter || 180_000));
-    let preferences=Appearance.normalize(options.appearance),library={},requestedReplay=null;
+    let preferences=Appearance.normalize(options.appearance);
     const appearanceDirector=Appearance.createDirector(preferences,{now:options.appearanceNow||now,random:options.appearanceRandom||createSeededRandom((options.seed??now())+7919)});
     let resolvedAppearance=appearanceDirector.sample();
     const memory=Memory.create(now);
     const personality=()=>Appearance.PERSONALITIES[preferences.personality];
-    const eligibleFrequency=name=>library[name]?.frequency!=='less'||random()<.2;
 
     let status = "offline";
     let count = 0;
@@ -256,7 +255,6 @@
 
     function cancelActivity(reason = "interrupted") {
       if(activity){
-        if(reason==='completed')options.onActivityEvent?.({name:activity.name,completed:true});
         if(Activities.NARRATIVES[activity.name]){memory.observe(reason==='completed'?'finished':'interrupted',activity.name);options.onPerformance?.(false);}
       }
       if(activity?.name.startsWith('performance_')) options.onPerformance?.(false);
@@ -296,7 +294,6 @@
       clearTimer("transient");
       transient = { name, priority, token: ++token };
       activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
-      if(!resume)options.onActivityEvent?.({name,completed:false});
       if(Activities.NARRATIVES[name]){activity.tempo=1;memory.started(name);options.onPerformance?.(true);}
       if(name.startsWith('performance_')) {
         activity.tempo=resume?.tempo || 1;
@@ -418,7 +415,6 @@
       clearTimer("transient");
       if (pendingReminder && pendingReminder.key === taskKey && remind()) return;
       if (drainLifecycle()) return;
-      if(requestedReplay){const request=requestedReplay;requestedReplay=null;if(now()<request.until&&!dragging&&['idle','offline','completed'].includes(status)&&playActivity(request.name,40))return;}
       if(pendingPanel && !dragging) {
         const detail=pendingPanel;pendingPanel=null;
         if(now()-detail.at<2500){interact('panel-phase',detail);return;}
@@ -442,22 +438,21 @@
           const route=status==='offline'?'idle':status;
           const theaters=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route===route&&now()-(activityHistory.get(name)??-Infinity)>300000);
           if(now()>=nextTheaterAt&&theaters.length){
-            const allowed=theaters.filter(eligibleFrequency);
-            const selected=allowed.length?chooseTheater(allowed):null;
+            const selected=chooseTheater(theaters);
             if(playActivity(selected,5)){scheduleBase();return;}
           }
           const story=preferences.stories?memory.next(status,pointerNear):null;
-          if(story&&random()<.2&&eligibleFrequency(story)&&playActivity(story,5)){scheduleBase();return;}
+          if(story&&random()<.2&&playActivity(story,5)){scheduleBase();return;}
           const idle = ["offline", "idle"].includes(status);
           const date = new Date(now());
           const holiday = (date.getMonth() === 0 && date.getDate() === 1) || (date.getMonth() === 11 && date.getDate() === 25);
           const pool = Activities.POOLS[status] || (idle ? Activities.POOLS.idle.concat(now() - lastActivity >= sleepAfter ? ["nap"] : [], holiday ? ["gift"] : []) : []);
-          const eligible = pool.filter(name => name !== "mimic" && eligibleFrequency(name) && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
+          const eligible = pool.filter(name => name !== "mimic" && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
           const last=[...activityHistory].sort((a,b)=>b[1]-a[1])[0];
           const history=[...activityHistory].sort((a,b)=>b[1]-a[1]).slice(0,6);
           if(status==='running'&&random()<.25){
             const name=pickPerformance('running');
-            if(name&&eligibleFrequency(name)&&playActivity(name,5)){scheduleBase();return;}
+            if(name&&playActivity(name,5)){scheduleBase();return;}
           }
           if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
         }
@@ -571,12 +566,6 @@
 
     function interact(type, detail = {}) {
       if (!type) return current;
-      if(type==='library-preferences'){library=detail.records||{};return current;}
-      if(type==='library-replay'){
-        if(!Activities.CLIPS[detail.name]||dragging||!['idle','offline','completed'].includes(status))return current;
-        if(transient?.priority>=50)requestedReplay={name:detail.name,until:now()+10000};else playActivity(detail.name,40);
-        return current;
-      }
       if(type==='completion-confirmed'){
         const name=memory.observe('confirmed');
         if(preferences.stories&&!dragging&&['idle','completed','offline'].includes(status)){
@@ -735,7 +724,7 @@
     function stop() {
       if (lifecycleTimer !== null) unschedule(lifecycleTimer);
       lifecycleTimer = null; lifecycleQueue.clear();
-      cancelActivity(); pendingReminder = null; pendingPanel=null; panelContact=null; requestedReplay=null; suspendedActivity = null; dragging = false; pointerNear = false;
+      cancelActivity(); pendingReminder = null; pendingPanel=null; panelContact=null; suspendedActivity = null; dragging = false; pointerNear = false;
       clearTimer("base");
       clearTimer("transient");
       transient = null;

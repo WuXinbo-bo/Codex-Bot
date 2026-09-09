@@ -4,6 +4,8 @@ const esbuild = require("esbuild");
 const root = path.resolve(__dirname, "..");
 const dest = path.join(root, "dist", "tauri");
 fs.mkdirSync(dest, { recursive: true });
+// Do not embed the retired collection module from an earlier incremental build.
+fs.rmSync(path.join(dest, 'performance-library.js'), { force: true });
 for (const entry of fs.readdirSync(path.join(root, "src"), {
   withFileTypes: true,
 })) {

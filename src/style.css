@@ -192,8 +192,3 @@ button:disabled { opacity: .5; cursor: default; }
 #setup input[type=text] { box-sizing:border-box; width:100%; padding:8px; border:1px solid #d8e5df; border-radius:8px; }
 #setupMessage { color:#a54526; }
 #setupMessage:empty { display:none; }
- .library-row{display:flex;align-items:center;gap:3px;border-bottom:1px solid #e2e8e4;padding:5px 0;min-height:32px}
- .library-row>span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12px}
- .library-row .icon-button{flex:0 0 26px;width:26px;height:26px}
- .library-row [aria-pressed="true"]{background:#f8edb0;color:#715700}
- .library-pager{display:flex;align-items:center;justify-content:center;gap:12px}

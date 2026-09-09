@@ -66,7 +66,7 @@ async(page)=>{
   await panel.locator('#reducedMotion').uncheck();await panel.getByRole('button',{name:'应用',exact:true}).click();
   await page.locator('iframe[title="panel"]').screenshot({path:'output/playwright/companion-mode.png'});
   await panel.locator('[data-settings-tab="appearance"]').click();
-  await panel.locator('#artMode').selectOption('fixed');await panel.locator('#artStyle').selectOption('paper');
+  await panel.locator('#artMode').selectOption('fixed');await panel.locator('#artStyle').selectOption('clay');
   await page.evaluate(()=>{const w=panelDemo.frames.panel.contentWindow;w.realSetAppearance=w.metaBot.setAppearance;w.metaBot.setAppearance=async()=>({ok:false,error:'测试保存失败'});});
   await panel.getByRole('button',{name:'应用',exact:true}).click();
   if((await inspect()).settings.artStyle!=='auto'||!await panel.locator('[data-settings-section="appearance"]').getByText('测试保存失败',{exact:true}).isVisible())throw Error('Save failure lost draft or reported success');

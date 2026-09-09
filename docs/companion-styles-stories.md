@@ -2,10 +2,12 @@
 
 ## Scope
 
-Six procedural rig styles extend the classic appearance: mime, clay, paper,
-doodle, pixel and rubber. They change body finish, default eyes and shape,
-motion tempo or interpolation. Explicit eye and shape choices take precedence.
-These are not six separately redrawn prop collections. The character stays
+Four procedural rig styles extend the classic appearance: mime, clay, pixel
+and rubber. They change body finish, preferred eyes and shape, motion tempo
+or interpolation. Explicit eye and shape choices take precedence. Paper and
+doodle art styles have been removed; saved selections return to automatic.
+Base body contours use rounded curves; pixel art samples those contours into
+square grid steps and retains its blocky finish. The character stays
 mouthless. Panel interaction directs gaze and hands toward the native panel;
 it does not deform the native window itself.
 
@@ -24,20 +26,18 @@ Real task signals take priority. Stories never invent task events, acknowledge
 notifications or delay the native panel transition. Confirmation reactions
 follow successful persistence of the user's explicit acknowledgement.
 
-## Collection
+## Automatic Playback
 
-The native config stores only validated activity identifiers, encounter and
-completion counts, favorites and normal/less frequency. It stores no task text.
-The settings list renders eight rows per page without animated previews.
-Replay requires an encountered item and is blocked during active tasks, drag
-or reduced motion. Replay cannot generate task completion notifications.
-Reduced frequency affects ambient selection, not urgent notifications.
+The collection UI, recording, favorites, frequency controls and replay APIs
+have been removed. Old collection records are inert and no longer affect the
+action scheduler. Existing activities, props, long theaters and story memory
+remain available through automatic scheduling and the developer gallery.
 
 ## Verification
 
-Unit tests cover style defaults, narrative assets, expiry, library validation,
-story delivery, confirmation, interruption and quiet-profile replay safety.
+Unit tests cover style defaults, narrative assets, expiry, preserved registries,
+story delivery, confirmation, interruption and quiet-profile behavior.
 The companion-upgrade browser test checks real native-coordinator integration,
-settings persistence, favorite/low-frequency controls and replay guards.
+settings persistence and rejection of removed collection APIs.
 Panel-system and catalog-pagination tests cover notification timing, retention,
 bounded preview instances, mobile overflow and JavaScript errors.

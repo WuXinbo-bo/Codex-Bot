@@ -36,9 +36,8 @@
     const shape = svgElement("g", { "data-layer": "shape" });
     const body = svgElement("path", { fill: Rig.COLORS.body, "data-part": "body" });
     const finish=svgElement('g',{'data-layer':'art-finish','pointer-events':'none'});
-    const finishLine=svgElement('path',{fill:'none',stroke:Rig.COLORS.ink,'stroke-width':1.4});
     const finishHighlight=svgElement('path',{fill:'#FFFFFF','fill-opacity':.28});
-    finish.append(finishHighlight,finishLine);
+    finish.append(finishHighlight);
     const face = svgElement("g", { "data-layer": "face" });
     const decorations = svgElement('g', {'data-layer':'emotion'});
     for (const x of [31,97]) decorations.append(svgElement('ellipse',{cx:x,cy:77,rx:8,ry:4,fill:'#F58499',opacity:.6}));
@@ -185,21 +184,16 @@
       const ey = Math.hypot((sin * a + cos * off) * b.rx, (sin * off + cos * d) * b.ry);
       let extent = Math.max(Math.abs(center.x) + ex, Math.abs(center.y) + ey);
       shape.setAttribute("transform", `translate(64 64) matrix(${a} ${off} ${off} ${d} 0 0) translate(-64 -64)`);
-      body.setAttribute("d", Appearance ? Appearance.path(bodyShape,b,oldShape,motionLevel==='reduced'?1:ease((now-shapeAt)/550)) : Rig.bodyPath(b));
+      body.setAttribute("d", Appearance ? (appearance.artStyle==='pixel'?Appearance.pixelPath:Appearance.path)(bodyShape,b,oldShape,motionLevel==='reduced'?1:ease((now-shapeAt)/550)) : Rig.bodyPath(b));
       body.setAttribute('fill',Appearance?.SKINS[appearance.skin]?.[0] || Rig.COLORS.body);
       svg.dataset.artStyle=appearance.artStyle;
       const artStyle=appearance.artStyle;
       finish.setAttribute('transform',`translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52})`);
-      finishLine.setAttribute('d',artStyle==='paper'?'M -29 23 L 0 39 L 29 23 M 0 39 L 0 47':artStyle==='doodle'?'M -41 -22 Q -29 -48 -3 -45 M 16 45 Q 43 38 46 12 M -46 4 l -3 9 m 7 15 l 5 6':'');
-      finishLine.setAttribute('stroke-dasharray',artStyle==='doodle'?'3 3':'none');
-      finishHighlight.setAttribute('d',artStyle==='clay'?'M -35 -19 Q -30 -41 -9 -39 Q -16 -28 -35 -19':artStyle==='paper'?'M -29 23 L 0 39 L -21 36 Z':'');
+      finishHighlight.setAttribute('d',artStyle==='clay'?'M -35 -19 Q -30 -41 -9 -39 Q -16 -28 -35 -19':'');
       svg.setAttribute('shape-rendering',artStyle==='pixel'?'crispEdges':'geometricPrecision');
-      if(artStyle==='pixel'){
-        const points=Appearance.points(bodyShape).map(p=>[Math.round((b.cx+b.rx*p.x)/5)*5,Math.round((b.cy+b.ry*p.y)/5)*5]);
-        body.setAttribute('d',points.map(([x,y],i)=>`${i?'L':'M'} ${x} ${y}`).join(' ')+' Z');
-      }
-      for(const arm of [leftArm,rightArm])arm.setAttribute('stroke-width',artStyle==='rubber'?5.5:artStyle==='doodle'?2.5:3.5);
-      for(const layer of [frontProps,backProps])layer.setAttribute('stroke-linejoin',artStyle==='paper'||artStyle==='pixel'?'miter':'round');
+      body.setAttribute('shape-rendering',artStyle==='pixel'?'crispEdges':'geometricPrecision');
+      for(const arm of [leftArm,rightArm])arm.setAttribute('stroke-width',artStyle==='rubber'?5.5:3.5);
+      for(const layer of [frontProps,backProps])layer.setAttribute('stroke-linejoin',artStyle==='pixel'?'miter':'round');
       svg.dataset.shape=bodyShape;
       svg.dataset.skin=appearance.skin || 'green';
       decorations.setAttribute('opacity', Math.max(pose.accents.blush,/delight|victory|shy|complete|curious|love|think|focus|closeness|caring|achievement/.test(expression) ? 1 : 0));

@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
-const Memory=require('../src/companion-memory'),Library=require('../src/performance-library'),Appearance=require('../src/appearance'),Activities=require('../src/m1-activities'),Rig=require('../src/m1-rig');
-test('six whole-body styles and three personalities normalize independently',()=>{
-  assert.equal(Object.keys(Appearance.ART_STYLES).length,7);assert.equal(Object.keys(Appearance.PERSONALITIES).length,3);
+const Memory=require('../src/companion-memory'),Appearance=require('../src/appearance'),Activities=require('../src/m1-activities'),Rig=require('../src/m1-rig');
+test('five whole-body styles and three personalities normalize independently',()=>{
+  assert.equal(Object.keys(Appearance.ART_STYLES).length,5);assert.equal(Object.keys(Appearance.PERSONALITIES).length,3);
   for(const artStyle of Object.keys(Appearance.ART_STYLES))assert.equal(Appearance.normalize({artStyle,eyeStyle:'anime',personality:'quiet'}).artStyle,artStyle);
   assert.equal(Appearance.normalize({artStyle:'bad'}).artStyle,'auto');assert.equal(Appearance.normalize({stories:false}).stories,false);
 });
@@ -29,11 +29,8 @@ test('nine narrative segments use valid assets, clean exits and no synthetic tas
     const end=Activities.CLIPS[name].at(-1);assert.ok(Object.values(Rig.merge(Rig.getExpression(end.expression),end.pose).accessories).every(p=>p.opacity===0));
   }
 });
-test('collection preserves preferences, separates encounters from completion and rejects unknown IDs',()=>{
-  let records=Library.record({},'story_practice',false);assert.equal(records.story_practice.completed,0);
-  records=Library.preference(records,'story_practice',{favorite:true,frequency:'less',seen:false});
-  records=Library.record(records,'story_practice',true);assert.equal(records.story_practice.completed,1);assert.equal(records.story_practice.favorite,true);
-  assert.deepEqual(Library.normalize(JSON.parse(JSON.stringify(records))),records);
-  assert.deepEqual(Library.record(records,'unknown',true),records);assert.throws(()=>Library.preference(records,'unknown',{}));
-  assert.equal(Library.catalog(records).length,Object.keys(Activities.CLIPS).length);
+test('removing collection leaves the complete action, prop and theater registries intact',()=>{
+  assert.equal(Object.keys(Activities.CLIPS).length,211);
+  assert.equal(Object.keys(Activities.THEATERS).length,20);
+  assert.equal(Rig.ACCESSORIES.length,24);
 });

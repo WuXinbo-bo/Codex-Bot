@@ -46,7 +46,6 @@
         <button type="button" class="settings-tab active" data-settings-tab="connection">连接与同步</button>
         <button type="button" class="settings-tab" data-settings-tab="appearance">外观皮肤</button>
         <button type="button" class="settings-tab" data-settings-tab="motion">动作与随机</button>
-        <button type="button" class="settings-tab" data-settings-tab="library">表演收藏</button>
         <button type="button" class="settings-tab" data-settings-tab="updates">关于更新</button>
       </nav>
       <div class="settings-section" data-settings-section="updates" hidden>
@@ -93,12 +92,6 @@
         <label><input id="particlesToggle" type="checkbox" checked> 粒子与庆祝特效</label>
         <label><input id="randomToggle" type="checkbox" checked> 随机动作</label>
         <div class="appearance-actions"><output class="appearance-status" role="status"></output><button class="appearance-discard icon-button" title="撤销未应用修改" aria-label="撤销未应用修改"><i data-lucide="undo-2"></i></button><button class="appearance-apply" type="button"><i data-lucide="check"></i>应用</button></div>
-      </div>
-      <div class="settings-section" data-settings-section="library" hidden>
-        <input id="librarySearch" type="search" placeholder="搜索表演" aria-label="搜索表演">
-        <label><input id="libraryFavorites" type="checkbox"> 只看收藏</label>
-        <output id="libraryCount" role="status"></output><div id="libraryList"></div>
-        <div class="library-pager"><button id="libraryPrev" class="icon-button" title="上一页" aria-label="上一页"><i data-lucide="chevron-left"></i></button><output id="libraryPage"></output><button id="libraryNext" class="icon-button" title="下一页" aria-label="下一页"><i data-lucide="chevron-right"></i></button></div>
       </div>
       <div class="settings-section" data-settings-section="connection">
       <button id="setupReopen" type="button">连接向导与修复</button>

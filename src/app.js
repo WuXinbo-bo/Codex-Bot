@@ -36,7 +36,6 @@
     onPerformance: active => ball?.setPerformanceContext({ theater: active }),
     onPerformanceDiagnostics: read => { performanceDiagnostics=read; },
     onBehaviorControl: fn=>{configureBehavior=fn;},
-    onActivityEvent: event=>window.metaBot?.recordPerformance?.(event).catch(console.error),
     onLifecycle: detail => { window.metaBot?.showLifecycleToast?.(detail.events.map(event => event.id)); },
     motionLevel: effectiveMotionLevel(),
     intervalMs: 8500
