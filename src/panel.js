@@ -5,11 +5,22 @@
   let view = { tasks: [], sources: {}, sourceHealth: {}, activeCount: 0, unreadCount: 0 };
   let selected = null, refreshing = false;
   const rows = new Map();
-  window.metaBot?.getNotificationSettings?.().then(settings => { if (settings) { $('retainCompletions').checked = settings.retainCompletions; $('autoCloseCompletions').checked = settings.autoCloseCompletions === true; if(settings.completionEscalation) $('completionEscalation').value=settings.completionEscalation; const a = settings.appearance || {}; if (a.skin) $('skinSelect').value = a.skin; if (a.shape) $('shapeSelect').value = a.shape; if (a.motion) $('motionSelect').value = a.motion; if (a.particles != null) $('particlesToggle').checked = a.particles; if (a.random != null) $('randomToggle').checked = a.random; for(const id of ['maskStyle','maskFrequency'])if(a[id])$(id).value=a[id];$('maskAuto').checked=a.maskAuto!==false;$('emojiMask').checked=a.masks!==false&&a.emoji!==false; } }).catch(error => feedback(error.message, true));
-  const appearanceControls = ['skinSelect','shapeSelect','emojiMask','motionSelect','particlesToggle','randomToggle','maskAuto','maskStyle','maskFrequency'];
+  window.metaBot?.getNotificationSettings?.().then(settings => {
+    if (!settings) return;
+    $('retainCompletions').checked = settings.retainCompletions;
+    $('autoCloseCompletions').checked = settings.autoCloseCompletions === true;
+    if(settings.completionEscalation) $('completionEscalation').value=settings.completionEscalation;
+    const a = settings.appearance || {};
+    for(const [key,id] of Object.entries({skin:'skinSelect',shape:'shapeSelect',motion:'motionSelect',eyeStyle:'eyeStyle',maskStyle:'maskStyle',maskFrequency:'maskFrequency'}))if(a[key])$(id).value=a[key];
+    if (a.particles != null) $('particlesToggle').checked = a.particles;
+    if (a.random != null) $('randomToggle').checked = a.random;
+    $('maskAuto').checked=a.maskAuto!==false;
+    $('emojiMask').checked=a.masks!==false&&a.emoji!==false;
+  }).catch(error => feedback(error.message, true));
+  const appearanceControls = ['skinSelect','shapeSelect','emojiMask','motionSelect','particlesToggle','randomToggle','maskAuto','maskStyle','maskFrequency','eyeStyle'];
   const saveAppearance = async () => {
     const value = { skin: $('skinSelect').value, shape: $('shapeSelect').value, emoji: $('emojiMask').checked, motion: $('motionSelect').value, particles: $('particlesToggle').checked, random: $('randomToggle').checked };
-    Object.assign(value,{masks:$('emojiMask').checked,maskAuto:$('maskAuto').checked,maskStyle:$('maskStyle').value,maskFrequency:$('maskFrequency').value});
+    Object.assign(value,{eyeStyle:$('eyeStyle').value,masks:$('emojiMask').checked,maskAuto:$('maskAuto').checked,maskStyle:$('maskStyle').value,maskFrequency:$('maskFrequency').value});
     try { if (!window.metaBot?.setAppearance) throw new Error('当前预览不支持保存外观'); const result = await window.metaBot.setAppearance(value); if (!result?.ok) throw new Error(result?.error || '保存失败'); feedback('外观与动作设置已保存'); } catch (error) { feedback(error.message, true); }
   };
   for (const id of appearanceControls) $(id).onchange = saveAppearance;

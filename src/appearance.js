@@ -5,8 +5,9 @@
 })(typeof self !== 'undefined' ? self : globalThis, function() {
   const SKINS = {green:['#02AD45','#87F8AD'],ocean:['#249AD9','#A0EDFF'],sunset:['#F58C40','#FFE0A2'],pink:['#ED83B6','#FFD9EA'],violet:['#9872DE','#E0CAFF'],lemon:['#EDCB42','#FFF5AE'],night:['#536178','#AEBFD8'],neon:['#54DAB9','#CB98FF']};
   const SHAPES = ['circle','square','triangle','pentagon','hexagon','star','drop','capsule','cloud','diamond','flower','blob','pancake','bean','bell','kite','cushion','spring'];
+  const EYE_STYLES = ['classic','anime','manga','minimal','pixel','neon','ink','sleepy','asymmetric'];
   function normalize(value = {}) {
-    return {skin: Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
+    return {eyeStyle:['auto',...EYE_STYLES].includes(value.eyeStyle)?value.eyeStyle:'auto',skin: Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
   }
   function points(name) {
     return Array.from({length:120},(_,i)=>{
@@ -33,6 +34,10 @@
     return p.map((v,i)=>`${i?'L':'M'} ${(b.cx+b.rx*(q[i].x+(v.x-q[i].x)*t)).toFixed(2)} ${(b.cy+b.ry*(q[i].y+(v.y-q[i].y)*t)).toFixed(2)}`).join(' ')+' Z';
   }
   function pool(expression) {
+    if(/special_(overload|composed|gingerly|apologetic)/.test(expression))return ['triangle','drop','diamond'];
+    if(/special_(eureka|understood|jubilant|smug)/.test(expression))return ['star','flower','circle'];
+    if(/special_(companion|bashful|covert)/.test(expression))return ['bean','cloud','circle'];
+    if(/special_(expectant|juggling)/.test(expression))return ['capsule','square','hexagon'];
     if(/recovery|anticipation/.test(expression))return ['pancake','bean','capsule'];
     if(/achievement/.test(expression))return ['star','kite','diamond'];
     if(/deliberate/.test(expression))return ['square','cushion','hexagon'];
@@ -43,5 +48,5 @@
     if(/focus|scan|think|steady|code/.test(expression)) return ['square','hexagon','pentagon','capsule'];
     return ['circle','cloud','blob','drop'];
   }
-  return {SKINS,SHAPES,normalize,points,path,pool};
+  return {SKINS,SHAPES,EYE_STYLES,normalize,points,path,pool};
 });

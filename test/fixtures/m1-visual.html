@@ -40,6 +40,7 @@
   <h2 id="appearanceCatalog">皮肤与身体形态</h2>
   <div class="toolbar"><label>预览皮肤 <select id="skinPreview"></select></label><label>身体形态 <select id="shapePreview"></select></label><label>动态 <select id="motionPreview"><option value="full">丰富</option><option value="soft">柔和</option><option value="reduced">低动态</option></select></label></div>
   <div id="skins" class="grid"></div><div id="shapes" class="grid"></div>
+  <h2>眼睛风格</h2><div id="eyeStyles" class="grid"></div>
   <div class="toolbar"><select id="activitySelect" aria-label="活动"></select><button id="play" aria-label="播放">▶</button><select id="statusSelect" aria-label="Codex 状态"><option value="running">Codex 正在工作</option><option value="needs_attention">Codex 需要处理</option><option value="completed">Codex 已完成</option><option value="failed">Codex 执行失败</option><option value="offline">空闲</option></select></div>
   <div id="preview" class="avatar"></div>
   <p id="activityCount"></p>
@@ -93,7 +94,13 @@
     }
     for (const e of Object.values(neutral.eyes)) { e.rx = 18; e.ry = 21; }
     for (const name of MetaBotM1Rig.CORE_EXPRESSION_NAMES) tile('core', name);
-    for (const name of Object.keys(MetaBotM1Rig.EXPRESSIONS).filter(n=>!MetaBotM1Rig.CORE_EXPRESSION_NAMES.includes(n))) tile('interactions', name,MetaBotM1Rig.EMOTIONS[name]?.label||name);
+    for (const name of Object.keys(MetaBotM1Rig.EXPRESSIONS).filter(n=>!MetaBotM1Rig.CORE_EXPRESSION_NAMES.includes(n))) tile('interactions', name,MetaBotM1Rig.SPECIALS[name]?.label||MetaBotM1Rig.EMOTIONS[name]?.label||name);
+    for(const eyeStyle of MetaBotAppearance.EYE_STYLES){
+      const fig=document.createElement('figure'),target=document.createElement('div'),caption=document.createElement('figcaption');
+      target.className='avatar';caption.textContent=eyeStyle;fig.append(target,caption);document.getElementById('eyeStyles').append(fig);
+      const bot=MetaBotM1.create(target,{appearance:{skin:'lemon',shape:'circle',eyeStyle,maskAuto:false}});
+      bot.setExpression('neutral',{duration:0});instances.push(bot);
+    }
     const live = MetaBotM1.create(document.getElementById('live'));
     const panelBot = MetaBotM1.create(document.getElementById('panelBot'));
     const panelStage = document.getElementById('panelStage');
@@ -140,6 +147,7 @@
     let lastPointer = null;
     let demoSequence = 0;
     function clearDemo() {
+      preview.setPerformanceContext({theater:false});
       preview.clearMask(true);
       clearTimeout(previewTimer);
       scenarioTimers.forEach(clearTimeout); scenarioTimers = [];
@@ -153,13 +161,14 @@
     function play(name) {
       clearDemo(); interactive = false;
       previewDirector.stop();
+      preview.setPerformanceContext({theater:name.startsWith('performance_')||name.startsWith('theater_')});
       clearTimeout(previewTimer);
       let index = 0;
       function advance() {
         const frame = MetaBotActivities.CLIPS[name][index++];
-        if (!frame) { preview.clearMask(); preview.setExpression('neutral'); return; }
+        if (!frame) { preview.clearMask(); preview.setPerformanceContext({theater:false}); preview.setExpression('neutral'); return; }
         if(Object.hasOwn(frame,'mask')){if(frame.mask)preview.setMask(frame.mask,'classic');else preview.clearMask();}
-        preview.setExpression(frame.expression, { pose: frame.pose, duration: Math.min(300, frame.duration * 0.55), auto: false });
+        preview.setExpression(frame.expression, { pose: frame.pose, duration: frame.transition || Math.min(450, frame.duration * .8), performanceId:name,performanceMs:MetaBotActivities.duration(name),auto: false });
         previewTimer = setTimeout(advance, frame.duration);
       }
       advance();

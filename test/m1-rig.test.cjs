@@ -14,6 +14,18 @@ test("M1 catalog exposes 24 semantic mouthless core expressions", () => {
   }
 });
 
+test('special expression library provides fifteen authored eye styles and accents',()=>{
+  assert.equal(Object.keys(Rig.SPECIALS).length,15);
+  const styles=new Set(Object.values(Rig.SPECIALS).map(item=>item.eyeStyle));
+  assert.ok(styles.size>=7);
+  for(const id of Object.keys(Rig.SPECIALS)){
+    const pose=Rig.getExpression(id);
+    assert.equal(typeof pose.eyeStyle,'string');
+    assert.equal(Object.hasOwn(pose,'mouth'),false);
+    assert.ok(Object.values(pose.accents).every(value=>value>=0&&value<=1));
+  }
+});
+
 test("M1 palette and body geometry enforce the product silhouette", () => {
   assert.equal(Rig.COLORS.body, "#02AD45");
   assert.equal(Rig.COLORS.eyes, "#F3F6F2");

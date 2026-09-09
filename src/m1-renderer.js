@@ -38,6 +38,13 @@
     const face = svgElement("g", { "data-layer": "face" });
     const decorations = svgElement('g', {'data-layer':'emotion'});
     for (const x of [31,97]) decorations.append(svgElement('ellipse',{cx:x,cy:77,rx:8,ry:4,fill:'#F58499',opacity:.6}));
+    const accents = svgElement('g',{'data-layer':'accents'});
+    const accentPaths = {
+      sweat: svgElement('path',{d:'M 108 27 Q 97 43 108 45 Q 119 43 108 27',fill:'#65BCE3'}),
+      stress: svgElement('path',{d:'M 26 26 L 25 38 M 31 24 L 30 36 M 36 23 L 35 34',stroke:'#667788','stroke-width':2}),
+      glint: svgElement('path',{d:'M 64 4 L 67 11 L 74 14 L 67 17 L 64 24 L 61 17 L 54 14 L 61 11 Z',fill:'#FFAC35'})
+    };
+    accents.append(...Object.values(accentPaths));
     const faceMask = svgElement('g',{'data-part':'face-mask',opacity:0});
     const maskArm = svgElement('path',{fill:'none',stroke:Rig.COLORS.ink,'stroke-width':3.5,'stroke-linecap':'round'});
     const maskArt = svgElement('g');
@@ -62,19 +69,22 @@
       const visible = svgElement("g", { "clip-path": `url(#${prefix}-${side}-lid)` });
       const white = svgElement("path", { fill: Rig.COLORS.eyes, "data-part": `eye-${side}` });
       const pupil = svgElement("ellipse", { fill: Rig.COLORS.ink, "data-part": `pupil-${side}` });
+      const iris = svgElement('ellipse',{fill:'#537CA4','data-part':`iris-${side}`,opacity:0});
+      const shine = svgElement('path',{fill:'white','data-part':`shine-${side}`,opacity:0});
       const closed = svgElement("path", { fill: "none", stroke: Rig.COLORS.ink, "stroke-width": 2.5, "stroke-linecap": "round", opacity: 0 });
-      visible.append(white, pupil);
+      visible.append(white, iris, pupil, shine);
       clipped.append(visible);
       const symbols = Object.fromEntries(Rig.SYMBOLS.map(name => {
         const symbol = svgElement("path", { "data-symbol": name, opacity: 0, "stroke-linecap": "round", "stroke-linejoin": "round" });
         return [name, symbol];
       }));
       const highlights = svgElement("path", { fill: Rig.COLORS.eyes, opacity: 0 });
-      group.append(clipped, closed, ...Object.values(symbols), highlights);
+      const designs = Object.fromEntries(['manga','minimal','pixel','neon','ink','sleepy','asymmetric'].map(id=>[id,svgElement('path',{'data-eye-design':id,opacity:0,fill:'none',stroke:Rig.COLORS.ink,'stroke-width':3,'stroke-linecap':'round','stroke-linejoin':'round'})]));
+      group.append(clipped, closed, ...Object.values(designs), ...Object.values(symbols), highlights);
       face.append(group);
-      eyes[side] = { group, outline, aperture, white, pupil, closed, visible, clipped, symbols, highlights };
+      eyes[side] = { group, outline, aperture, white, pupil, iris, shine, designs, closed, visible, clipped, symbols, highlights };
     }
-    character.append(backProps, shape, face, decorations, frontProps, faceMask);
+    character.append(backProps, shape, face, decorations, accents, frontProps, faceMask);
     const effects = svgElement("g", { "data-layer": "effects" });
     const fx = Object.fromEntries(Object.entries(FX_PATHS).map(([name, d]) => {
       const path = svgElement("path", { d, fill: "none", stroke: name === "input" ? Rig.COLORS.attention : name === "error" ? Rig.COLORS.error : Rig.COLORS.body, "stroke-width": 3, "stroke-linecap": "round", "stroke-linejoin": "round" });
@@ -112,12 +122,17 @@
     let motionMode = "idle";
     let armPose = current.arms;
     let performanceStarted = started;
+    let performanceMs = 2600;
+    let performanceId = null;
     let acting = { bob: 0, sway: 0, tilt: 0, wave: 0, squash: 0 };
 
     function samplePose(now) {
       if (!transitionDuration) return;
       const amount = ease((now - transitionStarted) / transitionDuration);
       current = Rig.interpolate(source, destination, amount);
+      // Eyes register intent first; the body follows rather than snapping in unison.
+      const eyeAmount = ease((now - transitionStarted) / Math.max(1,transitionDuration * .72));
+      current.eyes = Rig.interpolate(source.eyes,destination.eyes,eyeAmount);
       if (amount >= 1) transitionDuration = 0;
     }
 
@@ -153,7 +168,8 @@
       body.setAttribute('fill',Appearance?.SKINS[appearance.skin]?.[0] || Rig.COLORS.body);
       svg.dataset.shape=bodyShape;
       svg.dataset.skin=appearance.skin || 'green';
-      decorations.setAttribute('opacity', /delight|victory|shy|complete|curious|love|think|focus|closeness|caring|achievement/.test(expression) ? 1 : 0);
+      decorations.setAttribute('opacity', Math.max(pose.accents.blush,/delight|victory|shy|complete|curious|love|think|focus|closeness|caring|achievement/.test(expression) ? 1 : 0));
+      for(const [id,path] of Object.entries(accentPaths))path.setAttribute('opacity',appearance.particles===false?'0':String(pose.accents[id]));
       decorations.setAttribute('transform',`translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52}) translate(-64 -64)`);
       const occupied=Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater;
       maskController?.context(occupied);
@@ -161,6 +177,7 @@
       faceMask.setAttribute('opacity',m?.visible?'1':'0');
       face.setAttribute('opacity',String(1-(m?.cover||0)));
       if(m?.visible) decorations.setAttribute('opacity','0');
+      accents.setAttribute('visibility',m?.visible?'hidden':'visible');
       // Behind-body reach really is occluded; the carrying hand is in front of its plate.
       if(m?.back)character.insertBefore(faceMask,shape);else character.append(faceMask);
       if(m?.visible) {
@@ -213,7 +230,29 @@
         const pupil = Rig.constrainPupil(e, pose.pupils[side], gaze);
         for (const key of ["cx", "cy", "rx", "ry"]) parts.pupil.setAttribute(key, String(pupil[key]));
         const symbolic = Math.min(1, Object.values(e.symbols).reduce((sum, value) => sum + value, 0));
-        parts.clipped.setAttribute("opacity", String(1 - symbolic));
+        const design=pose.eyeDesign;
+        const stylized=Math.min(1,design.minimal+design.pixel+design.neon+design.ink);
+        parts.clipped.setAttribute("opacity", String((1 - symbolic)*(1-stylized)));
+        for(const key of ['cx','cy','rx','ry'])parts.iris.setAttribute(key,String(key==='rx'?pupil.rx+3:key==='ry'?pupil.ry+4:pupil[key]));
+        parts.iris.setAttribute('opacity',String(design.anime));
+        parts.pupil.setAttribute('rx',String(pupil.rx*(1-.25*design.anime)));
+        parts.shine.setAttribute('d',`M ${pupil.cx-3} ${pupil.cy-8} a 3 4 0 1 0 .1 0 M ${pupil.cx+4} ${pupil.cy+4} a 1.5 2 0 1 0 .1 0`);
+        parts.shine.setAttribute('opacity',String(design.anime));
+        const designPaths={
+          manga:`M -17 -12 Q 0 -25 17 -12 M -17 -12 l -4 -4 M 17 -12 l 4 -4`,
+          minimal:'M -12 0 Q 0 -7 12 0',
+          pixel:'M -12 -14 H 8 V -10 H 12 V 10 H 8 V 14 H -8 V 10 H -12 Z',
+          neon:'M -12 -16 Q 12 -22 12 0 Q 12 22 -12 16 Z M -7 0 H 8',
+          ink:'M -15 -2 Q 0 -11 14 -4 M -12 2 Q 0 -3 10 0',
+          sleepy:'M -18 -2 Q 0 -7 18 -2 M -16 -2 L -20 -5',
+          asymmetric:side==='left'?'M -15 -6 Q 0 -14 15 -6':'M -16 -19 Q 0 -25 16 -19'
+        };
+        for(const [id,path] of Object.entries(parts.designs)){
+          path.setAttribute('d',designPaths[id]);path.setAttribute('transform',`translate(${e.cx} ${e.cy}) scale(${e.rx/18} ${e.ry/21})`);
+          path.setAttribute('opacity',String(design[id]*(1-symbolic)*(1-closedMix)));
+          path.setAttribute('fill',id==='pixel'?Rig.COLORS.ink:'none');
+          path.setAttribute('stroke',id==='neon'?'#245F79':Rig.COLORS.ink);
+        }
         parts.closed.setAttribute("opacity", String((1 - symbolic) * closedMix));
         const paths = {
           star: "M 0 -18 L 5 -5 L 17 0 L 5 5 L 0 18 L -5 5 L -17 0 L -5 -5 Z",
@@ -227,7 +266,7 @@
         for (const [name, element] of Object.entries(parts.symbols)) {
           const outlineOnly = ["spiral", "squeeze", "flat", "cross"].includes(name);
           element.setAttribute("d", paths[name]);
-          element.setAttribute("fill", outlineOnly ? "none" : name === "heart" ? "#EF6684" : name === "star" ? "#F4BE4F" : Rig.COLORS.ink);
+          element.setAttribute("fill", outlineOnly ? "none" : name === "heart" ? "#EF6684" : name === "star" ? (appearance.skin==='lemon'?'#C45838':'#F4BE4F') : Rig.COLORS.ink);
           element.setAttribute("fill-rule", "evenodd");
           element.setAttribute("stroke", outlineOnly ? Rig.COLORS.ink : "none");
           element.setAttribute("stroke-width", "3.5");
@@ -258,6 +297,8 @@
       }
       for (const [name, element] of Object.entries(accessories)) {
         const value = pose.accessories[name];
+        const layer = value.back>.5 || Accessories.DEFINITIONS[name].layer==='back' ? backProps : frontProps;
+        if(element.parentNode!==layer)layer.append(element);
         element.setAttribute("opacity", String(m?.visible?0:value.opacity));
         if(m?.visible)continue;
         if (value.opacity <= 0.001) continue;
@@ -300,7 +341,7 @@
       previousFrame = now;
       samplePose(now);
       const reduced = motionLevel === "reduced";
-      const age = clamp((now - performanceStarted) / 1800, 0, 1);
+      const age = clamp((now - performanceStarted) / performanceMs, 0, 1);
       const envelope = active ? Math.sin(Math.PI * age) ** 2 : 0;
       const beat = Math.sin(age * Math.PI * 2 * current.performance.cycles);
       for (const key of Object.keys(acting)) {
@@ -311,7 +352,7 @@
       const wanted = tracking ? gazeTarget : current.gaze;
       gaze.x += (wanted.x - gaze.x) * gazeEase;
       gaze.y += (wanted.y - gaze.y) * gazeEase;
-      armPose = Rig.interpolate(armPose, current.arms, reduced ? 1 : 1 - Math.exp(-dt * 22));
+      armPose = Rig.interpolate(armPose, current.arms, reduced ? 1 : 1 - Math.exp(-dt * (motionMode==='dragging'?22:12)));
       for (let step = 0; step < 4; step += 1) {
         for (const key of Object.keys(REST)) {
           const acceleration = (motionTarget[key] - motion[key]) * 320 - velocity[key] * (motionMode === "settling" ? 24 : 36);
@@ -335,7 +376,7 @@
       const now = nowTime();
       samplePose(now);
       expression = Rig.EXPRESSIONS[name] ? name : "neutral";
-      if(Appearance && !performanceContext.theater && (now>=shapeDue || appearance.shape==='circle')) {
+      if(Appearance && (!performanceContext.theater || shapeDue===0) && (now>=shapeDue || appearance.shape==='circle')) {
         const pool=appearance.shape==='random'?Appearance.SHAPES:Appearance.pool(expression);
         oldShape=bodyShape;
         const choices=pool.filter(s=>s!==bodyShape);
@@ -344,7 +385,13 @@
       }
       source = current;
       destination = Rig.merge(Rig.getExpression(expression), settings.pose || {});
-      performanceStarted = now;
+      const eyeStyle = appearance.eyeStyle && appearance.eyeStyle!=='auto' ? appearance.eyeStyle : destination.eyeStyle;
+      destination.eyeDesign=Object.fromEntries(Object.keys(destination.eyeDesign).map(id=>[id,id===eyeStyle?1:0]));
+      if(eyeStyle==='sleepy')destination.eyes=Rig.merge(destination.eyes,{left:{upper:.5},right:{upper:.5}});
+      svg.dataset.eyeStyle=eyeStyle;
+      performanceMs=Math.max(2200,Number(settings.performanceMs)||2600);
+      const nextPerformanceId=settings.performanceId || expression;
+      if(performanceId!==nextPerformanceId){performanceStarted=now;performanceId=nextPerformanceId;}
       transitionStarted = now;
       transitionDuration = motionLevel === "reduced" ? 0 : Math.max(0, Number(settings.duration ?? 240));
       if (!transitionDuration) { current = destination; armPose = current.arms; }
@@ -388,13 +435,13 @@
       return motionLevel;
     }
     function setActive(value) { active = Boolean(value) && motionLevel !== "reduced"; blinkStarted = -Infinity; wake(); }
-    function setAppearance(value) { appearance=Appearance.normalize(value); maskController?.configure({...appearance,coordinated:true}); shapeDue=0; setExpression(expression); wake(); }
+    function setAppearance(value) { appearance=Appearance.normalize(value); maskController?.configure({...appearance,coordinated:true}); shapeDue=0; setExpression(expression,{pose:destination,performanceId,performanceMs}); wake(); }
     function resetIdle() { nextBlink = Math.min(nextBlink, nowTime() + 3200); wake(); }
     function destroy() { destroyed = true; if (frame !== null) cancelAnimationFrame(frame); target.textContent = ""; }
     render(current, started);
     wake();
     return { setAppearance, setExpression,
-      setPerformanceContext(value){performanceContext={...performanceContext,...value};if(value.theater)maskController?.clear(true);wake();},
+      setPerformanceContext(value){performanceContext={...performanceContext,...value};if(value.theater){maskController?.clear(true);shapeDue=0;}wake();},
       setMask(name,chain){const ok=maskController?.preview(name,chain);wake();return ok;},
       setTaskStatus(status){maskController?.status(status);wake();},
       maskLifecycle(kind,ids){maskController?.lifecycle(kind,ids);wake();},

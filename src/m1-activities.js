@@ -135,10 +135,88 @@
     if(['anxious','anticipation','setback'].includes(emotion.group))REACTIONS.hold.push(id);
     if(emotion.group==='recovery')REACTIONS.release.push(id);
   }
+  const SPECIAL_ROUTES={overload:'running',eureka:'running',covert:'running',caught_red:'idle',unravel:'paused',composed:'running',smug:'idle',companion:'idle',juggling:'running',expectant:'queued',understood:'running',gingerly:'queued',bashful:'idle',jubilant:'idle',apologetic:'paused'};
+  for(const [id,meta] of Object.entries(Rig.SPECIALS)){
+    LABELS[id]=meta.label;
+    CLIPS[id]=[step('attentive',420,{effects:{complete:0,input:0,error:0}}),step(id,1400,{effects:{complete:0,input:0,error:0}}),step(id,1800,{effects:{complete:0,input:0,error:0}}),step('calm',720,{effects:{complete:0,input:0,error:0}})];
+    POOLS[SPECIAL_ROUTES[id.replace('special_','')]||'idle'].push(id);
+  }
   POOLS.running.push('read_notes','compare_notes','remember_notes','write_notes','pencil_think','pencil_point');
   POOLS.queued.push('sand_watch','sand_turn','sand_wait','sand_check');
   POOLS.idle.push('close_notes','pencil_stow','stamp_ready','stamp_check','stamp_clean','flag_ready','flag_stow');
   const LIFECYCLE={started:['research','receive','prepare','keyboard'],joined:['prepare'],completed:['hero','deliver','finish_check','pack_up','stamp_done','flag_cheer'],failed:['failed'],attention:['attention','flag_wave'],stopped:['pack_up']};
+  const PERFORMANCES = {
+    started:['start_card','start_scan','start_idea','start_inspect','start_wave'],
+    completed:['done_flag','done_shades','done_stamp','done_report','done_bow','done_surprise','done_present'],
+    attention:['help_offer','help_pause','help_shy'],
+    failed:['help_review','help_retry']
+    ,running:['work_write','work_sort','work_think','work_wait','work_breathe','work_reset']
+  };
+  const authored = {
+    start_card:['认真接单',['special_gingerly','special_expectant','special_understood','focus']],
+    start_scan:['扫描任务',['special_composed','special_overload','special_understood','deep_focus']],
+    start_idea:['点亮思路',['special_covert','special_eureka','special_understood','focus']],
+    start_inspect:['谨慎验单',['special_gingerly','special_covert','special_understood','focus']],
+    start_wave:['招手开工',['special_bashful','special_expectant','special_companion','focus']],
+    done_flag:['举旗交付',['special_expectant','special_jubilant','special_smug','special_companion']],
+    done_shades:['墨镜收工',['special_composed','special_smug','special_bashful','special_smug']],
+    done_stamp:['盖章确认',['special_gingerly','special_understood','special_smug','special_companion']],
+    done_report:['递出成果',['special_covert','special_understood','special_smug','special_bashful']],
+    done_bow:['礼貌谢幕',['special_smug','special_companion','special_bashful','special_companion']],
+    done_surprise:['藏不住开心',['special_composed','special_covert','special_jubilant','special_bashful']],
+    done_present:['等待你查看',['special_expectant','special_gingerly','special_covert','special_companion']],
+    help_offer:['递出疑问',['special_gingerly','special_expectant','special_covert','special_gingerly']],
+    help_pause:['收手等指示',['special_composed','special_expectant','special_gingerly','special_companion']],
+    help_shy:['不好意思打扰',['special_bashful','special_covert','special_expectant','special_gingerly']],
+    help_review:['仔细复盘',['special_apologetic','special_covert','special_composed','special_gingerly']],
+    help_retry:['整理好再来',['special_apologetic','special_composed','special_understood','special_gingerly']],
+    work_write:['写下再推敲',['special_composed','focus','special_covert','special_understood']],
+    work_sort:['卡片归位',['special_juggling','special_gingerly','special_covert','focus']],
+    work_think:['悬笔思考',['special_composed','special_covert','special_eureka','focus']],
+    work_wait:['观察流沙',['special_expectant','special_gingerly','special_covert','special_companion']],
+    work_breathe:['从容陪伴',['special_companion','special_covert','special_companion','focus']],
+    work_reset:['忙中缓口气',['special_overload','special_composed','special_companion','focus']]
+  };
+  // Hand-space and object-space trajectories are authored per score, not sampled
+  // from previous clips. Back-layer reach -> present -> use -> put away.
+  const hand=(right,left=A.none,body={},gaze={x:.3,y:.2})=>({arms:{right,left},body,gaze});
+  const object=(prop,values,pose)=>Rig.merge(pose,{accessories:wear(prop,values)});
+  const reach=(prop)=>object(prop,{back:1,y:16,scale:.7},hand(A.grip));
+  const trajectories={
+    start_card:[reach('card'),object('card',{y:4,rotate:-12},hand(A.present)),object('card',{rotate:4},hand(A.point,A.none,{rotate:4})),object('card',{y:18,scale:.65,back:1},hand(A.think))],
+    start_scan:[hand(A.down,A.down,{cy:68}),hand(A.point,A.none,{rotate:-5},{x:-.8,y:.2}),hand(A.open,A.point,{rotate:5},{x:.8,y:.2}),hand(A.think,A.none,{cy:64})],
+    start_idea:[reach('pencil'),object('pencil',{y:-10,rotate:25},hand(A.up)),object('pencil',{rotate:45},hand(A.point)),object('pencil',{y:15,back:1},hand(A.think))],
+    start_inspect:[reach('lens'),object('lens',{x:-12,y:-10},hand(A.think)),object('lens',{x:12,y:4},hand(A.present)),object('lens',{back:1,y:16},hand(A.grip))],
+    start_wave:[hand(A.open),hand(A.up,A.none,{rotate:-7}),hand(A.open,A.none,{rotate:5}),hand(A.down)],
+    done_flag:[reach('flag'),object('flag',{rotate:-15},hand(A.up)),object('flag',{rotate:18},hand(A.open)),object('flag',{back:1,y:22,scale:.6},hand(A.think))],
+    done_shades:[reach('shades'),object('shades',{y:0},hand(A.think,A.none,{rotate:-9})),object('shades',{y:12,rotate:9},hand(A.question)),object('shades',{y:24,back:1},hand(A.down))],
+    done_stamp:[reach('stamp'),object('stamp',{y:-20},hand(A.up)),object('stamp',{y:10},hand(A.down,A.none,{cy:68})),object('stamp',{y:20,back:1},hand(A.grip,A.none,{cy:64}))],
+    done_report:[reach('notebook'),object('notebook',{rotate:-8},hand(A.present)),object('notebook',{rotate:5},hand(A.point)),object('notebook',{back:1,y:22,scale:.7},hand(A.think))],
+    done_bow:[hand(A.open,A.open,{cy:62}),hand(A.think,A.think,{cy:70,rotate:6}),hand(A.rest,A.rest,{cy:64,rotate:0}),hand(A.present)],
+    done_surprise:[hand(A.rest,A.rest),hand(A.think,A.none,{}, {x:.8,y:0}),object('spark',{x:-20,y:-26},hand(A.up,A.up,{cy:60})),hand(A.open,A.none,{cy:64,rotate:7})],
+    done_present:[reach('card'),object('card',{x:4},hand(A.present)),object('card',{rotate:6},hand(A.point,A.none,{}, {x:.8,y:.1})),object('card',{back:1,y:18,scale:.7},hand(A.think))],
+    help_offer:[reach('card'),object('card',{},hand(A.present)),object('card',{rotate:-8},hand(A.open)),object('card',{back:1,y:20},hand(A.think))],
+    help_pause:[hand(A.brace,A.brace),hand(A.think,A.think,{cy:66}),hand(A.open,A.none,{rotate:5}),hand(A.present)],
+    help_shy:[hand(A.think),hand(A.grip,A.none,{rotate:-6},{x:.8,y:0}),hand(A.open,A.none,{rotate:4}),hand(A.present)],
+    help_review:[reach('lens'),object('lens',{x:-12,y:-8},hand(A.think)),object('lens',{x:10,y:4},hand(A.present)),object('lens',{y:18,back:1},hand(A.grip))],
+    help_retry:[object('pencil',{rotate:55},hand(A.down)),object('pencil',{rotate:0},hand(A.think)),object('pencil',{rotate:-20},hand(A.point)),object('pencil',{back:1,y:18},hand(A.grip))],
+    work_write:[reach('pencil'),object('pencil',{rotate:25,x:4},hand(A.present)),object('pencil',{rotate:-15,y:-8},hand(A.think)),object('pencil',{y:16,back:1},hand(A.grip))],
+    work_sort:[object('card',{x:-18,rotate:-18},hand(A.present,A.present)),object('card',{x:18,rotate:18},hand(A.open)),object('card',{y:-9,rotate:0},hand(A.think)),object('card',{y:18,back:1},hand(A.down))],
+    work_think:[reach('pencil'),object('pencil',{rotate:50,y:-16},hand(A.think,A.none,{}, {x:-.5,y:-.6})),object('pencil',{rotate:10,y:-5},hand(A.point)),object('pencil',{back:1,y:18},hand(A.grip))],
+    work_wait:[reach('hourglass'),object('hourglass',{rotate:180},hand(A.present)),object('hourglass',{rotate:0},hand(A.present,A.none,{}, {x:.6,y:.5})),object('hourglass',{back:1,y:16},hand(A.grip))],
+    work_breathe:[hand(A.rest,A.rest,{cy:66}),hand(A.rest,A.rest,{cy:63,rotate:-3}),hand(A.rest,A.rest,{cy:66,rotate:0}),hand(A.think,A.none,{cy:64})],
+    work_reset:[hand(A.brace,A.think,{rotate:-4}),hand(A.down,A.down,{rotate:4}),hand(A.rest,A.rest,{cy:68,rotate:0}),hand(A.think,A.none,{cy:64})]
+  };
+  for(const [key,[label,beats]] of Object.entries(authored)){
+    const id='performance_'+key;
+    LABELS[id]=label;
+    CLIPS[id]=beats.map((expression,index)=>({...step(expression,[520,1050,1250,900][index],Rig.merge(trajectories[key][index],{effects:{complete:0,input:0,error:0},performance:{bob:0,sway:0,tilt:0,wave:0,squash:0}})),transition:[400,650,700,700][index],phase:['prepare','act','hold','stow'][index]}));
+    CLIPS[id].push({...step('calm',600,{effects:{complete:0,input:0,error:0}}),transition:550,phase:'exit'});
+  }
+  for(const [kind,names] of Object.entries(PERFORMANCES)){
+    const target = kind==='running' ? POOLS.running : LIFECYCLE[kind];
+    names.forEach(name=>target.push('performance_'+name));
+  }
   const THEATERS={};
   const stories=[
     ['notes','认真做笔记','running',['read_notes','write_notes','remember_notes','close_notes']],
@@ -233,5 +311,5 @@
     for(let i=0;i<keys.length;i++){r-=weights[i];if(r<0){key=keys[i];break;}}
     const pool=groups[key];return pool?.[Math.min(pool.length-1,Math.floor(random()*pool.length))];
   }
-  return { CLIPS, POOLS, LIFECYCLE, THEATERS, theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
+  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
 });

@@ -8,6 +8,7 @@
   let configuredMotionLevel = "full";
   let setRandomEnabled = () => {};
   let theaterMasksEnabled = true;
+  let performanceDiagnostics = () => ({});
 
   const ball = window.MetaBotM1?.create(ballEl, { expression: "neutral", motionLevel: effectiveMotionLevel() });
   const color = (status) => ({ running: "running", completed: "completed", failed: "failed", needs_attention: "needs-attention", queued: "queued", paused: "paused", offline: "offline", idle: "idle", stopped: "stopped", unknown: "unknown" })[status] || "offline";
@@ -30,6 +31,7 @@
     resetIdle: () => ball?.resetIdle(),
     onTheaterMask: id => id&&theaterMasksEnabled?ball?.setMask(id,'classic'):ball?.clearMask(true),
     onPerformance: active => ball?.setPerformanceContext({ theater: active }),
+    onPerformanceDiagnostics: read => { performanceDiagnostics=read; },
     onLifecycle: detail => { window.metaBot?.showLifecycleToast?.(detail.events.map(event => event.id)); },
     motionLevel: effectiveMotionLevel(),
     intervalMs: 8500
@@ -87,12 +89,9 @@
   });
   renderIndicator();
   window.metaBot?.onCompletionNudge?.(({stage})=>{
-    if(['failed','needs-attention'].includes(app.dataset.status)||['dragging','pressed'].includes(app.dataset.motion))return;
-    ball?.setMask(stage>=3?'angry':stage===2?'blank':'confused','crooked');
-    ball?.setExpression(stage>=3?'frustrated':'input',{duration:250,pose:{arms:{left:{x:6,y:59,bendX:2,bendY:77,opacity:1},right:{x:6,y:59,bendX:2,bendY:77,opacity:1}}}});
-    expressions?.interact('hover-dwell',{stage:'long'});
+    expressions?.interact('completion-nudge',{stage});
   });
-  window.__metaBotDebug = { getExpressionState: () => expressions?.getState(), getMotionLevel: effectiveMotionLevel };
+  window.__metaBotDebug = { getExpressionState: () => expressions?.getState(), getPerformanceState: () => performanceDiagnostics(), getMotionLevel: effectiveMotionLevel };
   window.addEventListener("beforeunload", () => {
     expressions?.stop();
     ball?.destroy();

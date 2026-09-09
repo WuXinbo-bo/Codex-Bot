@@ -65,6 +65,66 @@ test('long theater lasts about fifteen seconds and releases every mask',()=>{
   h.controller.stop();assert.equal(h.clock.pending(),0);
 });
 
+test('lifecycle scores rotate fully and survive their own toast choreography',()=>{
+  let diagnostics;
+  const h=harness({random:createSeededRandom(21),onPerformanceDiagnostics:read=>diagnostics=read});
+  for(const [kind,size] of [['started',5],['joined',5],['completed',7],['attention',3],['failed',2]]){
+    const seen=new Set();
+    for(let index=0;index<size;index++){
+      h.controller.interact('task-lifecycle',{events:[{id:kind+index,kind,taskId:'a',turnId:kind+index}]});h.clock.advance(180);
+      const name=h.controller.getState().activity.name;seen.add(name);
+      h.controller.interact('panel-phase',{label:kind==='completed'?'completions':'toast',phase:'entering',duration:220});
+      assert.equal(h.controller.getState().activity.name,name);
+      h.controller.interact('hover-enter');h.controller.interact('pointer-leave');
+      assert.equal(h.controller.getState().activity.name,name);
+      h.clock.advance(5000);
+    }
+    assert.equal(seen.size,size,kind);
+  }
+  assert.ok(diagnostics().history.length<=32);
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
+test('native entering-only panel phases rotate gestures without waiting for preparing',()=>{
+  const h=harness({random:createSeededRandom(45)});
+  h.controller.update('idle',0,{quiet:true});
+  const seen=[];
+  for(let i=0;i<12;i++){
+    h.controller.interact('panel-phase',{label:'panel',phase:'entering',side:'right',duration:220});
+    seen.push(h.controller.getCurrent());h.clock.advance(700);
+  }
+  assert.equal(new Set(seen).size,3);
+  assert.ok(seen.every((name,index)=>index===0||name!==seen[index-1]));
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
+test('completion nudges go through priority and accessibility controls',()=>{
+  const h=harness();h.controller.update('idle',0,{quiet:true});
+  h.controller.interact('completion-nudge',{stage:3});assert.equal(h.controller.getCurrent(),'special_overload');
+  h.controller.interact('drag-start');h.controller.interact('completion-nudge',{stage:3});
+  assert.equal(h.controller.getState().activity.name,'lifted');
+  h.controller.interact('drag-end');h.controller.setMotionLevel('reduced');
+  h.controller.interact('completion-nudge',{stage:2});h.clock.advance(150);
+  assert.equal(h.controller.getState().transient,null);h.controller.stop();
+});
+
+test('completion delivery never waits for the longer start performance',()=>{
+  const notices=[];const h=harness({onLifecycle:notice=>notices.push(notice.kind)});
+  h.controller.interact('task-lifecycle',{events:[{id:'start-fast',kind:'started',taskId:'a'}]});h.clock.advance(180);
+  h.controller.interact('task-lifecycle',{events:[{id:'done-fast',kind:'completed',taskId:'a'}]});h.clock.advance(180);
+  assert.deepEqual(notices,['started','completed']);
+  assert.match(h.controller.getState().activity.name,/performance_done_/);h.controller.stop();
+});
+
+test('six original work scores remain available with a permanently open task board',()=>{
+  let read;const h=harness({intervalMs:8500,random:createSeededRandom(73),onPerformanceDiagnostics:fn=>read=fn});
+  h.controller.update('running',1,{quiet:true});h.controller.interact('bubble-open');
+  h.clock.advance(3600000);
+  const counts=Object.entries(read().counts).filter(([name])=>name.startsWith('performance_work_'));
+  assert.equal(counts.length,6);assert.ok(Math.max(...counts.map(([,n])=>n))-Math.min(...counts.map(([,n])=>n))<=1);
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
 test('observing and opening a panel do not starve the thirty-minute theater rotation',t=>{
   for(const status of ['running','idle']){
     const h=harness({random:createSeededRandom(42),intervalMs:8500});
@@ -414,7 +474,8 @@ test("ten minutes of work balance focus with short performances and never invent
     const activities = require("../src/m1-activities.js");
     assert.ok(poolFor("running", 1).includes(name) || activities.POOLS.running.includes(activity?.name) || activities.THEATERS[activity?.name]?.route === 'running', name);
   }
-  assert.ok(occupancy.focus / 600000 >= 0.6, JSON.stringify(occupancy));
+  const focused = (occupancy.focus||0)+(occupancy.deep_focus||0)+(occupancy.quiet_progress||0);
+  assert.ok(focused / 600000 >= 0.6, JSON.stringify(occupancy));
   assert.ok(occupancy.focus / 600000 < 0.85, JSON.stringify(occupancy));
   assert.ok(Object.keys(occupancy).length >= 4);
   assert.ok(seen.size >= 6, [...seen].join(","));

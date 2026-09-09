@@ -105,6 +105,32 @@
     const theaterEvents = [];
     let lastTheater = null;
     const theaterVariants = new Map();
+    const performanceHistory = new Map();
+    const performanceRecent = [];
+    let pendingPanel = null;
+    let lastPanelStyle = -1;
+    let panelStyle = 0;
+    let emotionMemory = { name:'settled', intensity:.2, at:now() };
+    function feel(name,intensity=.5){emotionMemory={name,intensity,at:now()};}
+    function pickPerformance(kind) {
+      const pool = (Activities.PERFORMANCES?.[kind === 'joined' ? 'started' : kind] || []).map(name=>`performance_${name}`);
+      if(!pool.length)return null;
+      const minimum=Math.min(...pool.map(name=>performanceHistory.get(name)||0));
+      let choices=pool.filter(name=>(performanceHistory.get(name)||0)===minimum);
+      const last=performanceRecent.at(-1);
+      const diverse=choices.filter(name=>Activities.family(name)!==last?.family);
+      if(diverse.length)choices=diverse;
+      const styleFor=name=>Activities.poseFor(Activities.CLIPS[name][1].expression).eyeStyle;
+      const freshStyle=choices.filter(name=>styleFor(name)!==last?.eyeStyle);
+      if(freshStyle.length)choices=freshStyle;
+      const moodWeight=name=> emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)<.1 ? 1 : emotionMemory.name==='concerned' && /inspect|review|retry|think/.test(name) ? 2 : emotionMemory.name==='satisfied' && /bow|present|breathe/.test(name) ? 2 : 1;
+      let cursor=random()*choices.reduce((total,name)=>total+moodWeight(name),0);
+      const name=choices.find(name=>(cursor-=moodWeight(name))<0)||choices.at(-1);
+      performanceHistory.set(name,(performanceHistory.get(name)||0)+1);
+      performanceRecent.push({name,kind,family:Activities.family(name),eyeStyle:styleFor(name),at:now()});
+      if(performanceRecent.length>32)performanceRecent.shift();
+      return name;
+    }
     function theaterEvent(kind, name, reason) {
       theaterEvents.push({ kind, name, reason, at: now() });
       if (theaterEvents.length > 100) theaterEvents.shift();
@@ -169,6 +195,10 @@
       for (const event of events) {
         if (!event?.id || lifecycleSeen.has(event.id)) continue;
         lifecycleSeen.add(event.id);
+        const urgency={failed:6,attention:5,completed:4,stopped:3,started:2,joined:1};
+        if(activity?.priority===55 && (urgency[event.kind]||0)>(urgency[lifecycleCurrent?.kind]||0)){
+          cancelActivity('lifecycle-preemption');clearTimer('transient');transient=null;
+        }
         if (["completed", "failed", "stopped"].includes(event.kind)) {
           for (const kind of ["started", "joined"]) {
             const remaining = (lifecycleQueue.get(kind) || []).filter(item => item.taskId !== event.taskId || item.turnId !== event.turnId);
@@ -190,11 +220,13 @@
       const events = lifecycleQueue.get(kind);
       lifecycleQueue.delete(kind);
       const pools = Activities.LIFECYCLE;
-      const pool = pools[kind];
+      const authored = Activities.PERFORMANCES?.[kind === 'joined' ? 'started' : kind] || [];
+      const pool = authored.length ? authored.map(name => `performance_${name}`) : pools[kind];
       const eligible = pool.filter(name => name !== lifecycleCurrent?.clip);
       const choices = eligible.length ? eligible : pool;
-      const clip = choices[Math.floor(random() * choices.length)];
+      const clip = pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
       lifecycleCurrent = { kind, events, clip };
+      feel(({started:'engaged',joined:'engaged',completed:'satisfied',failed:'concerned',attention:'expectant',stopped:'settled'})[kind] || 'settled');
       if (kind === "completed") pleasedUntil = now() + 20000;
       options.onLifecycle?.({ kind, events });
       if (motionLevel === "reduced") {
@@ -211,6 +243,7 @@
     }
 
     function cancelActivity(reason = "interrupted") {
+      if(activity?.name.startsWith('performance_')) options.onPerformance?.(false);
       if(Activities.THEATERS[activity?.name]) {
         const name = activity.name;
         options.onTheaterMask?.(null);
@@ -231,7 +264,7 @@
 
     function suspendActivity(priority = 60) {
       if (!activity || activity.priority > 20) return;
-      if(Activities.THEATERS[activity.name] && (priority >= 50 && priority !== 60 || dragging)){suspendedActivity=null;return;}
+      if((Activities.THEATERS[activity.name] || activity.name.startsWith('performance_')) && (priority >= 50 && priority !== 60 || dragging)){suspendedActivity=null;return;}
       suspendedActivity = { ...activity, remaining: Math.max(1, activity.dueAt - now()), context: taskKey, expires: now() + 15000 };
     }
 
@@ -240,12 +273,16 @@
       const variants = [0,1,2].filter(value => value !== theaterVariants.get(name));
       const variant = Activities.THEATERS[name] ? resume?.variant ?? variants[Math.floor(random() * variants.length)] : 0;
       const frames = Activities.THEATERS[name] ? Activities.theaterFrames(name, variant) : Activities.CLIPS[name];
-      if (priority >= 50 && priority !== 60 && Activities.THEATERS[suspendedActivity?.name]) suspendedActivity = null;
+      if (priority >= 50 && priority !== 60 && (Activities.THEATERS[suspendedActivity?.name] || suspendedActivity?.name.startsWith('performance_'))) suspendedActivity = null;
       if (!resume && priority > 20) suspendActivity(priority);
       cancelActivity(resume ? "resume" : priority >= 50 ? "priority-event" : "social-response");
       clearTimer("transient");
       transient = { name, priority, token: ++token };
       activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
+      if(name.startsWith('performance_')) {
+        activity.tempo=resume?.tempo || 1;
+        options.onPerformance?.(true);
+      }
       if (!resume && !Activities.THEATERS[name]) activityHistory.set(name, now());
       nextActivityAt = now() + 12000 + random() * 8000;
       if(Activities.THEATERS[name]){
@@ -273,7 +310,7 @@
         if(Object.hasOwn(frame,'mask'))options.onTheaterMask?.(frame.mask);
         resume = null;
         const pose = name === "mimic" ? { ...frame.pose, gaze: { ...pointer }, body: { ...frame.pose.body, rotate: pointer.x * 12 } } : name === "lifted" && dragFace ? { ...frame.pose, eyes: dragFace.eyes } : frame.pose;
-        apply(frame.expression, { force: true, pose, duration: Math.min(300, duration * 0.55), auto: false });
+        apply(frame.expression, { force: true, pose, duration: Math.min(duration*.8,frame.transition || (priority>=60?220:450)), performanceId:name, performanceMs:Activities.duration(name)*activity.tempo, auto: false });
         activity.dueAt = now() + duration;
         activityTimer = schedule(advance, duration);
       };
@@ -299,7 +336,7 @@
     function apply(name, settings = {}) {
       if (!name || (name === current && !settings.force)) return false;
       current = name;
-      setExpression(name, { duration: settings.duration, pose: settings.pose, auto: settings.auto !== false });
+      setExpression(name, { duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs, auto: settings.auto !== false });
       return true;
     }
 
@@ -355,8 +392,12 @@
       clearTimer("transient");
       if (pendingReminder && pendingReminder.key === taskKey && remind()) return;
       if (drainLifecycle()) return;
+      if(pendingPanel && !dragging) {
+        const detail=pendingPanel;pendingPanel=null;
+        if(now()-detail.at<2500){interact('panel-phase',detail);return;}
+      }
       if (suspendedActivity && (suspendedActivity.context !== taskKey || now() >= suspendedActivity.expires)) suspendedActivity = null;
-      if (suspendedActivity && (Activities.THEATERS[suspendedActivity.name] || (!pointerNear && !panelOpen)) && !dragging && randomEnabled && motionLevel !== "reduced") {
+      if (suspendedActivity && (Activities.THEATERS[suspendedActivity.name] || suspendedActivity.name.startsWith('performance_') || (!pointerNear && !panelOpen)) && !dragging && randomEnabled && motionLevel !== "reduced") {
         const saved = suspendedActivity; suspendedActivity = null;
         if (playActivity(saved.name, saved.priority, saved)) return;
       }
@@ -384,6 +425,10 @@
           const eligible = pool.filter(name => name !== "mimic" && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
           const last=[...activityHistory].sort((a,b)=>b[1]-a[1])[0];
           const history=[...activityHistory].sort((a,b)=>b[1]-a[1]).slice(0,6);
+          if(status==='running'&&random()<.25){
+            const name=pickPerformance('running');
+            if(name&&playActivity(name,5)){scheduleBase();return;}
+          }
           if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
         }
         const resting = status === "offline" && count === 0 && now() - lastActivity >= standbyAfter;
@@ -396,7 +441,7 @@
     function playTransient(name, settings = {}) {
       const priority = Number(settings.priority || 0);
       if (transient && priority < transient.priority) return false;
-      if (priority >= 50 && priority !== 60 && Activities.THEATERS[suspendedActivity?.name]) suspendedActivity = null;
+      if (priority >= 50 && priority !== 60 && (Activities.THEATERS[suspendedActivity?.name] || suspendedActivity?.name.startsWith('performance_'))) suspendedActivity = null;
       if (priority > 20) suspendActivity(priority);
       cancelActivity();
       clearTimer("transient");
@@ -498,7 +543,7 @@
       if (!type) return current;
       const local = detail.local || {};
       // Passive pointer observation shares gaze, never takes ownership of a story.
-      if (Activities.THEATERS[activity?.name] && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
+      if ((Activities.THEATERS[activity?.name] || activity?.name.startsWith('performance_')) && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
         pointerNear = !["pointer-leave", "bubble-hover"].includes(type);
         if (pointerNear) setGaze(local.x || 0, local.y || 0); else clearGaze();
         return current;
@@ -540,6 +585,7 @@
           break;
         }
         case "press": {
+          feel('playful',.6);
           pressStreak = now() - lastPressAt < 1600 ? Math.min(pressStreak + 1, 4) : 1;
           lastPressAt = now();
           if (pressStreak >= 3) waryUntil = now() + 8000;
@@ -573,6 +619,11 @@
           break;
         }
         case "panel-phase":
+          // Never erase a lifecycle performance just because its toast has entered.
+          if(activity?.priority===55){
+            if(detail.label==='panel')pendingPanel={...detail,at:now()};
+            break;
+          }
           if(detail.label==='completions'&&detail.phase==='leaving')retainedTheaterCount=0;
           if(detail.phase==='attending'){
             const retained=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route==='retained'&&now()-(activityHistory.get(name)??-Infinity)>300000);
@@ -584,13 +635,27 @@
             break;
           }
           if(!dragging && (!transient || transient.priority<60)){
+            // Native preparing has zero duration and is not forwarded by app.js.
+            if(detail.phase==='entering'){
+              const choices=[0,1,2].filter(value=>value!==lastPanelStyle);
+              panelStyle=choices[Math.floor(random()*choices.length)];lastPanelStyle=panelStyle;
+            }
             const side=detail.side==='left'?'left':'right',other=side==='left'?'right':'left';
-            const name=detail.phase==='preparing'?'curious':detail.phase==='leaving'?'calm':'micro_confirm';
-            playTransient(name,{priority:56,duration:detail.duration,pose:{gaze:{x:side==='left'?-.8:.8,y:.2},arms:{[side]:Activities.poseFor('neutral').arms[side], [other]:{opacity:0}},body:{rotate:side==='left'?-8:8}}});
+            const name=detail.phase==='leaving'?'special_bashful':['special_covert','special_gingerly','special_expectant'][panelStyle];
+            playTransient(name,{priority:56,duration:Math.max(650,detail.duration||0),pose:{gaze:{x:side==='left'?-.8:.8,y:.2},arms:{[side]:Activities.poseFor('neutral').arms[side], [other]:{opacity:0}},body:{rotate:side==='left'?-8:8}}});
             // The hand reaches to the same edge used as the native panel origin.
-            apply(name,{force:true,auto:false,duration:120,pose:{gaze:{x:side==='left'?-.8:.8,y:.2},arms:{[side]:{x:detail.phase==='preparing'?24:4,y:63,bendX:5,bendY:83,opacity:1},[other]:{opacity:0}},body:{rotate:side==='left'?-6:6}}});
+            apply(name,{force:true,auto:false,duration:340,pose:{gaze:{x:side==='left'?-.8:.8,y:.2},arms:{[side]:{x:detail.phase==='preparing'?24:4,y:panelStyle===1?57:63,bendX:5,bendY:83,opacity:1},[other]:{opacity:0}},body:{rotate:(side==='left'?-1:1)*[6,3,8][panelStyle],cy:panelStyle===0?67:64}}});
           }
           break;
+        case "completion-nudge": {
+          if(dragging||['failed','needs_attention','running','queued'].includes(status)||transient?.priority>=50)break;
+          const stage=clamp(detail.stage,1,3);
+          options.onTheaterMask?.(null);
+          feel(stage>=3?'impatient':'expectant',stage/3);
+          const name=['special_expectant','special_composed','special_overload'][stage-1];
+          playTransient(name,{priority:50,duration:stage>=3?1600:1200,transition:450,pose:{effects:{complete:0,input:0,error:0},arms:{left:Activities.poseFor('neutral').arms.left,right:{x:5,y:59,bendX:3,bendY:80,opacity:1}},performance:{sway:stage>=3?2:0,tilt:stage>=3?3:0,cycles:2}}});
+          break;
+        }
         case "bubble-open": panelOpen = true; if (transient?.priority < 35 || !transient) playSocial("panel", 35); break;
         case "bubble-close": panelOpen = false; reminderAt = now() + 60000; if (transient?.priority < 35 || !transient) playSocial("leave", 35); break;
         case "activity-request": if ((Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
@@ -622,7 +687,7 @@
     function stop() {
       if (lifecycleTimer !== null) unschedule(lifecycleTimer);
       lifecycleTimer = null; lifecycleQueue.clear();
-      cancelActivity(); pendingReminder = null; suspendedActivity = null; dragging = false; pointerNear = false;
+      cancelActivity(); pendingReminder = null; pendingPanel=null; suspendedActivity = null; dragging = false; pointerNear = false;
       clearTimer("base");
       clearTimer("transient");
       transient = null;
@@ -633,10 +698,11 @@
     function setRandomEnabled(value) {
       randomEnabled = value !== false;
       if (!randomEnabled) suspendedActivity = null;
-      if(!randomEnabled&&Activities.THEATERS[activity?.name]&&activity.priority===5)restoreBase();
+      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
     }
     options.onRandomControl?.(setRandomEnabled);
     setMotionLevel(motionLevel);
+    options.onPerformanceDiagnostics?.(()=>({history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
     return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 

@@ -1,7 +1,8 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const Rig = require("../src/m1-rig.js");
-const { CLIPS, POOLS, duration } = require("../src/m1-activities.js");
+const A = require("../src/m1-activities.js");
+const { CLIPS, POOLS, duration } = A;
 const { DEFINITIONS } = require("../src/m1-accessories.js");
 
 test("every activity has valid finite geometry, existing assets, and a bounded duration", () => {
@@ -22,5 +23,27 @@ test("ambient work activities cannot signal completion, errors, or input request
   for (const name of POOLS.running) for (const frame of CLIPS[name]) {
     const pose = Rig.merge(Rig.getExpression(frame.expression), frame.pose);
     assert.deepEqual(pose.effects, { complete: 0, input: 0, error: 0 });
+  }
+});
+
+test('authored special expressions are reachable as paced activities',()=>{
+  const reachable=new Set(Object.values(POOLS).flat());
+  for(const id of Object.keys(Rig.SPECIALS)){
+    assert.ok(reachable.has(id),id);assert.ok(CLIPS[id]);
+    assert.ok(duration(id)>=4000&&duration(id)<=6000,id);
+  }
+});
+
+test('task lifecycle has multiple authored performance variants',()=>{
+  assert.equal(A.PERFORMANCES.started.length,5);
+  assert.equal(A.PERFORMANCES.completed.length,7);
+  assert.equal(A.PERFORMANCES.attention.length,3);
+  assert.equal(A.PERFORMANCES.failed.length,2);
+  assert.equal(A.PERFORMANCES.running.length,6);
+  for(const id of Object.values(A.PERFORMANCES).flat().map(name=>'performance_'+name)){
+    assert.ok(A.CLIPS[id],id);assert.ok(A.duration(id)>=3000);assert.ok(A.duration(id)<=6000);
+    assert.ok(A.CLIPS[id].slice(0,-1).every(frame=>frame.transition>=400));
+    const final=Rig.merge(Rig.getExpression(A.CLIPS[id].at(-1).expression),A.CLIPS[id].at(-1).pose);
+    assert.ok(Object.values(final.accessories).every(prop=>prop.opacity===0));
   }
 });

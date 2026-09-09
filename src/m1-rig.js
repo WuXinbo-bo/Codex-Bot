@@ -22,8 +22,11 @@
     gaze: { x: 0, y: 0.12 },
     arms: { left: ARMS.none, right: ARMS.none },
     effects: { complete: 0, input: 0, error: 0 },
-    accessories: Object.fromEntries(ACCESSORIES.map(name => [name, { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1 }])),
+    accessories: Object.fromEntries(ACCESSORIES.map(name => [name, { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1, back:0 }])),
     performance: { bob: 0, sway: 0, tilt: 0, wave: 0, squash: 0, cycles: 2 },
+    eyeStyle: 'classic',
+    eyeDesign: { anime:0,manga:0,minimal:0,pixel:0,neon:0,ink:0,sleepy:0,asymmetric:0 },
+    accents: { blush: 0, sweat: 0, glint: 0, stress: 0 },
     breathe: 0.003
   };
 
@@ -149,7 +152,33 @@
   emotionPoses.emotion_anticipation_3=merge(emotionPoses.emotion_anticipation_3,{body:{rx:56,ry:48},eyes:both({upper:.35}),arms:{left:ARMS.think,right:ARMS.think}});
   emotionPoses.emotion_setback_1=merge(emotionPoses.emotion_setback_1,{eyes:both({lower:.3,rotate:-3}),body:{rx:48,ry:53},gaze:{x:0,y:.65}});
   emotionPoses.emotion_caring_1=merge(emotionPoses.emotion_caring_1,{arms:{right:ARMS.present},gaze:{x:.55,y:.05},body:{rotate:4}});
-  const EXPRESSIONS = Object.freeze(Object.fromEntries(Object.entries({ ...originals,...emotionPoses }).map(([name, value]) => [name, merge(BASE, value)])));
+  // Authored poses, not aliases of the core catalog. No synthetic task signal.
+  const SPECIAL = {
+    overload: ['认真过载','neon',{eyes:both({upper:.4}),gaze:{x:.45,y:.3},accents:{sweat:1,stress:.5},arms:{left:ARMS.think,right:ARMS.brace}}],
+    eureka: ['灵光一现','anime',{eyes:both({ry:25}),pupils:both({rx:7,ry:9}),body:{rx:49,ry:55,cy:61},accents:{glint:1},arms:{right:ARMS.point}}],
+    covert: ['偷偷观察','asymmetric',{eyes:{left:{upper:.65},right:{ry:25}},gaze:{x:-.85,y:0},body:{rotate:-4},arms:{left:ARMS.grip}}],
+    caught_red: ['被抓包','manga',{eyes:both({ry:25}),pupils:both({rx:5,ry:6}),accents:{blush:1,sweat:.5},body:{rx:48,ry:55,cy:67},arms:{left:ARMS.brace,right:ARMS.brace}}],
+    unravel: ['有点晕乎','pixel',{eyes:both({symbols:{spiral:1}}),body:{rx:56,ry:48,rotate:8},arms:{left:ARMS.down,right:ARMS.down},accents:{stress:.7}}],
+    composed: ['强装镇定','ink',{eyes:both({upper:.36}),gaze:{x:.6,y:.25},accents:{sweat:1},arms:{left:ARMS.grip,right:ARMS.grip},breathe:.006}],
+    smug: ['得意邀功','manga',{eyes:{left:{upper:.5},right:{lower:.3}},gaze:{x:0,y:-.3},body:{rotate:-8,cy:61},accents:{blush:.55},arms:{right:ARMS.salute}}],
+    companion: ['安心陪伴','minimal',{eyes:both({closed:1,arc:-8}),body:{cy:66},arms:{right:ARMS.rest},breathe:.005}],
+    juggling: ['忙而不乱','pixel',{eyes:{left:{upper:.15},right:{lower:.2}},gaze:{x:.75,y:0},arms:{left:ARMS.open,right:ARMS.point},accents:{sweat:.45}}],
+    expectant: ['翘首等候','anime',{eyes:both({ry:25,lower:.15}),gaze:{x:0,y:-.6},body:{rx:49,ry:54,cy:61},arms:{left:ARMS.grip,right:ARMS.grip}}],
+    understood: ['突然理解','neon',{eyes:both({rotate:-8,lower:.15}),body:{cy:61,rotate:3},accents:{glint:.7},arms:{right:ARMS.open}}],
+    gingerly: ['小心翼翼','ink',{eyes:both({upper:.18,rotate:5}),gaze:{x:.7,y:.4},body:{rotate:-5,rx:54,ry:50},arms:{left:ARMS.brace,right:ARMS.present}}],
+    bashful: ['害羞躲闪','anime',{eyes:{left:{closed:.95,arc:-7},right:{lower:.32}},accents:{blush:1},gaze:{x:-.6,y:.4},body:{rotate:9},arms:{left:ARMS.think}}],
+    jubilant: ['闪耀庆典','anime',{eyes:both({symbols:{star:1}}),accents:{glint:1,blush:.5},body:{cy:60,rx:50,ry:54},arms:{left:ARMS.up,right:ARMS.up}}],
+    apologetic: ['认真致歉','sleepy',{eyes:both({upper:.4,rotate:-5}),gaze:{x:0,y:.7},body:{cy:69,rotate:2,rx:54,ry:50},arms:{left:ARMS.think,right:ARMS.think},accents:{sweat:.4}}]
+  };
+  const SIGNATURE_MOTION = {
+    overload:{sway:1,tilt:1,cycles:3},eureka:{bob:3,tilt:2,cycles:1},covert:{tilt:-3,cycles:1},
+    caught_red:{bob:2,squash:.018,cycles:1},unravel:{sway:3,tilt:5,squash:.02,cycles:2},
+    composed:{sway:.8,cycles:3},smug:{bob:2,tilt:-3,cycles:1},companion:{bob:1,cycles:1},
+    juggling:{sway:2,wave:4,cycles:2},expectant:{bob:2,squash:.01,cycles:1},understood:{bob:3,cycles:1},
+    gingerly:{tilt:2,wave:2,cycles:1},bashful:{tilt:3,sway:1,cycles:1},jubilant:{bob:4,wave:6,cycles:2},apologetic:{bob:-2,tilt:2,cycles:1}
+  };
+  const SPECIALS = Object.fromEntries(Object.entries(SPECIAL).map(([key,[label,eyeStyle,pose]])=>['special_'+key,{label,eyeStyle,pose:merge(pose,{eyeStyle,performance:SIGNATURE_MOTION[key]})}]));
+  const EXPRESSIONS = Object.freeze(Object.fromEntries(Object.entries({ ...originals,...emotionPoses,...Object.fromEntries(Object.entries(SPECIALS).map(([id,s])=>[id,s.pose])) }).map(([name, value]) => [name, merge(BASE, value)])));
   function getExpression(name) { return merge({}, EXPRESSIONS[name] || EXPRESSIONS.neutral); }
 
   function bodyPath(body) {
@@ -186,5 +215,5 @@
     }
     return amount < 0.5 ? from : to;
   }
-  return { COLORS, SYMBOLS, ACCESSORIES, ARMS, merge, CORE_EXPRESSION_NAMES, EXPRESSIONS, EMOTIONS, getExpression, bodyPath, eyePath, constrainPupil, interpolate };
+  return { COLORS, SYMBOLS, ACCESSORIES, ARMS, merge, CORE_EXPRESSION_NAMES, EXPRESSIONS, EMOTIONS, SPECIALS, getExpression, bodyPath, eyePath, constrainPupil, interpolate };
 });

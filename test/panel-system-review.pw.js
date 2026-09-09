@@ -8,10 +8,12 @@ async (page) => {
   await page.waitForFunction(()=>panelDemo.frames.toast.contentDocument.body.dataset.phase==='entering');
   await page.screenshot({path:'output/playwright/panel-handoff-mid.png'});
   await page.waitForFunction(()=>panelDemo.frames.toast.contentDocument.body.dataset.phase==='visible');
+  await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState().activity?.name.startsWith('performance_start_'),null,{timeout:3000});
   const start=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState());
   await page.screenshot({path:'output/playwright/panel-start.png'});
   await page.getByRole('button',{name:'完成任务'}).click();
   await page.waitForFunction(()=>panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible',null,{timeout:15000});
+  await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState().activity?.name.startsWith('performance_done_'),null,{timeout:3000});
   const finish=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState());
   await page.screenshot({path:'output/playwright/panel-complete.png'});
   await page.frameLocator('iframe[title="completions"]').getByRole('button',{name:'确认并接下一项'}).click();
@@ -32,5 +34,5 @@ async (page) => {
   await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===2&&panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible');
   await page.frameLocator('iframe[title="completions"]').getByRole('button',{name:'确认并接下一项'}).click();
   await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===1&&panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible');
-  return {passed:true,start:start.current,finish:finish.current,phases,errors};
+  return {passed:true,start:start.activity.name,finish:finish.activity.name,phases,errors};
 }
