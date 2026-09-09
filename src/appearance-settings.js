@@ -46,6 +46,7 @@
         appearance:draft,motionLevel:effectiveMotion(),appearanceNow:()=>Date.now()*8,
         setExpression:(name,options)=>preview?.setExpression(name,options),
         onResolvedAppearance:value=>preview?.setAppearance(value),
+        getAccessoryExposure:()=>preview?.getAccessoryExposure(),
         isAppearanceBlocked:()=>Boolean(preview?.getMaskState()?.current),
         setMotion:value=>preview?.setMotion(value),setGaze:(x,y)=>preview?.setGaze(x,y),clearGaze:()=>preview?.clearGaze(),setActive:value=>preview?.setActive(value),
         onPerformance:theater=>preview?.setPerformanceContext({theater}),

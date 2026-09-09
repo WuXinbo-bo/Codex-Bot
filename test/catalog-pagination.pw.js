@@ -33,7 +33,7 @@ async(page)=>{
         maxInstances=Math.max(maxInstances,state.instances);pages++;
         if(document.getElementById('catalogNext').disabled)break;
         document.getElementById('catalogNext').click();
-      }while(pages<250);
+      }while(pages<=review.getCatalogState().total+1);
       if(count!==review.getCatalogState().total||maxInstances>22)throw Error('Coverage or live-instance limit '+id);
       results.push({id,count,pages,maxInstances});
     }

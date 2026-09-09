@@ -9,6 +9,10 @@
   const ellipse = (cx, cy, rx, ry, fill, extra = {}) => ["ellipse", { cx, cy, rx, ry, fill, ...extra }];
   const rect = (x, y, width, height, fill, rx = 2, extra = {}) => ["rect", { x, y, width, height, rx, fill, ...extra }];
   const asset = (anchor, bounds, elements, layer = "front", offset = [0, 0]) => ({ anchor, bounds, elements, layer, offset });
+  const joint = (channel, elements, motion) => ['g', {'data-joint':channel}, elements, motion];
+  const turn = (elements, x=0, y=0) => joint('turn',elements,{rotate:360,x,y});
+  const extend = (elements, x=0, y=20) => joint('extend',elements,{dx:x,dy:y});
+  const open = elements => joint('open',elements,{sy:-.75});
   const DEFINITIONS = {
     notebook: asset('body',[-23,-18,23,18],[rect(-22,-17,44,34,blue,3),rect(-16,-14,35,28,white,1),line('M -10 -7 H 12 M -10 0 H 8 M -10 7 H 12',ink,1.5),line('M -19 -11 H -14 M -19 0 H -14 M -19 11 H -14',ink,2)],'front',[0,28]),
     pencil: asset('right',[-4,-28,4,8],[rect(-3,-23,6,27,gold,1),path('M -3 -23 L 0 -28 L 3 -23 Z',ink),rect(-3,3,6,5,pink,1),line('M 0 -20 V 0',white,1)]),
@@ -42,13 +46,60 @@
     gift: asset("body", [-22, -22, 22, 17], [rect(-20, -9, 40, 26, pink, 3), rect(-22, -13, 44, 8, "#F7859D", 2), rect(-3, -13, 6, 30, gold, 0), line("M 0 -13 C -22 -30 -18 -8 0 -13 C 22 -30 18 -8 0 -13", gold, 3)], "front", [0, 28]),
     drawing: asset("body", [-22, -20, 22, 20], [rect(-21, -19, 42, 38, white, 2), path("M 0 -12 L 3 -3 L 12 0 L 3 3 L 0 12 L -3 3 L -12 0 L -3 -3 Z", gold)], "front", [-5, 27])
   };
-  function create(element, back, front) {
-    return Object.fromEntries(Object.entries(DEFINITIONS).map(([name, definition]) => {
-      const group = element("g", { "data-accessory": name, opacity: 0 });
-      for (const [type, attrs] of definition.elements) group.append(element(type, attrs));
-      (definition.layer === "back" ? back : front).append(group);
-      return [name, group];
-    }));
+  const NEW = {
+    stickyRoll:['便签卷','work','body',[ellipse(0,-8,19,7,gold),extend([rect(-16,-8,32,20,'#FFF3A1',3),line('M -9 0 H 8 M -9 6 H 4',ink,1.5)],0,12)], [0,27]],
+    paperclip:['回形针','work','right',[line('M -5 10 V -16 Q -5 -28 5 -28 Q 14 -28 14 -18 V 5 Q 14 17 3 17 Q -10 17 -10 5 V -14',blue,4)],[-8,0]],
+    tapeMeasure:['软尺','work','body',[extend([rect(0,-6,30,13,'#FFF0A8',2),line('M 5 -5 V 0 M 12 -5 V 3 M 19 -5 V 0 M 26 -5 V 3',ink,1.5)],12,0),rect(-19,-15,27,28,blue,7),ellipse(-5,-1,7,7,white)],[-8,29]],
+    eraser:['橡皮','work','right',[rect(-14,-10,28,18,pink,5),rect(-3,-10,17,18,white,3),extend([line('M -14 14 H -9 M 0 15 H 4 M 12 13 H 15',pink,2)],0,4)]],
+    flashlight:['手电筒','inspect','right',[joint('open',[path('M -8 -17 Q -23 -33 -19 -39 H 19 Q 23 -33 8 -17 Z','#FFF3A1',{'fill-opacity':.55})],{opacity:1}),rect(-7,-15,14,27,blue,4),rect(-11,-20,22,9,ink,3),rect(-7,-20,14,3,white,1)]],
+    compass:['指南针','inspect','body',[ellipse(0,0,20,20,gold),ellipse(0,0,16,16,white),turn([path('M 0 -13 Q 4 -3 3 0 L 0 12 Q -4 3 -3 0 Z',pink)]),ellipse(0,0,3,3,ink)],[0,28]],
+    puzzle:['拼图块','inspect','body',[path('M -23 -13 H -9 Q -14 -23 -5 -23 Q 4 -23 0 -13 H 11 V -2 Q 1 -7 1 1 Q 1 9 11 5 V 17 H -23 Z',blue),extend([path('M 14 -13 H 30 V 17 H 14 V 5 Q 4 9 4 1 Q 4 -7 14 -2 Z',gold)],12,0)],[-4,28]],
+    spool:['线轴','inspect','body',[extend([line('M 0 0 Q 17 10 26 0 Q 35 -7 34 12',pink,2)],9,5),rect(-10,-18,20,36,gold,4),turn([line('M -7 -12 H 7 M -7 -6 H 7 M -7 0 H 7 M -7 6 H 7 M -7 12 H 7',pink,3)])],[-7,29]],
+    folder:['文件夹','work','body',[rect(-25,-15,50,33,blue,4),rect(-23,-21,21,9,blue,3),open([rect(-25,-10,50,28,'#A2DEED',4),line('M -15 -2 H 4',white,2)])],[0,28]],
+    tray:['小托盘','work','body',[ellipse(0,8,29,7,blue),line('M -27 5 Q 0 15 27 5',white,2),extend([rect(-19,-12,38,23,white,3),line('M -12 -4 H 12 M -12 2 H 5',blue,2)],0,-8)],[0,27]],
+    bookmark:['书签','work','right',[path('M -8 -22 Q 0 -26 8 -22 V 12 Q 4 11 0 7 Q -4 11 -8 12 Z',pink),ellipse(0,-15,2,2,gold),extend([line('M 0 -23 Q 9 -32 12 -23',gold,2)],0,4)]],
+    bell:['小铃铛','signal','right',[path('M -14 4 Q -9 -3 -9 -14 Q 0 -27 9 -14 Q 9 -3 14 4 Q 0 10 -14 4',gold),turn([ellipse(0,8,4,4,ink)],0,-10),ellipse(0,-22,3,3,pink)]],
+    brooch:['胸针','costume','body',[turn([path('M 0 -10 Q 6 -4 10 0 Q 5 4 0 10 Q -5 4 -10 0 Q -6 -4 0 -10',blue),ellipse(0,0,3,3,white)])],[28,21]],
+    pinwheel:['风车','play','right',[line('M 0 12 V -23',ink,3),turn([path('M 0 -23 Q -23 -43 -17 -23 Q -7 -19 0 -23 Q 20 -46 0 -40 Q -4 -30 0 -23 Q 23 -3 17 -23 Q 7 -27 0 -23 Q -20 0 0 -6 Q 4 -16 0 -23',blue),ellipse(0,-23,3,3,gold)],0,-23)]],
+    yoyo:['悠悠球','play','right',[joint('extend',[line('M 0 -14 V 0',ink,1.5)],{sy:30/14,x:0,y:-14}),extend([ellipse(0,0,12,12,pink),ellipse(0,0,5,5,gold),turn([ellipse(6,0,2,2,white)])],0,30)],[-4,-16]],
+    balloon:['小气球','play','right',[joint('extend',[line('M 0 10 Q -6 -3 0 -13',ink,1.5)],{sy:12/23,x:0,y:10}),extend([ellipse(0,-31,14,18,pink),line('M -6 -38 Q -9 -35 -8 -31',white,2)],0,-12)],[-8,0]],
+    springToy:['弹簧玩具','play','body',[joint('extend',[line('M -15 -12 C -28 -19 28 -19 15 -12 C 28 -5 -28 -5 -15 2 C -28 9 28 9 15 16 C 28 23 -28 23 -15 16',blue,3)],{sy:.6})],[0,27]],
+    blanket:['小毯子','rest','body',[open([path('M -34 5 Q 0 13 34 5 L 32 40 Q 0 47 -32 40 Z','#ABCBD7'),line('M -24 19 Q 0 25 24 19 M -24 32 Q 0 38 24 32',white,2)])],[0,0]],
+    fan:['折扇','rest','right',[joint('open',[path('M 0 10 Q -7 0 -24 -14 Q 0 -39 24 -14 Q 7 0 0 10',pink),line('M 0 10 L -16 -19 M 0 10 V -27 M 0 10 L 16 -19',white,1.5)],{sx:-.8,x:0,y:10})]],
+    handwarmer:['暖手包','rest','body',[rect(-22,-17,44,34,pink,12),rect(-8,-20,16,7,ink,3),joint('open',[line('M -7 -24 Q -13 -30 -7 -35 M 6 -24 Q 12 -30 6 -35',gold,2)],{opacity:1})],[0,28]],
+    plant:['小盆栽','rest','body',[rect(-15,0,30,21,gold,5),line('M 0 1 V -25','#399767',3),joint('open',[path('M 0 -10 Q -26 -30 -19 -11 Q -12 -4 0 -10 M 0 -20 Q 22 -37 19 -19 Q 12 -11 0 -20','#399767')],{rotate:15})],[0,26]]
+  };
+  for(const [id,[label,family,anchor,elements,offset]] of Object.entries(NEW)){
+    const bounds={stickyRoll:[-20,-16,20,26],paperclip:[-13,-31,17,20],tapeMeasure:[-21,-17,45,15],eraser:[-17,-13,18,21],flashlight:[-24,-42,24,15],compass:[-22,-22,22,22],puzzle:[-26,-26,46,20],spool:[-13,-21,48,23],folder:[-28,-24,28,21],tray:[-32,-23,32,18],bookmark:[-11,-33,15,15],bell:[-18,-28,18,17],brooch:[-14,-14,14,14],pinwheel:[-28,-51,28,16],yoyo:[-16,-17,16,49],balloon:[-18,-64,18,14],springToy:[-29,-35,29,42],blanket:[-35,0,35,46],fan:[-27,-33,27,13],handwarmer:[-25,-39,25,20],plant:[-28,-42,28,25]}[id];
+    DEFINITIONS[id]={...asset(anchor,bounds,elements,'front',offset||[0,0]),label,family,slot:family==='costume'?'wear':'main'};
   }
-  return { DEFINITIONS, create };
+  for(const [id,definition] of Object.entries(DEFINITIONS)){
+    definition.label||=id;
+    definition.slot||=['head','face'].includes(definition.anchor)||id==='cape'?'wear':'main';
+  }
+  function articulate(group,value){
+    for(const node of group._joints||[]){
+      const spec=node._motion,t=Number(value[node.dataset.joint])||0;
+      node.setAttribute('transform',`translate(${(spec.dx||0)*t} ${(spec.dy||0)*t}) translate(${spec.x||0} ${spec.y||0}) rotate(${(spec.rotate||0)*t}) scale(${1+(spec.sx||0)*t} ${1+(spec.sy||0)*t}) translate(${-(spec.x||0)} ${-(spec.y||0)})`);
+      if(spec.opacity)node.setAttribute('opacity',String(Math.max(0,Math.min(1,t))));
+    }
+  }
+  function create(element, back, front) {
+    const nodes={};
+    function ensure(name){
+      if(nodes[name])return nodes[name];
+      const definition=DEFINITIONS[name];if(!definition)return null;
+      const group = element("g", { "data-accessory": name, opacity: 0 });
+      group._joints=[];
+      function append(parent,entries){for(const [type,attrs,children,motion] of entries){
+        const node=element(type,attrs);parent.append(node);
+        if(motion){node._motion=motion;group._joints.push(node);}if(children)append(node,children);
+      }}
+      append(group,definition.elements);
+      (definition.layer === "back" ? back : front).append(group);
+      return nodes[name]=group;
+    }
+    return {nodes,ensure,prune(visible){for(const name of Object.keys(nodes))if(!visible.has(name)){nodes[name].remove();delete nodes[name];}}};
+  }
+  return { DEFINITIONS, NEW, create, articulate };
 });

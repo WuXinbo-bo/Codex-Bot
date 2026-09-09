@@ -52,7 +52,6 @@ async(page)=>{
         bots[0].setAppearance({artStyle,shape:'circle',eyeStyle:'auto',maskAuto:false});
         for(const id of Object.keys(E.entries)){
           bots[0].setExpression(id,{duration:0});frame(16);check(hosts[0],id);artChecks++;
-          if(artStyle==='pixel')for(const el of hosts[0].querySelectorAll('[data-accent]'))if(Number(el.getAttribute('opacity'))>0&&/[QCAL]/i.test(el.getAttribute('d')))throw Error('Nonpixel accent');
         }
       }
       const bot=bots[0],cell=hosts[0];bot.setAppearance({artStyle:'classic',shape:'circle',eyeStyle:'classic',maskAuto:false});bot.setMotionLevel('full');

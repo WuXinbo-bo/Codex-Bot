@@ -35,11 +35,11 @@ test('authored special expressions are reachable as paced activities',()=>{
 });
 
 test('task lifecycle has multiple authored performance variants',()=>{
-  assert.equal(A.PERFORMANCES.started.length,5);
-  assert.equal(A.PERFORMANCES.completed.length,7);
-  assert.equal(A.PERFORMANCES.attention.length,3);
-  assert.equal(A.PERFORMANCES.failed.length,2);
-  assert.equal(A.PERFORMANCES.running.length,6);
+  assert.equal(A.PERFORMANCES.started.length,7);
+  assert.equal(A.PERFORMANCES.completed.length,11);
+  assert.equal(A.PERFORMANCES.attention.length,4);
+  assert.equal(A.PERFORMANCES.failed.length,3);
+  assert.equal(A.PERFORMANCES.running.length,9);
   for(const id of Object.values(A.PERFORMANCES).flat().map(name=>'performance_'+name)){
     assert.ok(A.CLIPS[id],id);assert.ok(A.duration(id)>=3000);assert.ok(A.duration(id)<=6000);
     assert.ok(A.CLIPS[id].slice(0,-1).every(frame=>frame.transition>=400));

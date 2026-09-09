@@ -671,7 +671,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         )
           center.action(item.taskId, "ack");
         await renderCompletions();
-        await interact('completion-confirmed');
+        await interact('completion-confirmed',{taskId:item.taskId,turnId:item.turnId});
         return { ok: true };
       } catch (e) {
         return { ok: false, error: String(e) };

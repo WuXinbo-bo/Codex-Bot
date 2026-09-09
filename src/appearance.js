@@ -48,7 +48,6 @@
     classic:{label:'经典',eye:null,shape:null,tempo:1,amplitude:1},
     mime:{label:'无声默剧',eye:'bean',shape:null,tempo:1.15,amplitude:.7},
     clay:{label:'黏土软团',eye:'classic',shape:'blob',tempo:1.2,amplitude:.8},
-    pixel:{label:'像素掌机',eye:'soft_square',shape:'square',tempo:1.1,amplitude:.8},
     rubber:{label:'橡皮管',eye:'retro',shape:null,tempo:1.1,amplitude:1.15}
   };
   const PERSONALITIES={quiet:{label:'安静搭档',interval:1.5,tempo:1.1,social:.45},attentive:{label:'认真助手',interval:1,tempo:1,social:.7},playful:{label:'俏皮伙伴',interval:.85,tempo:1.05,social:1}};
@@ -84,7 +83,7 @@
     }
     function change(key,expression,time) {
       const art=ART_STYLES[current.artStyle]||ART_STYLES.classic;
-      const candidates=key==='artStyle'?Object.keys(ART_STYLES):key==='skin'?Object.keys(SKINS):key==='eyeStyle'?Object.keys(EYE_PRESETS).filter(id=>EYE_PRESETS[id].group==='base'&&(current.artStyle!=='pixel'||['soft_square','classic','bean'].includes(id))):preferences.shape==='random'?SHAPES:pool(expression);
+      const candidates=key==='artStyle'?Object.keys(ART_STYLES):key==='skin'?Object.keys(SKINS):key==='eyeStyle'?Object.keys(EYE_PRESETS).filter(id=>EYE_PRESETS[id].group==='base'):preferences.shape==='random'?SHAPES:pool(expression);
       current[key]=automatic(key)?pick(key,candidates,key==='eyeStyle'?art.eye:key==='shape'?art.shape:null):preferences[key];
       due[key]=time+ranges[key][0]+draw()*(ranges[key][1]-ranges[key][0]);
       events.push({key,value:current[key],at:time});events=events.slice(-40);
@@ -149,13 +148,6 @@
     // including the closing seam and all intermediate morph frames.
     return `M ${midpoint(outline.at(-1),outline[0])} `+outline.map((v,i)=>`Q ${v.x.toFixed(3)} ${v.y.toFixed(3)} ${midpoint(v,outline[(i+1)%outline.length])}`).join(' ')+' Z';
   }
-  function pixelPath(name,b,from=name,t=1) {
-    const p=points(name),q=points(from),amount=Math.max(0,Math.min(1,Number(t)||0));
-    const snap=value=>Math.round(value/5)*5;
-    const outline=p.map((v,i)=>({x:snap(b.cx+b.rx*(q[i].x+(v.x-q[i].x)*amount)),y:snap(b.cy+b.ry*(q[i].y+(v.y-q[i].y)*amount))}));
-    // Pixel art keeps square grid steps, but samples the same rounded silhouette.
-    return `M ${outline[0].x} ${outline[0].y} `+outline.slice(1).concat(outline[0]).map(v=>`H ${v.x} V ${v.y}`).join(' ')+' Z';
-  }
   function pool(expression) {
     if(/special_(overload|composed|gingerly|apologetic)/.test(expression))return ['triangle','drop','diamond'];
     if(/special_(eureka|understood|jubilant|smug)/.test(expression))return ['star','flower','circle'];
@@ -171,5 +163,5 @@
     if(/focus|scan|think|steady|code/.test(expression)) return ['square','hexagon','pentagon','capsule'];
     return ['circle','cloud','blob','drop'];
   }
-  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,COMPANION_MODES,normalize,migrate,createDirector,points,path,pixelPath,pool};
+  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,COMPANION_MODES,normalize,migrate,createDirector,points,path,pool};
 });

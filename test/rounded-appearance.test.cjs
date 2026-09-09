@@ -2,8 +2,8 @@ const test=require('node:test'),assert=require('node:assert/strict');
 const A=require('../src/appearance.js');
 
 test('retired art styles migrate in both old and current schemas without changing other preferences',()=>{
-  assert.deepEqual(Object.keys(A.ART_STYLES),['classic','mime','clay','pixel','rubber']);
-  for(const artStyle of ['paper','doodle'])for(const schemaVersion of [1,2]){
+  assert.deepEqual(Object.keys(A.ART_STYLES),['classic','mime','clay','rubber']);
+  for(const artStyle of ['paper','doodle','pixel'])for(const schemaVersion of [1,2]){
     const value=A.migrate({schemaVersion,artStyle,eyeStyle:'anime',shape:'triangle',skin:'pink',reducedMotion:true});
     assert.equal(value.artStyle,'auto');assert.equal(value.eyeStyle,'anime');assert.equal(value.shape,'triangle');assert.equal(value.skin,'pink');assert.equal(value.motion,'reduced');
     assert.deepEqual(A.migrate(value),value);
@@ -38,18 +38,8 @@ test('every pair of body shapes morphs with continuous quadratic tangents and a 
   }
 });
 
-test('pixel art preserves square grid steps while following rounded morph silhouettes',()=>{
-  const body={cx:64,cy:64,rx:52,ry:52};
-  for(const from of A.SHAPES)for(const to of A.SHAPES)for(const t of [0,.5,1]){
-    const path=A.pixelPath(to,body,from,t);
-    assert.ok(!/[QLC]|NaN|undefined|Infinity/.test(path));
-    assert.equal((path.match(/H/g)||[]).length,120);assert.equal((path.match(/V/g)||[]).length,120);
-    const numbers=path.match(/-?\d+(?:\.\d+)?/g).map(Number);assert.ok(numbers.every(n=>n%5===0));
-    const a=A.points(from),b=A.points(to);
-    for(let i=0;i<120;i++){
-      assert.ok(Math.abs(numbers[2*i]-(body.cx+body.rx*(a[i].x+(b[i].x-a[i].x)*t)))<=2.5001);
-      assert.ok(Math.abs(numbers[2*i+1]-(body.cy+body.ry*(a[i].y+(b[i].y-a[i].y)*t)))<=2.5001);
-    }
-    assert.deepEqual(numbers.slice(-2),numbers.slice(0,2));
-  }
+test('retired pixel style cannot return through automatic selection or saved preferences',()=>{
+  const d=A.createDirector({artStyle:'pixel'});
+  assert.equal(d.snapshot().preferences.artStyle,'auto');assert.equal(A.pixelPath,undefined);
+  for(let i=0;i<1000;i++)assert.ok(['classic','mime','clay','rubber'].includes(d.sample({force:true}).artStyle));
 });

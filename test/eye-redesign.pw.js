@@ -80,13 +80,13 @@ async(page)=>{
   await page.waitForFunction(()=>panelDemo.frames.panel.contentDocument.querySelector('#eyeStyle')?.value==='tender');
   for(const eyeStyle of ['pixel','manga','smug','ink']){
     await page.evaluate(eyeStyle=>{
-      panelDemo.stored['config.json'].appearance={schemaVersion:2,eyeStyle,artStyle:'pixel',skin:'pink',shape:'star'};
+      panelDemo.stored['config.json'].appearance={schemaVersion:2,eyeStyle,artStyle:'clay',skin:'pink',shape:'star'};
       panelDemo.frames.ball.srcdoc=panelDemo.frames.ball.srcdoc;
     },eyeStyle);
     await page.waitForFunction(()=>{
       const saved=panelDemo.stored['config.json'].appearance;
       const runtime=panelDemo.frames.ball.contentWindow.__metaBotDebug?.getPerformanceState().appearance;
-      return saved.eyeStyle==='auto'&&saved.artStyle==='pixel'&&saved.skin==='pink'&&saved.shape==='star'&&runtime?.preferences.eyeStyle==='auto'&&runtime.current.artStyle==='pixel';
+      return saved.eyeStyle==='auto'&&saved.artStyle==='clay'&&saved.skin==='pink'&&saved.shape==='star'&&runtime?.preferences.eyeStyle==='auto'&&runtime.current.artStyle==='clay';
     });
   }
   if(errors.length)throw Error(errors.join('\n'));

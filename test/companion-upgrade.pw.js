@@ -3,9 +3,9 @@ async(page)=>{
   await page.goto('http://127.0.0.1:4187/test/fixtures/m1-visual.html');
   await page.waitForFunction(()=>Boolean(window.review));
   await page.evaluate(()=>review.showCatalog('artStyles'));
-  if(await page.locator('#artStyles figure').count()!==5)throw Error('Missing styles');
+  if(await page.locator('#artStyles figure').count()!==4)throw Error('Missing styles');
   await page.locator('#artStyles').screenshot({path:'output/playwright/companion-art-styles.png'});
-  for(const style of ['mime','clay','pixel','rubber']){
+  for(const style of ['mime','clay','rubber']){
     await page.locator('#artPreview').selectOption(style);await page.locator('#activitySelect').selectOption('performance_start_card');await page.locator('#play').click();
     await page.waitForTimeout(900);
     if(await page.locator('#preview svg').getAttribute('data-art-style')!==style)throw Error('Style not applied '+style);
@@ -42,5 +42,5 @@ async(page)=>{
   await page.setViewportSize({width:390,height:844});
   await page.locator('iframe[title="panel"]').screenshot({path:'output/playwright/companion-panel-narrow.png'});
   if(errors.length)throw Error(errors.join('\n'));
-  return {styles:5,storyDelivery:true,persisted:true,collectionRemoved:true,errors};
+  return {styles:4,storyDelivery:true,persisted:true,collectionRemoved:true,errors};
 }

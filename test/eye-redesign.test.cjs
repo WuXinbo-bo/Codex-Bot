@@ -13,15 +13,14 @@ test('fifteen eye presets have eight base designs and seven contextual looks',()
   for(const artStyle of Object.keys(A.ART_STYLES))assert.ok(A.EYE_PRESETS[A.eyeConfig('neutral',{artStyle}).baseId]);
 });
 
-test('retired eye selections migrate to automatic without retiring pixel art or proud poses',()=>{
+test('retired eye selections migrate to automatic without changing supported art or proud poses',()=>{
   for(const eyeStyle of ['pixel','manga','smug','ink'])for(const schemaVersion of [1,2]){
     assert.ok(!A.EYE_STYLES.includes(eyeStyle));
-    const next=A.migrate({schemaVersion,eyeStyle,artStyle:'pixel',skin:'pink',shape:'star'});
-    assert.equal(next.eyeStyle,'auto');assert.equal(next.artStyle,'pixel');
+    const next=A.migrate({schemaVersion,eyeStyle,artStyle:'clay',skin:'pink',shape:'star'});
+    assert.equal(next.eyeStyle,'auto');assert.equal(next.artStyle,'clay');
     assert.equal(next.skin,'pink');assert.equal(next.shape,'star');
     assert.deepEqual(A.migrate(next),next);
   }
-  assert.ok(A.pixelPath('square',{cx:64,cy:64,rx:50,ry:50}).includes('H '));
   assert.ok(R.EXPRESSIONS.special_smug);assert.ok(R.EXPRESSIONS.proud_soft);
   for(const art of Object.values(A.ART_STYLES))if(art.eye)assert.ok(A.EYE_PRESETS[art.eye]);
   for(const preset of Object.values(A.EYE_PRESETS))if(preset.base)assert.ok(A.EYE_PRESETS[preset.base]);

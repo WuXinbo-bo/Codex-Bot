@@ -81,7 +81,7 @@
   <script src="../../src/base-emotions.js"></script>
   <script src="../../src/m1-rig.js"></script>
   <script src="../../src/m1-accessories.js"></script>
-  <script src="../../src/m1-activities.js"></script>
+  <script src="../../src/prop-scores.js"></script><script src="../../src/m1-activities.js"></script>
   <script src="../../src/appearance.js"></script>
   <script src="../../src/mask-system.js"></script>
   <script src="../../src/m1-renderer.js"></script>
@@ -121,7 +121,7 @@
     const panelBot = MetaBotM1.create(document.getElementById('panelBot'));
     const panelStage = document.getElementById('panelStage');
     const panelNodes = Object.fromEntries([...panelStage.querySelectorAll('[data-panel]')].map(n=>[n.dataset.panel,n]));
-    const panelDirector = MetaBotExpressionController.createExpressionController({setExpression:panelBot.setExpression,setGaze:panelBot.setGaze,clearGaze:panelBot.clearGaze,setMotion:panelBot.setMotion,setActive:panelBot.setActive,seed:19});
+    const panelDirector = MetaBotExpressionController.createExpressionController({getAccessoryExposure:panelBot.getAccessoryExposure,setExpression:panelBot.setExpression,setGaze:panelBot.setGaze,clearGaze:panelBot.clearGaze,setMotion:panelBot.setMotion,setActive:panelBot.setActive,seed:19});
     panelBot.setActive(false);
     function panelPhase(phase,label='primary'){ const node=panelNodes[label]; if(!node)return; node.classList.toggle('visible',phase==='entering'||phase==='visible'); node.classList.toggle('leaving',phase==='leaving'); panelStage.dataset.phase=phase; panelDirector.interact(phase==='entering'?'bubble-open':phase==='leaving'?'bubble-close':'panel-open'); }
     function panelLifecycle(kind){panelDirector.interact('task-lifecycle',{events:[{id:'visual-'+kind+'-'+Date.now(),kind,taskId:'visual-alpha',turnId:'visual',title:'任务 Alpha'}]}); panelBot.setTaskStatus(kind==='started'?'running':kind==='completed'?'completed':'idle');}
@@ -132,6 +132,7 @@
     document.getElementById('panelReset').onclick=()=>{for(const n of Object.values(panelNodes))n.className='demo-panel '+n.dataset.panel;panelStage.dataset.phase='hidden';panelBot.setTaskStatus('idle');panelDirector.update('idle',0);};
     const director = MetaBotExpressionController.createExpressionController({
       setExpression: live.setExpression, setGaze: live.setGaze, clearGaze: live.clearGaze,
+      getAccessoryExposure:live.getAccessoryExposure,
       setMotion: live.setMotion, setActive: live.setActive, resetIdle: live.resetIdle, seed: 42
     });
     live.setActive(false);
@@ -151,7 +152,7 @@
     }
     const preview = MetaBotM1.create(document.getElementById('preview'));
     let configurePreview=()=>{};
-    const previewDirector = MetaBotExpressionController.createExpressionController({ onResolvedAppearance:preview.setAppearance,onBehaviorControl:fn=>configurePreview=fn,setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
+    const previewDirector = MetaBotExpressionController.createExpressionController({getAccessoryExposure:preview.getAccessoryExposure, onResolvedAppearance:preview.setAppearance,onBehaviorControl:fn=>configurePreview=fn,setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
     previewDirector.update('running', 1);
     let previewTimer = null;
     let interactive = true;
@@ -257,7 +258,7 @@
       if(document.hidden)return;
       const state = previewDirector.getState();
       document.getElementById('directorState').textContent = interactive ? `状态：${state.status} · 动作：${labels[state.activity?.name] || state.current}${state.activity ? ' · 第 ' + state.activity.index + ' 步' : ''}${state.suspendedActivity ? ' · 待接续：' + labels[state.suspendedActivity.name] : ''}${state.pendingReminder ? ' · 提醒等待松手' : ''}` : '关键帧播放模式；点击“恢复交互”体验实际响应。';
-      if (interactive) document.getElementById('directorState').textContent += ` · 长动作覆盖 ${Object.keys(state.theater.completed).length}/20 · 完成 ${Object.values(state.theater.completed).reduce((a,b)=>a+b,0)} 次 · ${state.theater.blocker} · 冷却 ${Math.max(0,Math.ceil((state.theater.nextAt-Date.now())/1000))}s`;
+      if (interactive) document.getElementById('directorState').textContent += ` · 长动作覆盖 ${Object.keys(state.theater.completed).length}/${Object.keys(MetaBotActivities.THEATERS).length} · 完成 ${Object.values(state.theater.completed).reduce((a,b)=>a+b,0)} 次 · ${state.theater.blocker} · 冷却 ${Math.max(0,Math.ceil((state.theater.nextAt-Date.now())/1000))}s`;
     }, 500);
     window.review = { instances, live, director, preview, previewDirector, play, scenario, startInteractive };
     const A=MetaBotAppearance,M=MetaBotMaskSystem;
@@ -269,7 +270,10 @@
     document.getElementById('skinPreview').value='lemon';
     for(const name of ['morph','random',...A.SHAPES])document.getElementById('shapePreview').add(new Option(name,name));
     for(const name of A.SHAPES){const bot=tile('shapes','neutral',name);bot.setAppearance({shape:name,maskAuto:false});bot.setMotionLevel('reduced');}
-    for(const name of MetaBotM1Rig.ACCESSORIES)tile('accessoryTiles','neutral',name).setExpression('neutral',{duration:0,pose:{accessories:{[name]:{opacity:1}}}});
+    for(const name of MetaBotM1Rig.ACCESSORIES){
+      const sample=MetaBotActivities.PropScores.clips['prop_'+name]?.[2];
+      tile('accessoryTiles','neutral',MetaBotAccessories.DEFINITIONS[name].label).setExpression('neutral',{duration:0,pose:sample?.pose||{accessories:{[name]:{opacity:1}}}});
+    }
     for(const [id,meta] of Object.entries(A.EYE_PRESETS))document.getElementById('eyePreview').add(new Option(meta.label,id));
     const settings=()=>A.normalize({eyeStyle:document.getElementById('eyePreview').value,artStyle:document.getElementById('artPreview').value,companionMode:document.getElementById('companionPreview').value,reducedMotion:document.getElementById('reducedPreview').checked,skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
     function applyPreview(){const value=settings();configurePreview(value);preview.setMotionLevel(value.motion);previewDirector.setMotionLevel(value.motion);}

@@ -2,7 +2,7 @@ async(page)=>{
   const errors=[];page.on('pageerror',e=>errors.push(e.message));
   await page.goto('http://127.0.0.1:4187/test/fixtures/m1-visual.html');
   const stories=await page.evaluate(()=>Object.keys(MetaBotActivities.THEATERS));
-  if(stories.length!==20)throw Error('Expected 20 stories');
+  if(stories.length!==32)throw Error('Expected 32 stories');
   for(const id of stories){
     await page.evaluate(id=>review.showCatalog('activities',id),id);
     if(await page.locator('#clip-'+id+' figure').count()<5)throw Error('Missing storyboard '+id);

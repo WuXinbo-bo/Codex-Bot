@@ -33,6 +33,7 @@
     const backProps = svgElement("g");
     const frontProps = svgElement("g");
     const accessories = Accessories?.create(svgElement, backProps, frontProps) || {};
+    const propExposure={};let exposureAt=nowTime(),exposedProps=[];
     const shape = svgElement("g", { "data-layer": "shape" });
     const body = svgElement("path", { fill: Rig.COLORS.body, "data-part": "body" });
     const finish=svgElement('g',{'data-layer':'art-finish','pointer-events':'none'});
@@ -160,7 +161,6 @@
 
     function samplePose(now) {
       if (!transitionDuration) return;
-      if(appearance.artStyle==='pixel')now=transitionStarted+Math.floor((now-transitionStarted)/90)*90;
       const amount = ease((now - transitionStarted) / transitionDuration);
       current = Rig.interpolate(source, destination, amount);
       // Eyes register intent first; the body follows rather than snapping in unison.
@@ -200,29 +200,29 @@
       const ey = Math.hypot((sin * a + cos * off) * b.rx, (sin * off + cos * d) * b.ry);
       let extent = Math.max(Math.abs(center.x) + ex, Math.abs(center.y) + ey);
       shape.setAttribute("transform", `translate(64 64) matrix(${a} ${off} ${off} ${d} 0 0) translate(-64 -64)`);
-      body.setAttribute("d", Appearance ? (appearance.artStyle==='pixel'?Appearance.pixelPath:Appearance.path)(bodyShape,b,oldShape,motionLevel==='reduced'?1:ease((now-shapeAt)/550)) : Rig.bodyPath(b));
+      body.setAttribute("d", Appearance ? Appearance.path(bodyShape,b,oldShape,motionLevel==='reduced'?1:ease((now-shapeAt)/550)) : Rig.bodyPath(b));
       body.setAttribute('fill',Appearance?.SKINS[appearance.skin]?.[0] || Rig.COLORS.body);
       svg.dataset.artStyle=appearance.artStyle;
       const artStyle=appearance.artStyle;
       finish.setAttribute('transform',`translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52})`);
       finishHighlight.setAttribute('d',artStyle==='clay'?'M -35 -19 Q -30 -41 -9 -39 Q -16 -28 -35 -19':'');
-      svg.setAttribute('shape-rendering',artStyle==='pixel'?'crispEdges':'geometricPrecision');
-      body.setAttribute('shape-rendering',artStyle==='pixel'?'crispEdges':'geometricPrecision');
+      svg.setAttribute('shape-rendering','geometricPrecision');
+      body.setAttribute('shape-rendering','geometricPrecision');
       for(const arm of [leftArm,rightArm])arm.setAttribute('stroke-width',artStyle==='rubber'?5.5:3.5);
-      for(const layer of [frontProps,backProps])layer.setAttribute('stroke-linejoin',artStyle==='pixel'?'miter':'round');
+      for(const layer of [frontProps,backProps])layer.setAttribute('stroke-linejoin','round');
       svg.dataset.shape=bodyShape;
       svg.dataset.skin=appearance.skin || 'green';
       const accentAge=clamp((now-performanceStarted)/performanceMs,0,1);
       for(const [id,path] of Object.entries(accentPaths)){
-        path.setAttribute('d',accentArt[id][artStyle==='pixel'?1:0]);
-        path.setAttribute('stroke-linecap',artStyle==='pixel'?'square':'round');
+        path.setAttribute('d',accentArt[id][0]);
+        path.setAttribute('stroke-linecap','round');
         let opacity=clamp(pose.accents[id],0,1);
         if(id==='softShine')opacity*=1-(pose.eyes.left.closed+pose.eyes.right.closed)/2;
         if(['coolShade','heat','warmth'].includes(id))opacity*=.38;
         if(id==='heat'&&active&&motionLevel!=='reduced')opacity*=ease(accentAge*3);
         if(active&&motionLevel!=='reduced'&&['glint','question','pause','sweatSlide'].includes(id))opacity*=Math.sin(Math.PI*clamp(accentAge*1.4,0,1))**2;
         path.setAttribute('opacity',appearance.particles===false?'0':String(opacity));
-        path.setAttribute('transform',id==='sweatSlide'&&active&&motionLevel!=='reduced'?`translate(0 ${artStyle==='pixel'?Math.round(accentAge*4)*2:accentAge*8})`:'');
+        path.setAttribute('transform',id==='sweatSlide'&&active&&motionLevel!=='reduced'?`translate(0 ${accentAge*8})`:'');
       }
       accents.setAttribute('transform',`translate(64 64) matrix(${a} ${off} ${off} ${d} 0 0) translate(-64 -64) translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52}) translate(-64 -64)`);
       const occupied=Boolean(Rig.BaseEmotions.entries[expression])||Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater;
@@ -357,8 +357,15 @@
           }
         }
       }
-      for (const [name, element] of Object.entries(accessories)) {
+      const visibleProps=new Set(m?.visible?[]:Object.entries(pose.accessories).filter(([,v])=>v.opacity>.001).map(([name])=>name));
+      const exposureTime=nowTime(),elapsed=Math.max(0,Math.min(250,exposureTime-exposureAt));
+      if(!document.hidden)for(const name of exposedProps)propExposure[name]=(propExposure[name]||0)+elapsed;
+      exposureAt=exposureTime;exposedProps=[...visibleProps].filter(name=>pose.accessories[name].opacity>.5);
+      accessories.prune(visibleProps);
+      for (const name of visibleProps) {
+        const element=accessories.ensure(name);if(!element)continue;
         const value = pose.accessories[name];
+        Accessories.articulate(element,value);
         const layer = value.back>.5 || Accessories.DEFINITIONS[name].layer==='back' ? backProps : frontProps;
         if(element.parentNode!==layer)layer.append(element);
         element.setAttribute("opacity", String(m?.visible?0:value.opacity));
@@ -369,7 +376,7 @@
         if (definition.anchor === "head") y -= b.ry - 5;
         if (definition.anchor === "face") y += (54 - 64) * b.ry / 52;
         if (["left", "right"].includes(definition.anchor)) {
-          const side = definition.anchor;
+          const side = value.hand<-.5?'left':definition.anchor;
           const hand = armPose[side];
           const wave = acting.wave * strength * (side === "right" ? 1 : -0.65) * Math.PI / 180;
           const hx = 18 + Math.cos(wave) * (hand.x - 18) - Math.sin(wave) * (hand.y - 82);
@@ -523,6 +530,7 @@
     render(current, started);
     wake();
     return { setAppearance, setExpression,
+      getAccessoryExposure:()=>({...propExposure}),
       setPerformanceContext(value){performanceContext={...performanceContext,...value};if(value.theater){maskController?.clear(true);shapeDue=0;}wake();},
       setMask(name,chain){const ok=maskController?.preview(name,chain);wake();return ok;},
       setTaskStatus(status){maskController?.status(status);wake();},

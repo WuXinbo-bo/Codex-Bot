@@ -1,7 +1,7 @@
 const test=require('node:test'),assert=require('node:assert/strict');
 const Memory=require('../src/companion-memory'),Appearance=require('../src/appearance'),Activities=require('../src/m1-activities'),Rig=require('../src/m1-rig');
-test('five whole-body styles and three personalities normalize independently',()=>{
-  assert.equal(Object.keys(Appearance.ART_STYLES).length,5);assert.equal(Object.keys(Appearance.PERSONALITIES).length,3);
+test('four whole-body styles and three personalities normalize independently',()=>{
+  assert.equal(Object.keys(Appearance.ART_STYLES).length,4);assert.equal(Object.keys(Appearance.PERSONALITIES).length,3);
   for(const artStyle of Object.keys(Appearance.ART_STYLES))assert.equal(Appearance.normalize({artStyle,eyeStyle:'anime',personality:'quiet'}).artStyle,artStyle);
   assert.equal(Appearance.normalize({artStyle:'bad'}).artStyle,'auto');assert.equal(Appearance.normalize({stories:false}).stories,false);
 });
@@ -30,7 +30,7 @@ test('nine narrative segments use valid assets, clean exits and no synthetic tas
   }
 });
 test('removing collection leaves the complete action, prop and theater registries intact',()=>{
-  assert.equal(Object.keys(Activities.CLIPS).length,211);
-  assert.equal(Object.keys(Activities.THEATERS).length,20);
-  assert.equal(Rig.ACCESSORIES.length,24);
+  assert.equal(Object.keys(Activities.CLIPS).length,255);
+  assert.equal(Object.keys(Activities.THEATERS).length,32);
+  assert.equal(Rig.ACCESSORIES.length,45);
 });

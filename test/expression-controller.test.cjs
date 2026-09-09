@@ -147,12 +147,12 @@ test('completion delivery never waits for the longer start performance',()=>{
   assert.match(h.controller.getState().activity.name,/performance_done_/);h.controller.stop();
 });
 
-test('six original work scores remain available with a permanently open task board',()=>{
+test('nine work scores remain available with a permanently open task board',()=>{
   let read;const h=harness({intervalMs:8500,random:createSeededRandom(73),onPerformanceDiagnostics:fn=>read=fn});
   h.controller.update('running',1,{quiet:true});h.controller.interact('bubble-open');
   h.clock.advance(3600000);
   const counts=Object.entries(read().counts).filter(([name])=>name.startsWith('performance_work_'));
-  assert.equal(counts.length,6);assert.ok(Math.max(...counts.map(([,n])=>n))-Math.min(...counts.map(([,n])=>n))<=1);
+  assert.equal(counts.length,9);assert.ok(Math.max(...counts.map(([,n])=>n))-Math.min(...counts.map(([,n])=>n))<=1);
   h.controller.stop();assert.equal(h.clock.pending(),0);
 });
 
@@ -168,7 +168,7 @@ test('observing and opening a panel do not starve the thirty-minute theater rota
     }
     const state=h.controller.getState().theater;
     const counts=Object.values(state.completed);
-    assert.equal(counts.length,status==='running'?7:9);
+    assert.equal(counts.length,status==='running'?12:13);
     assert.ok(Math.max(...counts)-Math.min(...counts)<=1);
     assert.ok(state.events.filter(e=>e.kind==='completed').length>=10);
     t.diagnostic(JSON.stringify({status,completed:state.completed}));

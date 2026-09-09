@@ -18,8 +18,8 @@ appearance updates cannot compound dimensions or restart the same animation.
 Legacy IDs migrate as follows: minimal to bean, neon to glass, asymmetric to
 curious. Removed manga, pixel, smug and the older ink alias normalize to auto,
 including schema-v2 saved preferences. The coordinator persists that migration.
-Pixel art keeps its grid body and cadence, with soft_square as its suggested
-eye design. Proud expressions retain their authored eyelids and gestures.
+The overall pixel art style has also been retired; saved selections migrate to
+automatic art. Proud expressions retain their authored eyelids and gestures.
 
 ## Rendering
 

@@ -1,8 +1,8 @@
 (function (root, factory) {
-  const api = factory(typeof module === "object" && module.exports ? require("./m1-rig.js") : root.MetaBotM1Rig);
+  const api = factory(typeof module === "object" && module.exports ? require("./m1-rig.js") : root.MetaBotM1Rig,typeof module === "object" && module.exports ? require('./prop-scores.js') : root.MetaBotPropScores);
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MetaBotActivities = api;
-})(typeof self !== "undefined" ? self : globalThis, function (Rig) {
+})(typeof self !== "undefined" ? self : globalThis, function (Rig,PropScores) {
   const A = Rig.ARMS;
   const eyes = name => ({ left: { symbols: { [name]: 1 } }, right: { symbols: { [name]: 1 } } });
   const wear = (name, values = {}) => ({ [name]: { opacity: 1, ...values } });
@@ -284,6 +284,7 @@
     CLIPS[name]=frames;LABELS[name]=label;THEATERS[name]={label,route,duration:15000};
   }
   function theaterFrames(name, variant = 0) {
+    if(PropScores.meta[name])return PropScores.frames(name,variant);
     const frames = structuredClone(CLIPS[name]);
     if (!THEATERS[name] || !variant) return frames;
     // Vary the acting, not the story's object or its meaningful task signals.
@@ -324,7 +325,23 @@
     CLIPS[name]=beats.map(([expression,duration,pose])=>({...step(expression,duration,Rig.merge(pose,{effects:{complete:0,input:0,error:0}})),transition:Math.min(600,duration*.7)}));
     CLIPS[name].push({...step('calm',450,{effects:{complete:0,input:0,error:0}}),transition:400});
   }
+  for(const [name,meta] of Object.entries(PropScores.meta)){
+    CLIPS[name]=PropScores.clips[name];LABELS[name]=meta.label;
+    if(meta.type==='theater')THEATERS[name]={label:meta.label,route:meta.route,duration:15000};
+    else if(meta.type==='task'){
+      PERFORMANCES[meta.route].push(name.replace('performance_',''));
+      (meta.route==='running'?POOLS.running:LIFECYCLE[meta.route]).push(name);
+    }else POOLS[meta.route].push(name);
+  }
+  const propsFor=name=>[...new Set((CLIPS[name]||[]).flatMap(f=>Object.entries(f.pose.accessories||{}).filter(([,v])=>v.opacity>0).map(([k])=>k)))];
+  const propCache=new Map();
+  const primaryProp=name=>{if(!propCache.has(name))propCache.set(name,PropScores.meta[name]?.prop||propsFor(name)[0]||'gesture');return propCache.get(name);};
+  function exposureWeight(name,names,exposure={}){
+    const prop=primaryProp(name),copies=names.filter(id=>primaryProp(id)===prop).length;
+    return 1/Math.max(1,copies)/(1+(exposure[prop]||0)/15000);
+  }
   const family=name=>{
+    if(PropScores.meta[name])return PropScores.meta[name].family;
     const props=new Set((CLIPS[name]||[]).flatMap(f=>Object.entries(f.pose.accessories||{}).filter(([,v])=>v.opacity>0).map(([k])=>k)));
     for(const [family,items] of [['magic',['topHat','wand']],['art',['brush','drawing','beret']],['play',['cube','plane']],['rest',['cup','pillow','sleepHat','hourglass']],['inspect',['lens','detectiveHat']],['work',['glasses','card','notebook','pencil','stamp']],['signal',['flag']],['costume',['shades','cape']]])if(items.some(p=>props.has(p)))return family;
     return 'gesture';
@@ -336,7 +353,10 @@
     const keys=Object.keys(groups),weights=keys.map(k=>(k===previous?.family ? 0.25 : 1)/(1+(previous?.recentFamilies||[]).filter(f=>f===k).length));
     let r=random()*weights.reduce((a,b)=>a+b,0),key=keys.at(-1);
     for(let i=0;i<keys.length;i++){r-=weights[i];if(r<0){key=keys[i];break;}}
-    const pool=groups[key];return pool?.[Math.min(pool.length-1,Math.floor(random()*pool.length))];
+    const pool=groups[key];if(!pool)return undefined;
+    if(!previous?.exposure)return pool[Math.min(pool.length-1,Math.floor(random()*pool.length))];
+    let cursor=random()*pool.reduce((n,id)=>n+exposureWeight(id,pool,previous.exposure),0);
+    return pool.find(id=>(cursor-=exposureWeight(id,pool,previous.exposure))<0)||pool.at(-1);
   }
-  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, NARRATIVES, theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
+  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, NARRATIVES, PropScores,propsFor,exposureWeight,theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
 });

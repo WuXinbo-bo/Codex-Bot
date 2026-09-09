@@ -5,7 +5,7 @@
 })(typeof self !== "undefined" ? self : globalThis, function (BaseEmotions) {
   const COLORS = Object.freeze({ body: "#02AD45", eyes: "#F3F6F2", ink: "#181B20", attention: "#F4BE4F", error: "#F0645D" });
   const SYMBOLS = Object.freeze(["star", "heart", "spiral", "squeeze", "flat", "cross", "dot", "tear"]);
-  const ACCESSORIES = Object.freeze(["glasses", "shades", "topHat", "wand", "cape", "sleepHat", "pillow", "beret", "brush", "card", "cube", "spark", "plane", "cup", "detectiveHat", "lens", "umbrella", "gift", "drawing", "notebook", "pencil", "hourglass", "stamp", "flag"]);
+  const ACCESSORIES = Object.freeze(["glasses", "shades", "topHat", "wand", "cape", "sleepHat", "pillow", "beret", "brush", "card", "cube", "spark", "plane", "cup", "detectiveHat", "lens", "umbrella", "gift", "drawing", "notebook", "pencil", "hourglass", "stamp", "flag",'stickyRoll','paperclip','tapeMeasure','eraser','flashlight','compass','puzzle','spool','folder','tray','bookmark','bell','brooch','pinwheel','yoyo','balloon','springToy','blanket','fan','handwarmer','plant']);
   const eye = (cx) => ({ cx, cy: 54, rx: 18, ry: 21, kx:.55228475,ky:.55228475,bottomK:.55228475,rotate: 0, upper: 0, lower: 0, closed: 0, arc: 3, symbols: Object.fromEntries(SYMBOLS.map(name => [name, 0])) });
   const arm = (x = 9, y = 91, bendX = 8, bendY = 85, opacity = 1) => ({ x, y, bendX, bendY, opacity });
   const ARMS = {
@@ -22,7 +22,7 @@
     gaze: { x: 0, y: 0.12 },
     arms: { left: ARMS.none, right: ARMS.none },
     effects: { complete: 0, input: 0, error: 0 },
-    accessories: Object.fromEntries(ACCESSORIES.map(name => [name, { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1, back:0 }])),
+    accessories: Object.fromEntries(ACCESSORIES.map(name => [name, { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1, back:0,open:0,extend:0,turn:0,hand:0 }])),
     performance: { bob: 0, sway: 0, tilt: 0, wave: 0, squash: 0, cycles: 2 },
     eyeStyle: 'classic',
     eyeDesign: { anime:0,iris:0,shine:0,secondary:0,tone:0,retro:0,rim:0,tear:0,pixel:0 },

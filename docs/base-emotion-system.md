@@ -4,7 +4,7 @@
 
 `src/base-emotions.js` owns 24 families, four authored scores per family,
 and 12 mixed thoughts: 108 new base scores. Existing 149 rig identifiers remain
-valid for the 211 activities, 20 theaters and lifecycle performances. The rig
+valid for the 255 activities, 32 theaters and lifecycle performances. The rig
 now exposes 257 identifiers, with the 108 base scores in the base gallery and
 the legacy 149 in the other-pose gallery. These are not 108 additional activities.
 
@@ -43,7 +43,7 @@ The 18 accents are blush, blush lines, heat, waterline, held tear, soft shine,
 sweat, sliding sweat, fine sweat, hesitation, pressure, rounded annoyance,
 cool shade, tired marks, warmth, glint, question and pause. The legacy stress
 accent remains an alias for old scores. There is no name-based automatic blush.
-All accents follow body transforms. Pixel versions use square grid paths.
+All accents follow body transforms and use smooth contours.
 Transient marks fade; heat ramps gently. Particles off hides all emotion accents.
 Reduced motion renders a static pose and disables micro gestures and accent travel.
 
@@ -64,6 +64,6 @@ uses the main preview and has a unique performance ID to support replay.
 `test/base-emotions.test.cjs` covers registry integrity, full contextual coverage,
 state gates, drawing preservation, repeat avoidance, timer holds and priority.
 `test/base-emotions.pw.js` checks every gallery page, 1,620 eye combinations,
-1,944 shape combinations, 540 art combinations, 108 micro scores, accessibility,
+1,944 shape combinations, 432 art combinations, 108 micro scores, accessibility,
 mobile layout and the actual native-coordinator rendering path. Existing catalog,
 panel, appearance and native smoke suites remain required release gates.

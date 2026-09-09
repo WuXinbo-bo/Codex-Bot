@@ -4,7 +4,7 @@ async(page)=>{
   await page.goto('http://127.0.0.1:4187/test/fixtures/m1-visual.html');
   await page.waitForFunction(()=>Boolean(window.review));
   await page.evaluate(()=>review.showCatalog('artStyles'));
-  if(await page.locator('#artStyles figure').count()!==5)throw Error('Retired styles remain in gallery');
+  if(await page.locator('#artStyles figure').count()!==4)throw Error('Retired styles remain in gallery');
   const matrix=await page.evaluate(async()=>{
     const host=document.createElement('div');document.body.append(host);const A=MetaBotAppearance;
     const bot=MetaBotM1.create(host,{motionLevel:'reduced'});let count=0;
@@ -13,10 +13,7 @@ async(page)=>{
       bot.setAppearance({artStyle,shape,eyeStyle:'classic',maskAuto:false});bot.setExpression('neutral',{duration:0});await frame();
       const body=host.querySelector('[data-part="body"]');
       const path=body.getAttribute('d');
-      if(artStyle==='pixel'){
-        if(/[QLC]/.test(path)||!path.includes('H ')||!path.includes('V ')||body.getAttribute('shape-rendering')!=='crispEdges')throw Error('Pixel grid character was lost');
-        if(path.match(/-?\d+(?:\.\d+)?/g).some(n=>Number(n)%5!==0))throw Error('Off-grid pixel contour');
-      }else if((path.match(/Q/g)||[]).length!==120||body.getAttribute('shape-rendering')!=='geometricPrecision')throw Error('Sharp base body: '+artStyle+' '+shape);
+      if((path.match(/Q/g)||[]).length!==120||body.getAttribute('shape-rendering')!=='geometricPrecision')throw Error('Sharp base body: '+artStyle+' '+shape);
       if(/NaN|undefined|Infinity/.test(host.innerHTML))throw Error('Invalid rendered geometry');
       if(host.querySelectorAll('[data-layer="art-finish"] path').length!==1)throw Error('Retired finish layer remains');
       count++;
@@ -32,8 +29,6 @@ async(page)=>{
     }
   });
   await page.locator('#rounded-review').screenshot({path:'output/playwright/rounded-bodies-desktop.png'});
-  await page.evaluate(()=>roundedBots.forEach((b,i)=>{b.setAppearance({artStyle:'pixel',shape:MetaBotAppearance.SHAPES[i],eyeStyle:'soft_square',skin:'lemon',maskAuto:false});b.setMotionLevel('reduced');}));
-  await page.locator('#rounded-review').screenshot({path:'output/playwright/rounded-pixel-bodies.png'});
   await page.evaluate(()=>roundedBots.forEach((b,i)=>{b.setAppearance({artStyle:'classic',shape:MetaBotAppearance.SHAPES[i],eyeStyle:'classic',skin:'lemon',maskAuto:false});b.setMotionLevel('reduced');}));
   await page.setViewportSize({width:390,height:844});
   await page.locator('#rounded-review').screenshot({path:'output/playwright/rounded-bodies-mobile.png'});
@@ -41,7 +36,7 @@ async(page)=>{
   await page.evaluate(()=>{roundedBots.forEach(b=>b.destroy());document.getElementById('rounded-review').remove();});
   await page.setViewportSize({width:1100,height:850});
   await page.goto('http://127.0.0.1:4187/test/fixtures/panel-system.html');await page.waitForFunction(()=>Boolean(window.panelDemo));
-  for(const style of ['paper','doodle']){
+  for(const style of ['paper','doodle','pixel']){
     await page.evaluate(style=>{
       panelDemo.stored['config.json'].appearance={schemaVersion:2,artStyle:style,skin:'lemon',eyeStyle:'anime',shape:'triangle'};
       panelDemo.stored['config.json'].performanceLibrary={magic:{seen:true,favorite:true,frequency:'less'}};
@@ -57,7 +52,7 @@ async(page)=>{
   if(await panel.locator('[data-settings-tab="library"],[id^="library"]').count())throw Error('Collection UI remains');
   await panel.locator('[data-settings-tab="appearance"]').click();await panel.locator('#artMode').selectOption('fixed');
   const choices=await panel.locator('#artStyle option').evaluateAll(options=>options.map(o=>o.value));
-  if(choices.length!==5||choices.includes('paper')||choices.includes('doodle'))throw Error('Retired settings remain');
+  if(choices.length!==4||['paper','doodle','pixel'].some(id=>choices.includes(id)))throw Error('Retired settings remain');
   await panel.getByRole('button',{name:'撤销未应用修改',exact:true}).click();
   await page.locator('iframe[title="panel"]').screenshot({path:'output/playwright/rounded-settings.png'});
   const retired=await page.evaluate(async()=>{
@@ -70,5 +65,5 @@ async(page)=>{
   });
   if(retired.rejected!==4||!retired.apiRemoved||!retired.retained||Object.keys(retired.legacy).length!==1)throw Error('Retired collection still active or completion lost');
   if((await page.request.get('http://127.0.0.1:4187/dist/tauri/performance-library.js')).status()!==404)throw Error('Stale collection module still bundled');
-  if(errors.length)throw Error(errors.join('\n'));return {styles:5,roundedStyleShapeCombinations:matrix,migrations:2,collectionRemoved:true,retained:true,errors};
+  if(errors.length)throw Error(errors.join('\n'));return {styles:4,roundedStyleShapeCombinations:matrix,migrations:3,collectionRemoved:true,retained:true,errors};
 }

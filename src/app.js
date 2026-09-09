@@ -26,6 +26,7 @@
   const expressions = window.MetaBotExpressionController?.createExpressionController({
     setExpression: (name, options) => ball?.setExpression(name, options),
     onResolvedAppearance: detail => ball?.setAppearance(detail),
+    getAccessoryExposure:()=>ball?.getAccessoryExposure(),
     isAppearanceBlocked: () => Boolean(ball?.getMaskState()?.current),
     setGaze: (x, y) => ball?.setGaze(x, y),
     clearGaze: () => ball?.clearGaze(),

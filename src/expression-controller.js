@@ -113,6 +113,11 @@
     const theaterCounts = new Map();
     const theaterEvents = [];
     let lastTheater = null;
+    const propExposure={};let propVisible=[],propAt=now(),propFollowup=null;
+    const completionProps=new Map();
+    const accountProps=()=>{const time=now();for(const id of propVisible)propExposure[id]=(propExposure[id]||0)+Math.max(0,time-propAt);propAt=time;};
+    const exposure=()=>{accountProps();return options.getAccessoryExposure?.()||{...propExposure};};
+    const propPrevious=previous=>({...previous,exposure:exposure()});
     const theaterVariants = new Map();
     const performanceHistory = new Map();
     const performanceRecent = [];
@@ -135,8 +140,9 @@
       const freshStyle=choices.filter(name=>styleFor(name)!==last?.eyeStyle);
       if(freshStyle.length)choices=freshStyle;
       const moodWeight=name=> emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)<.1 ? 1 : emotionMemory.name==='concerned' && /inspect|review|retry|think/.test(name) ? 2 : emotionMemory.name==='satisfied' && /bow|present|breathe/.test(name) ? 2 : 1;
-      let cursor=random()*choices.reduce((total,name)=>total+moodWeight(name),0);
-      const name=choices.find(name=>(cursor-=moodWeight(name))<0)||choices.at(-1);
+      const used=exposure(),weight=name=>moodWeight(name)*Activities.exposureWeight(name,choices,used);
+      let cursor=random()*choices.reduce((total,name)=>total+weight(name),0);
+      const name=choices.find(name=>(cursor-=weight(name))<0)||choices.at(-1);
       performanceHistory.set(name,(performanceHistory.get(name)||0)+1);
       performanceRecent.push({name,kind,family:Activities.family(name),eyeStyle:styleFor(name),at:now()});
       if(performanceRecent.length>32)performanceRecent.shift();
@@ -149,7 +155,7 @@
     function chooseTheater(names) {
       const minimum = Math.min(...names.map(name => theaterCounts.get(name) || 0));
       const pool = names.filter(name => (theaterCounts.get(name) || 0) === minimum);
-      return Activities.chooseActivity(pool, random, lastTheater ? { name: lastTheater, family: Activities.family(lastTheater) } : null);
+      return Activities.chooseActivity(pool, random, propPrevious(lastTheater ? { name: lastTheater, family: Activities.family(lastTheater) } : null));
     }
     const lifecycleSeen = new Set();
     const lifecycleQueue = new Map();
@@ -241,6 +247,10 @@
       while(memoryEvents.size>128)memoryEvents.delete(memoryEvents.values().next().value);
       const clip = (preferences.stories&&narrative) || pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
       lifecycleCurrent = { kind, events, clip };
+      if(kind==='completed'&&Activities.PropScores.meta[clip]){
+        for(const e of events)completionProps.set(JSON.stringify([e.taskId,e.turnId||'']),Activities.PropScores.meta[clip].prop);
+        while(completionProps.size>128)completionProps.delete(completionProps.keys().next().value);
+      }
       feel(({started:'engaged',joined:'engaged',completed:'satisfied',failed:'concerned',attention:'expectant',stopped:'settled'})[kind] || 'settled');
       if (kind === "completed") pleasedUntil = now() + 20000;
       options.onLifecycle?.({ kind, events });
@@ -258,6 +268,8 @@
     }
 
     function cancelActivity(reason = "interrupted") {
+      accountProps();propVisible=[];
+      if(reason==='completed'&&Activities.PropScores.followups[activity?.name])propFollowup={name:Activities.PropScores.followups[activity.name],at:now()+45000,expires:now()+600000};
       if(activity){
         if(Activities.NARRATIVES[activity.name]){memory.observe(reason==='completed'?'finished':'interrupted',activity.name);options.onPerformance?.(false);}
       }
@@ -287,17 +299,19 @@
       suspendedActivity = { ...activity, remaining: Math.max(1, activity.dueAt - now()), context: taskKey, expires: now() + 15000 };
     }
 
-    function playActivity(name, priority = 5, resume = null) {
+    function playActivity(name, priority = 5, resume = null, overrideFrames = null) {
       if (!Activities.CLIPS[name] || motionLevel === "reduced" || (transient && transient.priority > priority)) return false;
       const variants = [0,1,2].filter(value => value !== theaterVariants.get(name));
-      const variant = Activities.THEATERS[name] ? resume?.variant ?? variants[Math.floor(random() * variants.length)] : 0;
-      const frames = Activities.THEATERS[name] ? Activities.theaterFrames(name, variant) : Activities.CLIPS[name];
+      const varied=Activities.THEATERS[name]||Activities.PropScores.meta[name];
+      const variant = varied ? resume?.variant ?? variants[Math.floor(random() * variants.length)] : 0;
+      const frames = overrideFrames || (Activities.PropScores.meta[name]?Activities.PropScores.frames(name,variant):Activities.THEATERS[name] ? Activities.theaterFrames(name, variant) : Activities.CLIPS[name]);
       if (priority >= 50 && priority !== 60 && (Activities.THEATERS[suspendedActivity?.name] || suspendedActivity?.name.startsWith('performance_'))) suspendedActivity = null;
       if (!resume && priority > 20) suspendActivity(priority);
       cancelActivity(resume ? "resume" : priority >= 50 ? "priority-event" : "social-response");
       clearTimer("transient");
       transient = { name, priority, token: ++token };
       activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
+      if(Activities.PropScores.meta[name]){theaterVariants.set(name,variant);activity.tempo=resume?.tempo||1;}
       if(Activities.NARRATIVES[name]){activity.tempo=1;memory.started(name);options.onPerformance?.(true);}
       if(name.startsWith('performance_')) {
         activity.tempo=resume?.tempo || 1;
@@ -321,6 +335,7 @@
       const advance = () => {
         if (!activity) return;
         const frame = frames[activity.index++];
+        accountProps();propVisible=[];
         if (!frame) {
           if (reminderKey) deliveredReminders.add(reminderKey);
           cancelActivity("completed");
@@ -328,6 +343,7 @@
           restoreBase(); return;
         }
         const duration = resume ? resume.remaining : frame.duration * activity.tempo;
+        propVisible=Object.entries(frame.pose?.accessories||{}).filter(([,p])=>p.opacity>.5).map(([id])=>id);
         if(Object.hasOwn(frame,'mask'))options.onTheaterMask?.(frame.mask);
         resume = null;
         const pose = name === "mimic" ? { ...frame.pose, gaze: { ...pointer }, body: { ...frame.pose.body, rotate: pointer.x * 12 } } : name === "lifted" && dragFace ? { ...frame.pose, eyes: dragFace.eyes } : frame.pose;
@@ -358,7 +374,9 @@
       if (!name || (name === current && !settings.force)) return false;
       if(panelContact&&now()<panelContact.until&&activity?.priority===55&&settings.performanceId){
         const side=panelContact.side,other=side==='right'?'left':'right';
-        settings={...settings,pose:{...settings.pose,gaze:{x:side==='right'?.8:-.8,y:.2},arms:{[side]:{x:4,y:70,bendX:2,bendY:83,opacity:1},[other]:{opacity:0}}}};
+        const coordinated=Activities.PropScores.meta[settings.performanceId];
+        const props=coordinated?Object.fromEntries(Object.entries(settings.pose?.accessories||{}).map(([id,p])=>[id,{...p,hand:side==='left'?-1:0}])):(settings.pose?.accessories||{});
+        settings={...settings,pose:{...settings.pose,accessories:props,gaze:{x:side==='right'?.8:-.8,y:.2},arms:{[side]:{x:4,y:70,bendX:2,bendY:83,opacity:1},[other]:coordinated?(settings.pose?.arms?.[other]||{opacity:0}):{opacity:0}}}};
       }
       current = name;
       if(BaseEmotions.entries[name]&&settings.auto!==false)settings={...settings,duration:550,performanceMs:baseHoldMs};
@@ -439,6 +457,10 @@
         if (!panelOpen && now() >= reminderAt && ["needs_attention", "failed"].includes(status) && remind(true)) { scheduleBase(); return; }
         if (randomEnabled && now() >= nextActivityAt && motionLevel !== "reduced") {
           const route=status==='offline'?'idle':status;
+          if(propFollowup&&now()>propFollowup.expires)propFollowup=null;
+          if(preferences.stories&&propFollowup&&now()>=propFollowup.at&&!pointerNear&&!panelOpen&&Activities.THEATERS[propFollowup.name]?.route===route){
+            const name=propFollowup.name;propFollowup=null;if(playActivity(name,5)){scheduleBase();return;}
+          }
           const theaters=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route===route&&now()-(activityHistory.get(name)??-Infinity)>300000);
           if(now()>=nextTheaterAt&&theaters.length){
             const selected=chooseTheater(theaters);
@@ -457,7 +479,7 @@
             const name=pickPerformance('running');
             if(name&&playActivity(name,5)){scheduleBase();return;}
           }
-          if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
+          if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,propPrevious(last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null)), 5)) { scheduleBase(); return; }
         }
         const sleepBoundary=status==='offline'&&count===0&&now()-lastActivity>=sleepAfter&&BaseEmotions.entries[current]?.family!=='sleepy';
         // Base scores own a full hold, not the legacy 2.3-second transient/restore loop.
@@ -571,8 +593,9 @@
       if (!type) return current;
       if(type==='completion-confirmed'){
         const name=memory.observe('confirmed');
+        const key=JSON.stringify([detail.taskId,detail.turnId||'']),prop=completionProps.get(key);completionProps.delete(key);
         if(preferences.stories&&!dragging&&['idle','completed','offline'].includes(status)){
-          if(motionLevel==='reduced')playTransient('micro_confirm',{priority:57,duration:120});else playActivity(name,57);
+          if(motionLevel==='reduced')playTransient('micro_confirm',{priority:57,duration:120});else playActivity(name,57,null,prop?Activities.PropScores.confirmationFrames(prop):null);
         }
         return current;
       }
@@ -698,7 +721,7 @@
         }
         case "bubble-open": panelOpen = true; if (transient?.priority < 35 || !transient) playSocial("panel", 35); break;
         case "bubble-close": panelOpen = false; reminderAt = now() + 60000; if (transient?.priority < 35 || !transient) playSocial("leave", 35); break;
-        case "activity-request": if ((Activities.NARRATIVES[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
+        case "activity-request": if ((Activities.NARRATIVES[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.PropScores.meta[detail.name]?.type==='short'&&Activities.PropScores.meta[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
         case "refresh-start": playTransient("refreshing", { priority: 40 }); break;
         case "refresh-success":
         case "refresh-recovered": playTransient("micro_confirm", { priority: 40, duration: 520 }); break;
@@ -714,6 +737,7 @@
       setActive(motionLevel !== "reduced");
       if (motionLevel === "reduced") {
         suspendedActivity = null;
+        propFollowup=null;
         if (activity?.priority === 50 || pendingReminder) deliveredReminders.add(taskKey);
         pendingReminder = null;
         cancelActivity(); clearTimer("transient"); transient = null;
@@ -728,6 +752,8 @@
       if (lifecycleTimer !== null) unschedule(lifecycleTimer);
       lifecycleTimer = null; lifecycleQueue.clear();
       cancelActivity(); pendingReminder = null; pendingPanel=null; panelContact=null; suspendedActivity = null; dragging = false; pointerNear = false;
+      propFollowup=null;
+      completionProps.clear();
       clearTimer("base");
       clearTimer("transient");
       transient = null;
@@ -738,7 +764,7 @@
     function setRandomEnabled(value) {
       randomEnabled = value !== false;
       if (!randomEnabled) suspendedActivity = null;
-      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||Activities.NARRATIVES[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
+      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||Activities.NARRATIVES[activity?.name]||Activities.PropScores.meta[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
     }
     options.onRandomControl?.(setRandomEnabled);
     options.onAppearanceControl?.({snapshot:()=>appearanceDirector.snapshot(),shuffle:()=>{
@@ -748,10 +774,10 @@
     options.onBehaviorControl?.(value=>{
       preferences=Appearance.normalize(value);appearanceDirector.configure(preferences);
       resolvedAppearance=appearanceDirector.sample({blocked:true});options.onResolvedAppearance?.(resolvedAppearance);
-      if(!preferences.stories){memory.reset();if(Activities.NARRATIVES[activity?.name])restoreBase();}
+      if(!preferences.stories){memory.reset();propFollowup=null;if(Activities.NARRATIVES[activity?.name])restoreBase();}
     });
     setMotionLevel(motionLevel);
-    options.onPerformanceDiagnostics?.(()=>({base:baseDirector.snapshot(),history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
+    options.onPerformanceDiagnostics?.(()=>({props:{exposure:exposure(),source:options.getAccessoryExposure?'renderer':'timeline',followup:propFollowup?{...propFollowup}:null},base:baseDirector.snapshot(),history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
     return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 

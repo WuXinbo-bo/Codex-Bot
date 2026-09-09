@@ -52,9 +52,9 @@ async(page)=>{
         if(expected?.back>.5 && prop.parentNode!==target.querySelector('[data-layer="character"]').firstElementChild)throw Error('Not behind body '+id);
       }
     }
-    return samples.length/5;
+    return new Set(samples.map(sample=>sample.id)).size;
   });
-  if(scores!==23)throw Error('Missing original scores');
+  if(scores!==34)throw Error('Missing task scores');
   await page.locator('#score-contact').screenshot({path:'output/playwright/living-scores.png'});
   await page.goto('http://127.0.0.1:4187/test/fixtures/panel-system.html');
   await page.waitForFunction(()=>Boolean(window.panelDemo));

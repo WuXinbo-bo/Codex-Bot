@@ -34,7 +34,7 @@ test('weighted coverage visits every automatic style, base eye, shape and skin w
     if(event&&event!==before&&event.at===time){assert.notEqual(last[event.key],event.value);last[event.key]=event.value;}
   }
   const counts=d.snapshot().counts;
-  assert.equal(Object.keys(counts.artStyle).length,5);assert.equal(Object.keys(counts.eyeStyle).length,8);
+  assert.equal(Object.keys(counts.artStyle).length,4);assert.equal(Object.keys(counts.eyeStyle).length,8);
   assert.equal(Object.keys(counts.shape).length,18);assert.equal(Object.keys(counts.skin).length,8);
   assert.equal(d.snapshot().preferences.artStyle,'auto');assert.equal(d.snapshot().preferences.skin,'auto');
 });
