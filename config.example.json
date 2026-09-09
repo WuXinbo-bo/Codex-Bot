@@ -1,0 +1,23 @@
+{
+  "intervalMs": 1500,
+  "idleIntervalMs": 2000,
+  "maxOfflineIntervalMs": 30000,
+  "motion": {
+    "level": "full"
+  },
+  "notifications": {
+    "retainCompletions": true
+  },
+  "workbench": {
+    "enabled": false,
+    "baseUrl": "http://127.0.0.1:4338",
+    "webUrl": "http://127.0.0.1:4338",
+    "token": ""
+  },
+  "codex": {
+    "enabled": true,
+    "executable": "codex",
+    "includeArchived": false,
+    "limit": 100
+  }
+}

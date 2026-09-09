@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-labelledby="title desc">
+  <title id="title">Meta Bot M1 model sheet</title>
+  <desc id="desc">Product model sheet for a green circular digital companion with modular white eyes, black pupils and retractable line arms. The character has no mouth.</desc>
+  <defs>
+    <style>
+      .bg{fill:#E9EFEB}.paper{fill:#F8FAF7}.grid{stroke:#D4DBD6;stroke-width:2;fill:none}.ink{fill:#181B20}.mint{fill:#02AD45}.pearl{fill:#F3F6F2}.amber{fill:#F4BE4F}.coral{fill:#F0645D}.body{fill:#02AD45}.line{fill:none;stroke:#181B20;stroke-width:7;stroke-linecap:round;stroke-linejoin:round}.fine{fill:none;stroke:#181B20;stroke-width:4;stroke-linecap:round;stroke-linejoin:round}.guide{fill:none;stroke:#7D8A82;stroke-width:2;stroke-dasharray:7 7}.call{fill:none;stroke:#02AD45;stroke-width:3;stroke-linecap:round}.h1{font:760 44px 'Segoe UI','Microsoft YaHei',sans-serif;fill:#181B20}.h2{font:700 25px 'Segoe UI','Microsoft YaHei',sans-serif;fill:#181B20}.copy{font:400 19px 'Segoe UI','Microsoft YaHei',sans-serif;fill:#657069}.small{font:600 16px 'Segoe UI','Microsoft YaHei',sans-serif;fill:#657069}.mono{font:650 16px Consolas,monospace;fill:#277956}
+    </style>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="180%"><feDropShadow dx="0" dy="16" stdDeviation="13" flood-color="#181B20" flood-opacity=".17"/></filter>
+  </defs>
+  <rect width="1600" height="1000" class="bg"/>
+  <rect x="28" y="28" width="1544" height="944" rx="8" class="paper"/>
+  <text x="70" y="92" class="h1">META BOT M1 · MASTER MODEL</text>
+  <text x="70" y="128" class="copy">默认圆形 · 几何眼白 · 独立瞳孔 · 无嘴表达 · 可收纳线条手臂</text>
+
+  <!-- hero -->
+  <g transform="translate(105 188)">
+    <text x="0" y="0" class="h2">NEUTRAL / 默认定妆</text>
+    <rect x="0" y="28" width="620" height="700" rx="8" fill="#EEF3EF"/>
+    <path class="guide" d="M310 76 V671 M58 374 H562"/>
+    <circle cx="310" cy="374" r="200" class="body" filter="url(#shadow)"/>
+    <ellipse cx="247" cy="346" rx="64" ry="76" class="pearl" transform="rotate(-5 247 346)"/>
+    <rect x="319" y="270" width="118" height="149" rx="55" class="pearl" transform="rotate(5 378 345)"/>
+    <ellipse cx="261" cy="365" rx="25" ry="37" class="ink" transform="rotate(-5 261 365)"/>
+    <ellipse cx="364" cy="365" rx="25" ry="37" class="ink" transform="rotate(5 364 365)"/>
+    <circle cx="448" cy="229" r="16" class="pearl" stroke="#181B20" stroke-width="6"/>
+    <circle cx="448" cy="229" r="8" class="mint"/>
+    <rect x="410" y="507" width="66" height="42" rx="12" class="ink"/>
+    <text x="443" y="536" text-anchor="middle" font-family="Segoe UI,sans-serif" font-size="23" font-weight="800" fill="#F3F6F2">3</text>
+
+    <path class="call" d="M131 236 H66 V182"/><text x="26" y="161" class="small">白色眼部容器</text>
+    <path class="call" d="M221 404 H102 V468"/><text x="26" y="498" class="small">独立黑色瞳孔</text>
+    <path class="call" d="M310 437 V562 H197"/><text x="26" y="592" class="small">无嘴：眼神承担情绪</text>
+    <path class="call" d="M465 229 H542 V176"/><text x="465" y="155" class="small">固定状态锚</text>
+    <path class="call" d="M476 528 H551 V600"/><text x="439" y="628" class="small">固定任务锚</text>
+    <text x="310" y="692" text-anchor="middle" class="mono">128px BASE · 8px SAFE AREA</text>
+  </g>
+
+  <!-- Right upper: eye rig -->
+  <g transform="translate(775 188)">
+    <text x="0" y="0" class="h2">EYE RIG / 眼神构造</text>
+    <rect x="0" y="28" width="750" height="260" rx="8" fill="#EEF3EF"/>
+    <g transform="translate(38 72)">
+      <ellipse cx="74" cy="74" rx="68" ry="72" class="pearl" stroke="#D4DBD6" stroke-width="2"/><circle cx="90" cy="82" r="25" class="ink"/>
+      <text x="74" y="176" text-anchor="middle" class="small">ROUND</text>
+    </g>
+    <g transform="translate(213 72)">
+      <path d="M5 40 H135 V109 Q106 146 66 146 Q18 143 5 103Z" class="pearl" stroke="#D4DBD6" stroke-width="2"/><circle cx="82" cy="92" r="25" class="ink"/>
+      <text x="70" y="176" text-anchor="middle" class="small">LOW LID</text>
+    </g>
+    <g transform="translate(388 72)">
+      <path d="M8 59 L130 26 L139 111 Q100 146 58 137 Q20 129 8 98Z" class="pearl" stroke="#D4DBD6" stroke-width="2"/><circle cx="83" cy="86" r="25" class="ink"/>
+      <text x="74" y="176" text-anchor="middle" class="small">ANGLED</text>
+    </g>
+    <g transform="translate(568 72)">
+      <rect x="7" y="41" width="134" height="92" rx="31" class="pearl" stroke="#D4DBD6" stroke-width="2"/><circle cx="59" cy="88" r="25" class="ink"/>
+      <text x="74" y="176" text-anchor="middle" class="small">TRACK</text>
+    </g>
+  </g>
+
+  <!-- Right middle: arm construction -->
+  <g transform="translate(775 510)">
+    <text x="0" y="0" class="h2">RETRACTABLE ARMS / 收纳手臂</text>
+    <rect x="0" y="28" width="360" height="250" rx="8" fill="#EEF3EF"/>
+    <g transform="translate(36 62)">
+      <circle cx="105" cy="92" r="78" class="body"/>
+      <path class="line" d="M42 111 Q5 125 13 166 Q17 187 37 185"/>
+      <path class="fine" d="M37 185 L24 174 M37 185 L43 170 M37 185 L51 181"/>
+      <path class="line" d="M168 111 Q210 120 226 88 Q235 67 220 56"/>
+      <path class="fine" d="M220 56 L207 67 M220 56 L219 73 M220 56 L231 68"/>
+      <ellipse cx="79" cy="82" rx="26" ry="34" class="pearl"/><ellipse cx="132" cy="82" rx="26" ry="34" class="pearl"/>
+      <circle cx="86" cy="90" r="11" class="ink"/><circle cx="125" cy="90" r="11" class="ink"/>
+    </g>
+    <text x="270" y="85" class="small">4px 圆头线</text><text x="270" y="118" class="small">2–3 指端点</text><text x="270" y="151" class="small">默认隐藏</text><text x="270" y="184" class="small">按语义出现</text>
+  </g>
+
+  <!-- Right middle: shape range -->
+  <g transform="translate(1165 510)">
+    <text x="0" y="0" class="h2">SHAPE RANGE / 形态范围</text>
+    <rect x="0" y="28" width="360" height="250" rx="8" fill="#EEF3EF"/>
+    <circle cx="72" cy="110" r="52" class="body"/>
+    <rect x="145" y="58" width="108" height="108" rx="29" class="body"/>
+    <ellipse cx="301" cy="110" rx="44" ry="64" class="body"/>
+    <text x="72" y="196" text-anchor="middle" class="small">REST</text><text x="199" y="196" text-anchor="middle" class="small">TENSE</text><text x="301" y="196" text-anchor="middle" class="small">SURPRISE</text>
+    <text x="180" y="231" text-anchor="middle" class="mono">AREA ≈ CONSTANT</text>
+  </g>
+
+  <!-- Size check -->
+  <g transform="translate(775 818)">
+    <text x="0" y="0" class="h2">SIZE CHECK</text>
+    <g transform="translate(157 19)">
+      <circle cx="64" cy="64" r="56" class="body"/><ellipse cx="46" cy="59" rx="18" ry="23" class="pearl"/><ellipse cx="82" cy="59" rx="18" ry="23" class="pearl"/><circle cx="51" cy="64" r="8" class="ink"/><circle cx="77" cy="64" r="8" class="ink"/>
+      <text x="64" y="145" text-anchor="middle" class="small">128px</text>
+    </g>
+    <g transform="translate(350 51)">
+      <circle cx="32" cy="32" r="28" class="body"/><ellipse cx="23" cy="29" rx="9" ry="12" class="pearl"/><ellipse cx="41" cy="29" rx="9" ry="12" class="pearl"/><circle cx="25" cy="32" r="4.5" class="ink"/><circle cx="39" cy="32" r="4.5" class="ink"/>
+      <text x="32" y="113" text-anchor="middle" class="small">64px</text>
+    </g>
+    <g transform="translate(497 67)">
+      <circle cx="16" cy="16" r="14" class="body"/><ellipse cx="11.5" cy="14" rx="4.5" ry="6" class="pearl"/><ellipse cx="20.5" cy="14" rx="4.5" ry="6" class="pearl"/><circle cx="12.5" cy="16" r="2.5" class="ink"/><circle cx="19.5" cy="16" r="2.5" class="ink"/>
+      <text x="16" y="97" text-anchor="middle" class="small">32px</text>
+    </g>
+    <g transform="translate(560 52)"><rect width="34" height="34" rx="6" class="ink"/><rect x="49" width="34" height="34" rx="6" class="mint"/><rect x="98" width="34" height="34" rx="6" class="pearl" stroke="#CBD2CD"/><rect x="147" width="34" height="34" rx="6" class="amber"/><rect x="196" width="34" height="34" rx="6" class="coral"/></g>
+  </g>
+</svg>

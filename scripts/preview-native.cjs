@@ -1,0 +1,14 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const {spawn} = require('node:child_process');
+const folder=path.resolve(__dirname,'../.runtime',`portable-preview-${Date.now()}`);
+fs.mkdirSync(folder,{recursive:true});
+const executable=path.join(folder,'MetaBot.exe');
+fs.copyFileSync(path.resolve(__dirname,'../src-tauri/target/release/meta-bot.exe'),executable);
+const live = process.argv.includes('--live');
+const env = {...process.env,METABOT_HOME:path.join(folder,'data'),WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS:`--remote-debugging-port=${live ? 9225 : 9224}`};
+if (live) delete env.METABOT_NATIVE_TEST;
+else env.METABOT_NATIVE_TEST = 'hold';
+const child=spawn(executable,[],{cwd:folder,windowsHide:true,detached:true,stdio:'ignore',env});
+child.on('error',error=>console.error(error));child.unref();
+console.log(JSON.stringify({pid:child.pid,folder,mode:live ? 'live' : 'hold'}));

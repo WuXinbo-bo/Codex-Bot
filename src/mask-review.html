@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="zh-CN">
+  <meta charset="utf-8" /><title>Meta Bot 面具验收</title>
+  <style>
+    body {
+      font: 14px system-ui;
+      background: #eef2f5;
+      color: #263743;
+      margin: 24px;
+    }
+    #gallery {
+      display: grid;
+      grid-template-columns: repeat(6, 150px);
+      gap: 12px;
+    }
+    .card {
+      background: white;
+      border-radius: 18px;
+      text-align: center;
+      padding: 8px;
+    }
+    .card svg {
+      width: 128px;
+      height: 128px;
+    }
+    button,
+    select {
+      padding: 8px;
+      margin: 6px;
+    }
+    #live {
+      width: 192px;
+      height: 192px;
+    }
+    #live svg {
+      width: 192px;
+      height: 192px;
+    }
+  </style>
+  <h1>24 张整脸面具 · 6 套佩戴动作 · 3 种材质</h1>
+  <a href="../test/fixtures/m1-visual.html">原神态目录</a>
+  <div>
+    <select id="mask"></select
+    ><select id="chain"></select
+    ><select id="material">
+      <option value="sticker">贴纸</option>
+      <option value="paper">纸质</option>
+      <option value="holo">全息</option></select
+    ><button id="play">播放佩戴全过程</button><button id="remove">摘下</button
+    ><select id="status">
+      <option>idle</option>
+      <option>running</option>
+      <option>needs_attention</option>
+      <option>completed</option>
+      <option>failed</option></select
+    ><button id="event">模拟任务状态</button>
+  </div>
+  <div id="live"></div>
+  <output id="phase"></output>
+  <div id="gallery"></div>
+  <script src="appearance.js"></script>
+  <script src="mask-system.js"></script>
+  <script src="m1-rig.js"></script>
+  <script src="m1-accessories.js"></script>
+  <script src="m1-renderer.js"></script>
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const M = MetaBotMaskSystem;
+    for (const id of M.names) $("mask").add(new Option(M.MASKS[id].label, id));
+    for (const id of M.CHAINS) $("chain").add(new Option(id, id));
+    const bot = MetaBotM1.create($("live"), {
+      appearance: { maskAuto: false },
+    });
+    $("play").onclick = () => {
+      bot.setAppearance({ maskAuto: false, maskStyle: $("material").value });
+      bot.setMask($("mask").value, $("chain").value);
+    };
+    $("remove").onclick = () => bot.clearMask();
+    $("event").onclick = () => {
+      bot.setAppearance({ maskAuto: true });
+      bot.setTaskStatus($("status").value);
+    };
+    setInterval(() => {
+      $("phase").textContent = $("live").querySelector("svg").dataset.maskPhase;
+    }, 80);
+    const make = (tag, attrs) => {
+      let el = document.createElementNS("http://www.w3.org/2000/svg", tag);
+      for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
+      return el;
+    };
+    function gallery() {
+      $("gallery").textContent = "";
+      for (const id of M.names) {
+        let cell = document.createElement("div");
+        cell.className = "card";
+        let svg = make("svg", { viewBox: "0 0 128 128" }),
+          g = make("g", { transform: "translate(64 64)" });
+        svg.append(g);
+        M.draw(make, g, id, $("material").value);
+        cell.append(svg, document.createTextNode(M.MASKS[id].label));
+        $("gallery").append(cell);
+      }
+    }
+    $("material").onchange = gallery;
+    gallery();
+    window.maskReview = { bot, M };
+  </script>
+</html>

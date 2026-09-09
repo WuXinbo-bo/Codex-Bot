@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <!-- The new mask gallery is separate so the baseline pose audit remains unchanged. -->
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>M1 visual review</title>
+  <link rel="icon" href="data:,">
+  <style>
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 24px; color: #202724; background: #f4f6f5; font: 14px "Segoe UI", sans-serif; }
+    h1 { font-size: 22px; margin: 0 0 8px; }
+    h2 { font-size: 15px; margin: 22px 0 12px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(152px, 1fr)); gap: 12px; max-width: 960px; }
+    figure { margin: 0; display: grid; justify-items: center; gap: 6px; padding: 12px 4px; border-bottom: 1px solid #d9dfdc; content-visibility:auto; contain-intrinsic-size:152px 164px; }
+    .avatar { width: 128px; height: 128px; }
+    figcaption { font-size: 12px; text-align: center; }
+    #live { width: 128px; height: 128px; }
+    .sequence { display: flex; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #ccd7d0; padding: 12px 0; }
+    .sequence figure { width: 152px; border: 0; }
+    .toolbar { display: flex; gap: 12px; flex-wrap: wrap; margin: 16px 0; }
+    select, button { font: inherit; padding: 6px 10px; }
+    #preview { touch-action: none; cursor: grab; }
+    #preview:active { cursor: grabbing; }
+    #directorState { display: block; min-height: 36px; max-width: 960px; line-height: 1.6; }
+    .mask-toolbar { display:flex; gap:8px; flex-wrap:wrap; align-items:center; margin:12px 0; }
+    #maskGallery { display:grid; grid-template-columns:repeat(auto-fit,minmax(128px,1fr)); gap:10px; max-width:960px; }
+    #maskGallery figure { background:#fff; border:1px solid #d9dfdc; border-radius:12px; padding:8px; }
+    .panel-demo{max-width:960px;background:#fff;border:1px solid #d9dfdc;border-radius:14px;padding:14px;display:grid;grid-template-columns:128px minmax(0,1fr);gap:14px;align-items:center}
+    .panel-demo .bot-anchor{width:128px;height:128px}.panel-stack{position:relative;min-height:150px}.demo-panel{position:absolute;background:#fff;border:1px solid #bcd5c5;border-radius:10px;box-shadow:0 8px 20px #193b241f;padding:10px;transition:transform .36s cubic-bezier(.2,.8,.2,1),opacity .24s ease;transform-origin:left center;opacity:0;transform:translateX(-18px) scale(.94)}
+    .demo-panel.visible{opacity:1;transform:none}.demo-panel.completed{top:82px;left:24px;width:260px}.demo-panel.toast{top:8px;left:44px;width:220px;font-size:12px}.demo-panel.primary{top:8px;left:24px;width:280px;min-height:68px}.demo-panel.leaving{opacity:0;transform:translateX(16px) scale(.96)}.panel-demo[data-overflow="true"] .completed{left:12px;transform:translateY(22px) scale(.92)}
+    #maskGallery .avatar { width:112px; height:112px; }
+  </style>
+</head>
+<body>
+  <h1>Meta Bot M1</h1>
+  <p><a href="task-relay.html">任务接力交互演示：逐条查看 / 确认 / 保留切换</a></p>
+  <nav class="toolbar"><a href="#appearanceCatalog">皮肤与形态</a><a href="#maskGallery">面具</a><a href="#core">全部神态</a><a href="#activities">全部活动</a><a href="#accessoryCatalog">配件</a></nav>
+  <p id="catalogCount"></p>
+  <h2 id="appearanceCatalog">皮肤与身体形态</h2>
+  <div class="toolbar"><label>预览皮肤 <select id="skinPreview"></select></label><label>身体形态 <select id="shapePreview"></select></label><label>动态 <select id="motionPreview"><option value="full">丰富</option><option value="soft">柔和</option><option value="reduced">低动态</option></select></label></div>
+  <div id="skins" class="grid"></div><div id="shapes" class="grid"></div>
+  <div class="toolbar"><select id="activitySelect" aria-label="活动"></select><button id="play" aria-label="播放">▶</button><select id="statusSelect" aria-label="Codex 状态"><option value="running">Codex 正在工作</option><option value="needs_attention">Codex 需要处理</option><option value="completed">Codex 已完成</option><option value="failed">Codex 执行失败</option><option value="offline">空闲</option></select></div>
+  <div id="preview" class="avatar"></div>
+  <p id="activityCount"></p>
+  <div class="toolbar"><button id="interactive">恢复交互</button><select id="scenario" aria-label="交互检查"><option value="lift">举起 → 快拖 → 放下</option><option value="resume">魔术 → 被发现 → 接着演</option><option value="visit">靠近 → 悬停 → 离开再来</option><option value="reminder">开始 A → 完成 A → 完成 B</option></select><button id="runScenario">演示交互链</button></div>
+  <output id="directorState" aria-live="off"></output>
+  <h2 id="panelDemo">面板生命周期与任务通知（真实界面 / 模拟数据）</h2>
+  <p><a href="panel-system.html">打开完整集成演示：开始 → 完成 → 查看 → 确认 → 收起</a></p>
+  <iframe title="真实面板集成演示" src="panel-system.html" style="width:100%;max-width:1000px;height:670px;border:1px solid #ccd7d0;border-radius:14px"></iframe>
+  <details><summary>单独的旧版概念草图（不作为验收依据）</summary>
+  <div class="toolbar"><button id="panelOpen">打开任务面板</button><button id="panelClose">收起任务面板</button><button id="taskStart">模拟开始任务</button><button id="taskComplete">模拟完成任务</button><button id="panelReset">重置面板</button></div>
+  <div id="panelStage" class="panel-demo"><div id="panelBot" class="bot-anchor"></div><div class="panel-stack"><div class="demo-panel primary" data-panel="primary"><strong>进行中的任务</strong><div>Codex 正在处理 · 任务 Alpha</div></div><div class="demo-panel completed" data-panel="completed"><strong>任务已完成</strong><div>Alpha · 查看 / 确认</div></div><div class="demo-panel toast" data-panel="toast">Meta Bot · 状态已同步</div></div></div>
+  </details>
+  <h2>Special eyes</h2><div id="symbols" class="grid"></div>
+  <h2>Activity keyframes</h2><div id="activities"></div>
+  <h2>Eye proportions</h2><div id="proportions" class="grid"></div>
+  <h2>Core expressions</h2><div id="core" class="grid"></div>
+  <h2>Interaction poses</h2><div id="interactions" class="grid"></div>
+  <h2 id="accessoryCatalog">全部配件</h2><div id="accessoryTiles" class="grid"></div>
+  <h2>Live motion</h2><div id="live"></div>
+  <h2>Full face masks</h2>
+  <p>24 张整脸面具 · 6 套佩戴动作 · 3 种材质 · 任务状态联动</p>
+  <div class="mask-toolbar"><select id="maskSelect"></select><select id="maskChain"></select><select id="maskStyle"><option value="sticker">立体贴纸</option><option value="paper">纸质</option><option value="holo">全息</option></select><button id="maskPlay">掏出并佩戴</button><button id="maskRemove">摘下</button><select id="maskStatus"><option value="idle">空闲</option><option value="running">执行中</option><option value="needs_attention">需要处理</option><option value="completed">已完成</option><option value="failed">失败</option></select><button id="maskEvent">模拟任务状态</button></div>
+  <div id="maskGallery" class="grid"></div>
+  <p><a href="../../src/mask-review.html">打开独立面具与动作验收页</a></p>
+  <script src="../../src/m1-rig.js"></script>
+  <script src="../../src/m1-accessories.js"></script>
+  <script src="../../src/m1-activities.js"></script>
+  <script src="../../src/appearance.js"></script>
+  <script src="../../src/mask-system.js"></script>
+  <script src="../../src/m1-renderer.js"></script>
+  <script src="../../src/expression-controller.js"></script>
+  <script>
+    const instances = [];
+    function tile(parent, name, label = name) {
+      const figure = document.createElement('figure');
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      const caption = document.createElement('figcaption');
+      caption.textContent = label;
+      figure.append(avatar, caption);
+      document.getElementById(parent).append(figure);
+      const renderer = MetaBotM1.create(avatar, { expression: name, appearance:{maskAuto:false} });
+      renderer.setActive(false);
+      instances.push(renderer);
+      return renderer;
+    }
+    const neutral = MetaBotM1Rig.EXPRESSIONS.neutral;
+    for (const [label, rx, ry] of [['Compact / 16 x 20', 16, 20], ['Balanced / 18 x 21', 18, 21], ['Wide / 19 x 23', 19, 23]]) {
+      for (const e of Object.values(neutral.eyes)) { e.rx = rx; e.ry = ry; }
+      tile('proportions', 'neutral', label);
+    }
+    for (const e of Object.values(neutral.eyes)) { e.rx = 18; e.ry = 21; }
+    for (const name of MetaBotM1Rig.CORE_EXPRESSION_NAMES) tile('core', name);
+    for (const name of Object.keys(MetaBotM1Rig.EXPRESSIONS).filter(n=>!MetaBotM1Rig.CORE_EXPRESSION_NAMES.includes(n))) tile('interactions', name,MetaBotM1Rig.EMOTIONS[name]?.label||name);
+    const live = MetaBotM1.create(document.getElementById('live'));
+    const panelBot = MetaBotM1.create(document.getElementById('panelBot'));
+    const panelStage = document.getElementById('panelStage');
+    const panelNodes = Object.fromEntries([...panelStage.querySelectorAll('[data-panel]')].map(n=>[n.dataset.panel,n]));
+    const panelDirector = MetaBotExpressionController.createExpressionController({setExpression:panelBot.setExpression,setGaze:panelBot.setGaze,clearGaze:panelBot.clearGaze,setMotion:panelBot.setMotion,setActive:panelBot.setActive,seed:19});
+    panelDirector.update('idle',0);
+    function panelPhase(phase,label='primary'){ const node=panelNodes[label]; if(!node)return; node.classList.toggle('visible',phase==='entering'||phase==='visible'); node.classList.toggle('leaving',phase==='leaving'); panelStage.dataset.phase=phase; panelDirector.interact(phase==='entering'?'bubble-open':phase==='leaving'?'bubble-close':'panel-open'); }
+    function panelLifecycle(kind){panelDirector.interact('task-lifecycle',{events:[{id:'visual-'+kind+'-'+Date.now(),kind,taskId:'visual-alpha',turnId:'visual',title:'任务 Alpha'}]}); panelBot.setTaskStatus(kind==='started'?'running':kind==='completed'?'completed':'idle');}
+    document.getElementById('panelOpen').onclick=()=>{panelPhase('entering');setTimeout(()=>panelPhase('visible'),380);};
+    document.getElementById('panelClose').onclick=()=>{panelPhase('leaving');setTimeout(()=>panelPhase('hidden'),260);};
+    document.getElementById('taskStart').onclick=()=>{panelPhase('visible');panelLifecycle('started');panelNodes.toast.classList.add('visible');};
+    document.getElementById('taskComplete').onclick=()=>{panelPhase('visible');panelLifecycle('completed');panelNodes.completed.classList.add('visible');panelStage.dataset.overflow='false';};
+    document.getElementById('panelReset').onclick=()=>{for(const n of Object.values(panelNodes))n.className='demo-panel '+n.dataset.panel;panelStage.dataset.phase='hidden';panelBot.setTaskStatus('idle');panelDirector.update('idle',0);};
+    const director = MetaBotExpressionController.createExpressionController({
+      setExpression: live.setExpression, setGaze: live.setGaze, clearGaze: live.clearGaze,
+      setMotion: live.setMotion, setActive: live.setActive, resetIdle: live.resetIdle, seed: 42
+    });
+    director.update('running', 1);
+    for (const name of MetaBotM1Rig.SYMBOLS) {
+      tile('symbols', 'neutral', name).setExpression('neutral', { duration: 0, pose: { eyes: { left: { symbols: { [name]: 1 } }, right: { symbols: { [name]: 1 } } } } });
+    }
+    const labels = { research:'戴眼镜研究', compare:'左右对照', trace:'沿线推演', organize:'归整资料', inspect:'放大检查', caught:'被发现走神', ponder:'认真思考', dizzy:'转晕后扶正', lifted:'举起后挣扎', stretch:'伸懒腰', shades:'偷戴墨镜', magic:'小魔术', dance:'小舞步', nap:'困到点头', hero:'任务完成', attention:'需要处理', affection:'亲近回应', toss:'抛接方块', fold:'折纸飞机', balance:'平衡练习', cup:'捧杯休息', tidy:'整理自己', mimic:'模仿指针（跟随实际移动）', detective:'小侦探', drums:'无声鼓点', cards:'整理卡片', paint:'小画家', rain:'雨天剧场', gift:'节日礼物', failed:'执行失败', wake:'醒来', greet:'再次见面' };
+    Object.assign(labels, { receive: '接收任务', prepare: '点头准备', keyboard: '交替敲键', deliver: '递交结果', finish_check: '检查完成', pack_up: '收工放松' });
+    Object.assign(labels, MetaBotActivities.LABELS);
+    document.getElementById('activityCount').textContent = `${Object.keys(MetaBotActivities.CLIPS).length} 套活动 · ${Object.keys(MetaBotM1Rig.EXPRESSIONS).length} 个表情与姿态`;
+    for (const [name, frames] of Object.entries(MetaBotActivities.CLIPS)) {
+      const routes=Object.entries({...MetaBotActivities.POOLS,...MetaBotActivities.LIFECYCLE}).filter(([,pool])=>pool.includes(name)).map(([id])=>id);
+      if(MetaBotActivities.THEATERS[name])routes.push('15 s',MetaBotActivities.THEATERS[name].route);
+      const mouse=Object.entries(MetaBotActivities.REACTIONS).filter(([,pool])=>pool.includes(name)).map(([id])=>id);
+      const heading = document.createElement('h2'); heading.textContent = `${labels[name]||name} · ${routes.concat(mouse).join(' / ')||'专用交互'}`;
+      const row = document.createElement('div'); row.className = 'sequence'; row.id = 'clip-' + name;
+      document.getElementById('activities').append(heading, row);
+      frames.forEach((frame, index) => tile(row.id, frame.expression, `${index + 1} · ${frame.duration} ms`).setExpression(frame.expression, { duration: 0, pose: frame.pose }));
+      const option = document.createElement('option'); option.value = name; option.textContent = labels[name]; document.getElementById('activitySelect').append(option);
+    }
+    const preview = MetaBotM1.create(document.getElementById('preview'));
+    const previewDirector = MetaBotExpressionController.createExpressionController({ setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(), seed: 7 });
+    previewDirector.update('running', 1);
+    let previewTimer = null;
+    let interactive = true;
+    let scenarioTimers = [];
+    let dwellTimers = [];
+    let pressed = null;
+    let lastPointer = null;
+    let demoSequence = 0;
+    function clearDemo() {
+      preview.clearMask(true);
+      clearTimeout(previewTimer);
+      scenarioTimers.forEach(clearTimeout); scenarioTimers = [];
+      dwellTimers.forEach(clearTimeout); dwellTimers = [];
+      pressed = null; lastPointer = null;
+    }
+    function startInteractive(status = document.getElementById('statusSelect').value) {
+      clearDemo(); previewDirector.stop(); interactive = true;
+      previewDirector.update(status, status === 'offline' ? 0 : 1, { taskId: 'preview-' + ++demoSequence });
+    }
+    function play(name) {
+      clearDemo(); interactive = false;
+      previewDirector.stop();
+      clearTimeout(previewTimer);
+      let index = 0;
+      function advance() {
+        const frame = MetaBotActivities.CLIPS[name][index++];
+        if (!frame) { preview.clearMask(); preview.setExpression('neutral'); return; }
+        if(Object.hasOwn(frame,'mask')){if(frame.mask)preview.setMask(frame.mask,'classic');else preview.clearMask();}
+        preview.setExpression(frame.expression, { pose: frame.pose, duration: Math.min(300, frame.duration * 0.55), auto: false });
+        previewTimer = setTimeout(advance, frame.duration);
+      }
+      advance();
+    }
+    document.getElementById('play').onclick = () => play(document.getElementById('activitySelect').value);
+    document.getElementById('statusSelect').onchange = event => startInteractive(event.target.value);
+    document.getElementById('interactive').onclick = () => startInteractive();
+    function scenario(name) {
+      startInteractive(name === 'resume' ? 'idle' : 'running');
+      const send = (type, detail = {}) => previewDirector.interact(type, detail);
+      const later = (ms, callback) => scenarioTimers.push(setTimeout(callback, ms));
+      if (name === 'lift') {
+        send('press'); later(250, () => send('drag-start'));
+        later(283, () => send('drag-move', { velocity: { x: 1100, y: 0, speed: 1100 } }));
+        later(2000, () => send('drag-end', { releaseSpeed: 600 }));
+      } else if (name === 'resume') {
+        send('activity-request', { name: 'magic' });
+        later(850, () => send('proximity-enter', { local: { x: 0.6, y: 0 } }));
+        later(950, () => send('hover-enter'));
+        later(2600, () => send('pointer-leave'));
+      } else if (name === 'visit') {
+        send('proximity-enter'); later(100, () => send('hover-enter'));
+        later(1000, () => send('pointer-leave')); later(2300, () => send('proximity-enter'));
+      } else if (name === 'reminder') {
+        const id = 'demo-' + demoSequence;
+        const event = (kind, task) => send('task-lifecycle', { events: [{ id: id + task + kind, kind, taskId: task, turnId: id, title: task }] });
+        previewDirector.update('running', 2, { quiet: true, lifecycleManaged: true });
+        event('started', 'A');
+        later(3200, () => { previewDirector.update('running', 1, { quiet: true, lifecycleManaged: true }); event('completed', 'A'); });
+        later(6400, () => { previewDirector.update('idle', 0, { quiet: true, lifecycleManaged: true }); event('completed', 'B'); });
+      }
+    }
+    document.getElementById('runScenario').onclick = () => scenario(document.getElementById('scenario').value);
+    const previewElement = document.getElementById('preview');
+    const localPoint = event => { const r = previewElement.getBoundingClientRect(); return { x: Math.max(-1, Math.min(1, (event.clientX - r.left - r.width / 2) / 180)), y: Math.max(-1, Math.min(1, (event.clientY - r.top - r.height / 2) / 180)) }; };
+    previewElement.onpointerenter = event => {
+      if (!interactive || pressed) return;
+      previewDirector.interact('hover-enter', { local: localPoint(event) });
+      dwellTimers = [200, 800, 2500].map((ms, i) => setTimeout(() => previewDirector.interact('hover-dwell', { stage: ['short', 'medium', 'long'][i] }), ms));
+    };
+    previewElement.onpointerleave = () => {
+      dwellTimers.forEach(clearTimeout); dwellTimers = [];
+      if (interactive && !pressed) previewDirector.interact('pointer-leave');
+    };
+    previewElement.onpointerdown = event => {
+      if (!interactive) startInteractive();
+      dwellTimers.forEach(clearTimeout); dwellTimers = [];
+      pressed = { x: event.clientX, y: event.clientY, at: performance.now(), dragging: false };
+      previewElement.setPointerCapture(event.pointerId);
+      previewDirector.interact('press', { local: localPoint(event) });
+      dwellTimers.push(setTimeout(() => { if (pressed && !pressed.dragging) previewDirector.interact('hold-ready'); }, 420));
+    };
+    previewElement.onpointermove = event => {
+      if (!interactive) return;
+      const at = performance.now(), elapsed = Math.max(1, at - (lastPointer?.at ?? at));
+      const velocity = { x: lastPointer ? (event.clientX - lastPointer.x) * 1000 / elapsed : 0, y: lastPointer ? (event.clientY - lastPointer.y) * 1000 / elapsed : 0 };
+      velocity.speed = Math.hypot(velocity.x, velocity.y);
+      lastPointer = { x: event.clientX, y: event.clientY, at, velocity };
+      if (pressed && !pressed.dragging && Math.hypot(event.clientX - pressed.x, event.clientY - pressed.y) > 5) { pressed.dragging = true; previewDirector.interact('drag-start'); }
+      previewDirector.interact(pressed?.dragging ? 'drag-move' : 'hover-move', { local: localPoint(event), velocity });
+    };
+    function releasePointer(event) {
+      if (!pressed) return;
+      previewDirector.interact(pressed.dragging ? 'drag-end' : performance.now() - pressed.at >= 420 ? 'hold-release' : 'ball-click', { releaseSpeed: performance.now() - (lastPointer?.at ?? 0) < 100 ? lastPointer?.velocity.speed || 0 : 0 });
+      pressed = null; dwellTimers.forEach(clearTimeout); dwellTimers = [];
+      if (previewElement.hasPointerCapture(event.pointerId)) previewElement.releasePointerCapture(event.pointerId);
+      previewDirector.interact('pointer-leave');
+    }
+    previewElement.onpointerup = releasePointer;
+    previewElement.onpointercancel = releasePointer;
+    setInterval(() => {
+      const state = previewDirector.getState();
+      document.getElementById('directorState').textContent = interactive ? `状态：${state.status} · 动作：${labels[state.activity?.name] || state.current}${state.activity ? ' · 第 ' + state.activity.index + ' 步' : ''}${state.suspendedActivity ? ' · 待接续：' + labels[state.suspendedActivity.name] : ''}${state.pendingReminder ? ' · 提醒等待松手' : ''}` : '关键帧播放模式；点击“恢复交互”体验实际响应。';
+    }, 200);
+    window.review = { instances, live, director, preview, previewDirector, play, scenario, startInteractive };
+    const A=MetaBotAppearance,M=MetaBotMaskSystem;
+    document.getElementById('catalogCount').textContent=`${Object.keys(MetaBotM1Rig.EXPRESSIONS).length} 神态 / ${Object.keys(MetaBotActivities.CLIPS).length} 活动 / ${Object.keys(A.SKINS).length} 皮肤 / ${A.SHAPES.length} 形态 / ${M.names.length} 面具 / ${M.CHAINS.length} 佩戴动作 / ${MetaBotM1Rig.ACCESSORIES.length} 配件`;
+    for(const name of Object.keys(A.SKINS)) {document.getElementById('skinPreview').add(new Option(name,name));const bot=tile('skins','neutral',name);bot.setAppearance({skin:name,shape:'circle',maskAuto:false});bot.setMotionLevel('reduced');}
+    for(const name of ['morph','random',...A.SHAPES])document.getElementById('shapePreview').add(new Option(name,name));
+    for(const name of A.SHAPES){const bot=tile('shapes','neutral',name);bot.setAppearance({shape:name,maskAuto:false});bot.setMotionLevel('reduced');}
+    for(const name of MetaBotM1Rig.ACCESSORIES)tile('accessoryTiles','neutral',name).setExpression('neutral',{duration:0,pose:{accessories:{[name]:{opacity:1}}}});
+    const settings=()=>({skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
+    function applyPreview(){preview.setAppearance(settings());preview.setMotionLevel(document.getElementById('motionPreview').value);}
+    for(const id of ['skinPreview','shapePreview','motionPreview'])document.getElementById(id).onchange=applyPreview;
+    for(const id of M.names)document.getElementById('maskSelect').add(new Option(M.MASKS[id].label,id));
+    const chainLabels=['身后取出','探头试戴','翻转戴上','歪戴扶正','滑落扶正','花式举起'];
+    M.CHAINS.forEach((id,i)=>document.getElementById('maskChain').add(new Option(chainLabels[i],id)));
+    function wear(){applyPreview();preview.setMask(document.getElementById('maskSelect').value,document.getElementById('maskChain').value);document.getElementById('preview').scrollIntoView({block:'center'});}
+    document.getElementById('maskPlay').onclick=wear;
+    document.getElementById('maskRemove').onclick=()=>preview.clearMask();
+    document.getElementById('maskEvent').onclick=()=>{preview.setAppearance({...settings(),maskAuto:true});preview.setTaskStatus(document.getElementById('maskStatus').value);document.getElementById('preview').scrollIntoView({block:'center'});};
+    const make=(tag,attrs)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;};
+    function maskGallery(){const grid=document.getElementById('maskGallery');grid.textContent='';for(const id of M.names){const fig=document.createElement('figure'),svg=make('svg',{viewBox:'0 0 128 128',width:128,height:128}),g=make('g',{transform:'translate(64 64)'});svg.append(g);M.draw(make,g,id,document.getElementById('maskStyle').value);const button=document.createElement('button');button.textContent=M.MASKS[id].label;button.onclick=()=>{document.getElementById('maskSelect').value=id;wear();};fig.append(svg,button);grid.append(fig);}}
+    document.getElementById('maskStyle').onchange=maskGallery;maskGallery();applyPreview();
+  </script>
+</body>
+</html>

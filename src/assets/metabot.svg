@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Meta Bot M1">
+  <circle cx="64" cy="64" r="56" fill="#02AD45"/>
+  <path d="M25 54a18 21 0 1 0 36 0a18 21 0 1 0-36 0M67 54a18 21 0 1 0 36 0a18 21 0 1 0-36 0" fill="#F3F6F2"/>
+  <ellipse cx="43" cy="55" rx="9" ry="11" fill="#181B20"/>
+  <ellipse cx="85" cy="55" rx="9" ry="11" fill="#181B20"/>
+</svg>

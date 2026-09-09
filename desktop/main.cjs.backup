@@ -1,0 +1,460 @@
+const path = require("node:path");
+const os = require("node:os");
+const fs = require("node:fs");
+const { app, BrowserWindow, Tray, Menu, ipcMain, shell, nativeImage, screen } = require("electron");
+const { StatusBridge } = require("../bridge/status-bridge.cjs");
+const { bubblePosition } = require("../shared/bubble-position.cjs");
+const { pointInsideCircle } = require("../shared/bubble-hit-test.cjs");
+const { createBallDragController } = require("../shared/ball-drag.cjs");
+
+const DATA_HOME = path.join(process.env.METABOT_HOME || path.join(os.homedir(), ".metabot"));
+const CONFIG_FILE = path.join(DATA_HOME, "config.json");
+const CACHE_FILE = path.join(DATA_HOME, "cache", "snapshot.json");
+const WINDOW_STATE_FILE = path.join(DATA_HOME, "window-state.json");
+const BALL_SIZE = { width: 128, height: 128 };
+const BUBBLE_SIZE = { width: 350, height: 220 };
+const BUBBLE_GAP = 8;
+const BALL_RADIUS = BALL_SIZE.width / 2;
+const BALL_HIT_TEST_INTERVAL = 24;
+const BUBBLE_HIT_TEST_INTERVAL = 30;
+let ballWindow = null;
+let bubbleWindow = null;
+let tray = null;
+let bridge = null;
+let isQuitting = false;
+let bubbleMouseInteractive = true;
+let bubbleHitRegions = [];
+let bubbleHitTestTimer = null;
+let ballMouseInteractive = true;
+let ballHitTestTimer = null;
+let inputHookStarted = false;
+let inputFallback = false;
+let globalInput = null;
+const ballDrag = createBallDragController({ threshold: 6 });
+const testExitMs = Number(process.env.METABOT_TEST_EXIT_MS || 0);
+const interactionTest = process.env.METABOT_INTERACTION_TEST === "1";
+
+function readConfig() {
+  try {
+    const value = JSON.parse(fs.readFileSync(CONFIG_FILE, "utf8"));
+    return value && typeof value === "object" ? value : {};
+  } catch { return {}; }
+}
+
+function clamp(value, minimum, maximum) { return Math.min(Math.max(value, minimum), Math.max(minimum, maximum)); }
+
+function integerPosition(position) {
+  if (!Number.isFinite(position?.x) || !Number.isFinite(position?.y)) return null;
+  return { x: Math.round(position.x), y: Math.round(position.y) };
+}
+
+function setBallPosition(position) {
+  const next = integerPosition(position);
+  if (!next || !ballWindow || ballWindow.isDestroyed()) return false;
+  ballWindow.setPosition(next.x, next.y, false);
+  return true;
+}
+
+function workAreaFor(bounds) {
+  const display = typeof screen.getDisplayMatching === "function"
+    ? screen.getDisplayMatching(bounds)
+    : screen.getDisplayNearestPoint({ x: bounds.x, y: bounds.y });
+  return display.workArea;
+}
+
+function safeBallPosition(bounds) {
+  const area = workAreaFor(bounds);
+  return {
+    x: clamp(bounds.x, area.x, area.x + area.width - bounds.width),
+    y: clamp(bounds.y, area.y, area.y + area.height - bounds.height)
+  };
+}
+
+function readBallPosition() {
+  try {
+    const value = JSON.parse(fs.readFileSync(WINDOW_STATE_FILE, "utf8"));
+    if (!Number.isFinite(value?.x) || !Number.isFinite(value?.y)) return null;
+    return safeBallPosition({ x: Math.round(value.x), y: Math.round(value.y), ...BALL_SIZE });
+  } catch { return null; }
+}
+
+function saveBallPosition() {
+  if (!ballWindow || ballWindow.isDestroyed()) return;
+  const { x, y } = ballWindow.getBounds();
+  try {
+    fs.mkdirSync(DATA_HOME, { recursive: true });
+    fs.writeFileSync(WINDOW_STATE_FILE, `${JSON.stringify({ x, y })}\n`, "utf8");
+  } catch { /* Position persistence must never interrupt the companion. */ }
+}
+
+function placeBubble() {
+  if (!ballWindow || !bubbleWindow || ballWindow.isDestroyed() || bubbleWindow.isDestroyed()) return;
+  const ball = ballWindow.getBounds();
+  const placement = bubblePosition(ball, BUBBLE_SIZE, workAreaFor(ball), BUBBLE_GAP);
+  const position = integerPosition(placement);
+  if (!position) return;
+  bubbleWindow.setBounds({ ...position, ...BUBBLE_SIZE }, false);
+  bubbleWindow.webContents.send("bubble:placement", placement);
+}
+
+function setBubbleMouseInteractive(interactive) {
+  if (!bubbleWindow || bubbleWindow.isDestroyed()) return;
+  if (interactive === bubbleMouseInteractive) return;
+  bubbleMouseInteractive = interactive;
+  bubbleWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+}
+
+function bubblePointHitsControl(point) {
+  if (!bubbleWindow || bubbleWindow.isDestroyed() || !bubbleWindow.isVisible()) return false;
+  const bounds = bubbleWindow.getBounds();
+  const x = point.x - bounds.x;
+  const y = point.y - bounds.y;
+  return bubbleHitRegions.some((region) => x >= region.x && y >= region.y && x <= region.x + region.width && y <= region.y + region.height);
+}
+
+function updateBubbleMouseMode() {
+  setBubbleMouseInteractive(bubblePointHitsControl(screen.getCursorScreenPoint()));
+}
+
+function startBubbleHitTesting() {
+  if (isQuitting || !bubbleWindow || bubbleWindow.isDestroyed() || !bubbleWindow.isVisible()) return;
+  if (bubbleHitTestTimer) clearInterval(bubbleHitTestTimer);
+  bubbleHitTestTimer = setInterval(updateBubbleMouseMode, BUBBLE_HIT_TEST_INTERVAL);
+  bubbleHitTestTimer.unref?.();
+  updateBubbleMouseMode();
+}
+
+function stopBubbleHitTesting() {
+  if (bubbleHitTestTimer) clearInterval(bubbleHitTestTimer);
+  bubbleHitTestTimer = null;
+  setBubbleMouseInteractive(true);
+}
+
+function physicalToDipPoint(point) {
+  if (!Number.isFinite(point?.x) || !Number.isFinite(point?.y)) return null;
+  const physical = { x: Math.round(point.x), y: Math.round(point.y) };
+  return process.platform === "win32" ? screen.screenToDipPoint(physical) : physical;
+}
+
+function cursorHitsBall(point = screen.getCursorScreenPoint()) {
+  if (!ballWindow || ballWindow.isDestroyed() || !ballWindow.isVisible()) return false;
+  return pointInsideCircle(point, ballWindow.getBounds(), BALL_RADIUS);
+}
+
+function setBallMouseInteractive(interactive) {
+  if (!ballWindow || ballWindow.isDestroyed() || interactive === ballMouseInteractive) return;
+  ballMouseInteractive = interactive;
+  ballWindow.setIgnoreMouseEvents(!interactive, { forward: true });
+}
+
+function updateBallMouseMode() {
+  setBallMouseInteractive(ballDrag.isActive() || cursorHitsBall());
+}
+
+function startBallHitTesting() {
+  if (isQuitting || ballHitTestTimer) return;
+  ballHitTestTimer = setInterval(updateBallMouseMode, BALL_HIT_TEST_INTERVAL);
+  ballHitTestTimer.unref?.();
+  updateBallMouseMode();
+}
+
+function stopBallHitTesting() {
+  if (ballHitTestTimer) clearInterval(ballHitTestTimer);
+  ballHitTestTimer = null;
+  ballMouseInteractive = true;
+  if (ballWindow && !ballWindow.isDestroyed()) ballWindow.setIgnoreMouseEvents(false);
+}
+
+function onGlobalMouseDown(event) {
+  if (event.button !== 1 || isQuitting || !ballWindow || ballWindow.isDestroyed()) return;
+  const point = physicalToDipPoint(event);
+  if (!point || !cursorHitsBall(point)) return;
+  ballDrag.begin(point, ballWindow.getBounds());
+  setBallMouseInteractive(true);
+}
+
+function onGlobalMouseMove(event) {
+  const point = physicalToDipPoint(event);
+  if (!point) return;
+  if (!ballDrag.isActive()) {
+    setBallMouseInteractive(cursorHitsBall(point));
+    return;
+  }
+  const update = ballDrag.move(point);
+  if (!update) return;
+  if (update.type === "drag-start") hideBubble();
+  const current = ballWindow.getBounds();
+  setBallPosition(safeBallPosition({ ...current, ...update.position }));
+}
+
+function onGlobalMouseUp(event) {
+  if (event.button !== 1 || !ballDrag.isActive()) return;
+  const point = physicalToDipPoint(event);
+  const result = ballDrag.end(point);
+  if (result?.type === "drag-end") {
+    const current = ballWindow.getBounds();
+    if (result.position) setBallPosition(safeBallPosition({ ...current, ...result.position }));
+    saveBallPosition();
+  } else if (result?.type === "click") {
+    toggleBubble();
+  }
+  updateBallMouseMode();
+}
+
+function startInputHook() {
+  if (inputHookStarted) return;
+  try {
+    globalInput = require("uiohook-napi").uIOhook;
+    globalInput.on("mousedown", onGlobalMouseDown);
+    globalInput.on("mousemove", onGlobalMouseMove);
+    globalInput.on("mouseup", onGlobalMouseUp);
+    globalInput.start();
+    inputHookStarted = true;
+    inputFallback = false;
+  } catch (error) {
+    globalInput = null;
+    inputFallback = true;
+    console.error("Meta Bot global input unavailable; using native drag fallback.", error);
+  }
+}
+
+function stopInputHook() {
+  ballDrag.cancel();
+  if (!inputHookStarted) return;
+  globalInput.removeListener("mousedown", onGlobalMouseDown);
+  globalInput.removeListener("mousemove", onGlobalMouseMove);
+  globalInput.removeListener("mouseup", onGlobalMouseUp);
+  globalInput.stop();
+  globalInput = null;
+  inputHookStarted = false;
+}
+
+function pointsMatch(actual, expected, tolerance = 1) {
+  return Math.abs(actual.x - expected.x) <= tolerance && Math.abs(actual.y - expected.y) <= tolerance;
+}
+
+async function runInteractionTest() {
+  const initial = ballWindow.getBounds();
+  const pressDip = { x: initial.x + 24, y: initial.y + initial.height / 2 };
+  const releaseDip = { x: pressDip.x + 80, y: pressDip.y + 40 };
+  const press = process.platform === "win32" ? screen.dipToScreenPoint(pressDip) : pressDip;
+  const release = process.platform === "win32" ? screen.dipToScreenPoint(releaseDip) : releaseDip;
+  onGlobalMouseDown({ ...press, button: 1 });
+  onGlobalMouseMove({ ...release, button: 0 });
+  onGlobalMouseUp({ ...release, button: 1 });
+  await new Promise((resolve) => setTimeout(resolve, 100));
+
+  const expected = safeBallPosition({ ...initial, x: initial.x + 80, y: initial.y + 40 });
+  const moved = ballWindow.getBounds();
+  const clickDip = { x: moved.x + moved.width / 2, y: moved.y + moved.height / 2 };
+  const click = process.platform === "win32" ? screen.dipToScreenPoint(clickDip) : clickDip;
+  onGlobalMouseDown({ ...click, button: 1 });
+  onGlobalMouseUp({ ...click, button: 1 });
+  const opened = bubbleWindow.isVisible();
+  onGlobalMouseDown({ ...click, button: 1 });
+  onGlobalMouseUp({ ...click, button: 1 });
+  const closed = !bubbleWindow.isVisible();
+  const result = {
+    windowCount: BrowserWindow.getAllWindows().length,
+    expected: { x: expected.x, y: expected.y },
+    actual: { x: moved.x, y: moved.y },
+    dragAccurate: pointsMatch(moved, expected),
+    clickOpened: opened,
+    secondClickClosed: closed
+  };
+  const passed = result.windowCount === 2 && result.dragAccurate && result.clickOpened && result.secondClickClosed;
+  console.log(`METABOT_INTERACTION_TEST ${JSON.stringify(result)}`);
+  process.exitCode = passed ? 0 : 1;
+  app.quit();
+}
+
+function showBubble(focus = false) {
+  if (!bubbleWindow || bubbleWindow.isDestroyed()) return false;
+  placeBubble();
+  if (focus) {
+    bubbleWindow.show();
+    bubbleWindow.focus();
+  } else {
+    bubbleWindow.showInactive();
+  }
+  startBubbleHitTesting();
+  ballWindow?.webContents.send("bubble:visibility", true);
+  return true;
+}
+
+function hideBubble() {
+  if (!bubbleWindow || bubbleWindow.isDestroyed()) return false;
+  bubbleWindow.hide();
+  stopBubbleHitTesting();
+  ballWindow?.webContents.send("bubble:visibility", false);
+  return true;
+}
+
+function toggleBubble() {
+  if (!bubbleWindow || bubbleWindow.isDestroyed()) return false;
+  if (bubbleWindow.isVisible()) {
+    hideBubble();
+    return false;
+  }
+  showBubble(false);
+  return true;
+}
+
+function createBallWindow() {
+  const savedPosition = readBallPosition();
+  ballWindow = new BrowserWindow({
+    ...BALL_SIZE,
+    ...(savedPosition || {}),
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    backgroundColor: "#00000000",
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, "preload.cjs") }
+  });
+  ballWindow.setAlwaysOnTop(true, "floating");
+  ballWindow.loadFile(path.join(__dirname, "../src/index.html"));
+  ballWindow.webContents.on("did-finish-load", () => {
+    if (inputFallback) ballWindow.webContents.send("input:fallback");
+  });
+  ballWindow.on("close", (event) => {
+    if (!isQuitting) { event.preventDefault(); hideBubble(); ballWindow.hide(); }
+  });
+  ballWindow.on("closed", () => { ballWindow = null; });
+  ballWindow.on("moved", () => {
+    if (isQuitting || !ballWindow || ballWindow.isDestroyed()) return;
+    if (ballDrag.isDragging()) return;
+    hideBubble();
+    const current = ballWindow.getBounds();
+    const safe = safeBallPosition(current);
+    if (safe.x !== current.x || safe.y !== current.y) setBallPosition(safe);
+    saveBallPosition();
+  });
+  startBallHitTesting();
+}
+
+function createBubbleWindow() {
+  bubbleWindow = new BrowserWindow({
+    ...BUBBLE_SIZE,
+    show: false,
+    frame: false,
+    transparent: true,
+    resizable: false,
+    alwaysOnTop: true,
+    skipTaskbar: true,
+    hasShadow: false,
+    backgroundColor: "#00000000",
+    webPreferences: { contextIsolation: true, nodeIntegration: false, sandbox: true, preload: path.join(__dirname, "preload.cjs") }
+  });
+  bubbleWindow.setAlwaysOnTop(true, "floating");
+  bubbleWindow.loadFile(path.join(__dirname, "../src/panel.html"));
+  bubbleWindow.webContents.on("did-finish-load", () => {
+    if (isQuitting) return;
+    placeBubble();
+    if (bridge?.snapshot) bubbleWindow.webContents.send("status:update", bridge.snapshot);
+  });
+  bubbleWindow.on("close", (event) => {
+    if (!isQuitting) { event.preventDefault(); hideBubble(); }
+  });
+  bubbleWindow.on("closed", () => { bubbleWindow = null; });
+}
+
+function createTray() {
+  const iconPath = path.join(__dirname, "../src/assets/metabot.svg");
+  const icon = fs.existsSync(iconPath) ? nativeImage.createFromPath(iconPath) : nativeImage.createEmpty();
+  tray = new Tray(icon);
+  tray.setToolTip("Meta Bot");
+  tray.setContextMenu(Menu.buildFromTemplate([
+    { label: "打开 Meta Bot", click: () => { ballWindow?.show(); showBubble(true); } },
+    { type: "separator" },
+    { label: "退出", click: () => app.quit() }
+  ]));
+  tray.on("click", () => { ballWindow?.show(); toggleBubble(); });
+}
+
+const singleInstance = app.requestSingleInstanceLock();
+if (!singleInstance) {
+  app.quit();
+} else {
+  app.on("second-instance", () => {
+    if (!ballWindow) return;
+    if (ballWindow.isMinimized()) ballWindow.restore();
+    ballWindow.show();
+    showBubble(true);
+  });
+}
+
+app.whenReady().then(() => {
+  if (!singleInstance) return;
+  fs.mkdirSync(DATA_HOME, { recursive: true });
+  app.setAppUserModelId("ai.metabot.companion");
+  createBallWindow();
+  createBubbleWindow();
+  createTray();
+  startInputHook();
+  const handleDisplayChange = () => {
+    if (!ballWindow || ballWindow.isDestroyed()) return;
+    const current = ballWindow.getBounds();
+    const position = safeBallPosition(current);
+    if (position.x !== current.x || position.y !== current.y) setBallPosition(position);
+    if (bubbleWindow?.isVisible()) placeBubble();
+    saveBallPosition();
+  };
+  screen.on("display-added", handleDisplayChange);
+  screen.on("display-removed", handleDisplayChange);
+  screen.on("display-metrics-changed", handleDisplayChange);
+  const config = readConfig();
+  bridge = new StatusBridge({ ...config, cacheFile: CACHE_FILE });
+  bridge.on("update", (snapshot) => bubbleWindow?.webContents.send("status:update", snapshot));
+  bridge.on("diagnostic", (detail) => bubbleWindow?.webContents.send("status:diagnostic", detail));
+  bridge.start();
+  if (interactionTest) setTimeout(runInteractionTest, 600);
+  else if (testExitMs > 0) setTimeout(() => app.quit(), testExitMs).unref();
+});
+
+function senderIs(event, window) {
+  return Boolean(window && !window.isDestroyed() && event.sender === window.webContents);
+}
+
+ipcMain.handle("meta-bot:toggle-bubble", (event) => senderIs(event, ballWindow) && !inputHookStarted ? toggleBubble() : false);
+ipcMain.handle("meta-bot:hide-bubble", (event) => senderIs(event, bubbleWindow) ? hideBubble() : false);
+ipcMain.handle("meta-bot:show-bubble", (event, focus) => {
+  if (!senderIs(event, bubbleWindow)) return false;
+  return showBubble(Boolean(focus));
+});
+ipcMain.on("meta-bot:set-bubble-hit-regions", (event, regions) => {
+  if (!senderIs(event, bubbleWindow)) return;
+  bubbleHitRegions = Array.isArray(regions)
+    ? regions.filter((region) => region && Number.isFinite(region.x) && Number.isFinite(region.y) && Number.isFinite(region.width) && Number.isFinite(region.height)).map((region) => ({ x: region.x, y: region.y, width: Math.max(0, region.width), height: Math.max(0, region.height) }))
+    : [];
+});
+ipcMain.on("meta-bot:update-indicator", (event, status, count) => {
+  if (!bubbleWindow || event.sender !== bubbleWindow.webContents) return;
+  ballWindow?.webContents.send("indicator:update", { status: String(status || "offline"), count: Math.max(0, Number(count) || 0) });
+});
+ipcMain.handle("meta-bot:refresh", (event) => senderIs(event, bubbleWindow) ? bridge?.refresh() : false);
+ipcMain.handle("meta-bot:open-target", async (event, value) => {
+  if (!senderIs(event, bubbleWindow)) return false;
+  const target = String(value || "");
+  if (/^https?:\/\//i.test(target)) return shell.openExternal(target);
+  const config = readConfig();
+  const baseUrl = config.workbench?.webUrl || config.workbench?.baseUrl;
+  const sessionMatch = target.match(/^metacode:\/\/session\/([^/?#]+)/i);
+  if (sessionMatch && baseUrl && /^https?:\/\//i.test(baseUrl)) return shell.openExternal(`${String(baseUrl).replace(/\/$/, "")}/?session=${encodeURIComponent(decodeURIComponent(sessionMatch[1]))}`);
+  const codexBaseUrl = config.codex?.webUrl;
+  const codexMatch = target.match(/^metacode:\/\/codex\/thread\/([^/?#]+)/i);
+  if (codexMatch && codexBaseUrl && /^https?:\/\//i.test(codexBaseUrl)) return shell.openExternal(`${String(codexBaseUrl).replace(/\/$/, "")}/?thread=${encodeURIComponent(decodeURIComponent(codexMatch[1]))}`);
+  return false;
+});
+ipcMain.handle("meta-bot:quit", (event) => senderIs(event, bubbleWindow) ? app.quit() : false);
+app.on("before-quit", () => {
+  isQuitting = true;
+  saveBallPosition();
+  stopInputHook();
+  stopBallHitTesting();
+  stopBubbleHitTesting();
+  bridge?.stop();
+  tray?.destroy();
+});

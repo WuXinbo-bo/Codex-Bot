@@ -1,0 +1,36 @@
+async (page) => {
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.goto('http://127.0.0.1:4187/test/fixtures/panel-system.html');
+  await page.waitForFunction(()=>Boolean(window.panelDemo),null,{timeout:30000});
+  await page.getByRole('button',{name:'展开面板'}).click();
+  await page.waitForFunction(()=>panelDemo.windows.panel?.visible);
+  await page.getByRole('button',{name:'开始任务'}).click();
+  await page.waitForFunction(()=>panelDemo.frames.toast.contentDocument.body.dataset.phase==='entering');
+  await page.screenshot({path:'output/playwright/panel-handoff-mid.png'});
+  await page.waitForFunction(()=>panelDemo.frames.toast.contentDocument.body.dataset.phase==='visible');
+  const start=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState());
+  await page.screenshot({path:'output/playwright/panel-start.png'});
+  await page.getByRole('button',{name:'完成任务'}).click();
+  await page.waitForFunction(()=>panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible',null,{timeout:15000});
+  const finish=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState());
+  await page.screenshot({path:'output/playwright/panel-complete.png'});
+  await page.frameLocator('iframe[title="completions"]').getByRole('button',{name:'确认并接下一项'}).click();
+  await page.waitForFunction(()=>!panelDemo.windows.completions?.visible);
+  await page.getByRole('button',{name:'收起面板'}).click();
+  await page.waitForFunction(()=>!panelDemo.windows.panel?.visible);
+  if(errors.length)throw Error(errors.join('\n'));
+  await page.screenshot({path:'output/playwright/panel-system-review.png'});
+  const phases=await page.evaluate(()=>panelDemo.events.filter(e=>e.topic==='panel:phase').map(e=>({target:e.target,phase:e.data.phase})));
+  for(const target of ['toast','completions'])for(const phase of ['preparing','entering','visible'])if(!phases.some(e=>e.target===target&&e.phase===phase))throw Error('Missing choreography '+target+phase);
+  if(!phases.some(e=>e.target==='completions'&&e.phase==='leaving'))throw Error('Confirmation skipped retrieval');
+  const positions=await page.evaluate(()=>panelDemo.events.filter(e=>e.topic==='window'&&e.target==='completions'&&e.data.action==='bounds').map(e=>e.data));
+  if(positions.length>12)throw Error('Panel animation regressed to per-frame native bounds calls');
+  const durations=await page.evaluate(()=>panelDemo.events.filter(e=>e.topic==='panel:phase').map(e=>e.data.duration));
+  if(durations.some(ms=>ms>220))throw Error('Panel choreography exceeded its animation budget');
+  await page.getByRole('button',{name:'多任务',exact:true}).click();
+  await page.getByRole('button',{name:'完成任务'}).click();
+  await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===2&&panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible');
+  await page.frameLocator('iframe[title="completions"]').getByRole('button',{name:'确认并接下一项'}).click();
+  await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===1&&panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible');
+  return {passed:true,start:start.current,finish:finish.current,phases,errors};
+}

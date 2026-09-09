@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN" data-side="right">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <link rel="icon" href="data:,">
+  <title>Meta Bot 状态</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body class="panel-page">
+  <section id="setup" hidden aria-label="首次连接向导">
+    <header><strong>连接 Codex</strong><span>Meta Bot · 第三方任务助手</span></header>
+    <p>先打开并登录 Codex，无需提供密码或 API Key。</p>
+    <output id="setupChecks" role="status">等待检查</output>
+    <button id="setupCheck" type="button">重新检测</button>
+    <details><summary>连接详情与修复</summary>
+      <output id="setupDetails"></output>
+      <p>仅选择可信的 Codex 安装目录；留空则自动检测。</p>
+      <label>Codex 程序<input id="setupExecutable" type="text" placeholder="自动发现 codex.exe"></label><button id="pickExecutable" type="button">选择程序</button>
+      <label>Codex 数据目录<input id="setupHome" type="text" placeholder="自动发现 .codex"></label><button id="pickHome" type="button">选择目录</button>
+      <button id="setupSave" type="button">保存并连接</button>
+      <button id="setupCopy" type="button">复制脱敏诊断</button>
+    </details>
+    <h2>确认提醒正常</h2>
+    <p>在 Codex 运行一次任务，检查开始、完成提醒，以及查看任务和确认清除。</p>
+    <label><input id="setupVerified" type="checkbox">以上四项均已验证</label>
+    <div class="setup-actions"><button id="setupTasks" type="button">去任务面板</button><button id="setupDone" type="button" disabled>完成连接</button><button id="setupSkip" type="button">稍后</button></div>
+    <details class="setup-privacy"><summary>数据与隐私</summary><p>非 OpenAI 官方产品。读取本机 Codex 任务元数据与日志，并缓存状态；不修改登录配置。查询会启动 Codex 自带的 app-server，Codex 可能记录运行日志。</p></details>
+    <output id="setupMessage" role="status"></output>
+  </section>
+  <main id="panel" class="bubble-shell" aria-label="Meta Bot 任务状态">
+    <header class="bubble-header">
+      <div class="brand-block">
+        <div class="brand-line"><span id="headerDot" class="mini-dot offline" role="img" tabindex="0" aria-label="Codex 未连接"></span><strong>Codex Bot</strong></div>
+      </div>
+      <nav class="toolbar" aria-label="面板工具">
+        <button id="diagnosticsButton" class="icon-button" type="button" aria-label="设置与连接诊断" aria-expanded="false" data-tooltip="设置与连接诊断"><i data-lucide="settings"></i></button>
+        <button id="refreshButton" class="icon-button" type="button" aria-label="刷新状态" data-tooltip="刷新状态"><i data-lucide="refresh-cw"></i></button>
+        <button id="closeButton" class="icon-button" type="button" aria-label="收起气泡" data-tooltip="收起气泡"><i data-lucide="x"></i></button>
+        <button id="quitButton" class="icon-button danger" type="button" aria-label="退出 Meta Bot" data-tooltip="退出 Meta Bot"><i data-lucide="power"></i></button>
+      </nav>
+    </header>
+    <section class="task-overview" hidden aria-label="进行中的任务"><strong id="activeCount">0</strong></section>
+    <section id="diagnostics" hidden aria-label="设置">
+      <nav class="settings-tabs" aria-label="设置菜单">
+        <button type="button" class="settings-tab active" data-settings-tab="connection">连接与同步</button>
+        <button type="button" class="settings-tab" data-settings-tab="appearance">外观皮肤</button>
+        <button type="button" class="settings-tab" data-settings-tab="motion">动作与随机</button>
+        <button type="button" class="settings-tab" data-settings-tab="updates">关于更新</button>
+      </nav>
+      <div class="settings-section" data-settings-section="updates" hidden>
+        <strong>Codex Bot <span id="updateVersion"></span></strong>
+        <output id="updateStatus" role="status">等待检查</output>
+        <label><input id="updateAutoCheck" type="checkbox" checked> 自动检查更新</label>
+        <label><input id="updateAutoDownload" type="checkbox"> 自动下载更新包</label>
+        <label><input id="updateNotifications" type="checkbox" checked> 更新提醒</label>
+        <progress id="updateProgress" max="100" hidden aria-label="下载进度"></progress>
+        <p id="updateNotes" hidden></p>
+        <div class="update-actions">
+          <button id="updateCheck" type="button"><i data-lucide="refresh-cw"></i>检查更新</button>
+          <button id="updateDownload" type="button" hidden><i data-lucide="download"></i>下载</button>
+          <button id="updateInstall" type="button" hidden><i data-lucide="package-check"></i>安装</button>
+          <button id="updateLater" type="button" hidden>明天提醒</button>
+          <button id="updateIgnore" type="button" hidden>忽略此版</button>
+        </div>
+        <div id="updateConfirm" hidden><p>安装会退出并重启机器人，Codex 任务不受影响。</p><button id="updateConfirmInstall" type="button">确认安装并重启</button><button id="updateCancelInstall" type="button">取消</button></div>
+      </div>
+      <div class="settings-section" data-settings-section="appearance" hidden>
+        <label>皮肤<select id="skinSelect"><option value="green">草木绿</option><option value="ocean">深海蓝</option><option value="sunset">日落橙</option><option value="pink">樱花粉</option><option value="violet">紫罗兰</option><option value="lemon" selected>柠檬黄</option><option value="night">暗夜</option><option value="neon">霓虹</option></select></label>
+        <label>形态<select id="shapeSelect"><option value="morph">情绪变形</option><option value="circle">固定圆形</option><option value="random">自由变形</option><option value="square">软方形</option><option value="triangle">软三角</option><option value="star">星星</option><option value="cloud">云朵</option><option value="hexagon">六边形</option></select></label>
+        <label><input id="emojiMask" type="checkbox" checked> 整脸面具</label>
+        <label><input id="maskAuto" type="checkbox" checked> 自动佩戴（任务与互动）</label>
+        <label>面具材质<select id="maskStyle"><option value="sticker">立体贴纸</option><option value="paper">纸质面具</option><option value="holo">全息面具</option></select></label>
+        <label>面具最小间隔<select id="maskFrequency"><option value="rare">偶尔 · 120 秒</option><option value="normal" selected>标准 · 65 秒</option><option value="lively">活泼 · 40 秒</option></select></label>
+      </div>
+      <div class="settings-section" data-settings-section="motion" hidden>
+        <label>动画强度<select id="motionSelect"><option value="full">丰富</option><option value="soft">标准</option><option value="reduced">低动态</option></select></label>
+        <label><input id="particlesToggle" type="checkbox" checked> 粒子与庆祝特效</label>
+        <label><input id="randomToggle" type="checkbox" checked> 随机动作</label>
+      </div>
+      <div class="settings-section" data-settings-section="connection">
+      <button id="setupReopen" type="button">连接向导与修复</button>
+      <label><input id="retainCompletions" type="checkbox" checked> 启用完成提醒（查看不清除，确认后清除）</label>
+      <label><input id="autoCloseCompletions" type="checkbox"> 自动关闭完成提醒</label>
+      <label>自动关闭时间<select id="completionCloseMinutes"><option value="1">1 分钟</option><option value="5">5 分钟</option><option value="15" selected>15 分钟</option><option value="30">30 分钟</option></select></label>
+      <output id="completionConflict" role="status"></output>
+      <label><input id="boardAnimation" type="checkbox" checked> 任务板甩出与催促动画</label>
+      <label>未处理催促<select id="completionEscalation"><option value="off">关闭</option><option value="gentle">轻柔</option><option value="standard" selected>标准</option><option value="angry">生气</option></select></label>
+      <label><input id="enabled-codex" type="checkbox"> Codex</label><output id="health-codex"></output>
+      </div>
+    </section>
+    <div class="task-scroll"><div id="taskList"></div><div id="empty" class="empty"></div></div>
+    <section id="detail" hidden>
+      <div id="taskStatus"></div><strong id="taskTitle"></strong><div id="taskMeta"></div>
+      <div class="notice-actions">
+        <button id="copyButton" class="icon-button action" aria-label="复制任务链接" data-tooltip="复制任务链接"><i data-lucide="copy"></i></button>
+        <button id="snoozeButton" class="icon-button action" aria-label="5 分钟后提醒" data-tooltip="5 分钟后提醒"><i data-lucide="alarm-clock"></i></button>
+        <button id="ackButton" class="icon-button action confirm" aria-label="确认提醒" data-tooltip="确认提醒"><i data-lucide="check"></i></button>
+        <button id="openButton" class="icon-button action" aria-label="查看任务" data-tooltip="查看任务"><i data-lucide="external-link"></i></button>
+      </div>
+    </section>
+    <output id="feedback" role="status"></output>
+  </main>
+  <script src="../node_modules/lucide/dist/umd/lucide.min.js"></script>
+  <script src="./appearance.js"></script><script src="./panel-motion.js"></script><script src="./panel.js"></script>
+  <script src="./onboarding.js"></script>
+  <script src="./updates.js"></script>
+</body>
+</html>

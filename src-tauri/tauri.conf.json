@@ -1,0 +1,14 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Codex Bot",
+  "version": "0.3.0",
+  "identifier": "com.metabot.companion",
+  "plugins": { "updater": { "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDkxMDgxQzU4OEI4OUMwQjUKUldTMXdJbUxXQndJa2N2c3pVdHlrYk9rZzBCdTBLbWF3ZU9IcVdhSzBuSnhaRjB3eVUxR3ozMUMK", "endpoints": ["https://github.com/WuXinbo-bo/Codex-Bot/releases/latest/download/latest.json"], "windows": { "installMode": "passive" } } },
+  "build": { "frontendDist": "../dist/tauri", "beforeBuildCommand": "node scripts/build-tauri.cjs", "beforeDevCommand": "node scripts/build-tauri.cjs" },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [],
+    "security": { "csp": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src ipc: http://ipc.localhost; object-src 'none'; base-uri 'none'; frame-src 'none'" }
+  },
+  "bundle": { "active": true, "createUpdaterArtifacts": true, "targets": ["nsis"], "shortDescription": "Codex task companion", "windows": { "webviewInstallMode": { "type": "downloadBootstrapper" } } }
+}

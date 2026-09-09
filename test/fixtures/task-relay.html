@@ -1,0 +1,10 @@
+<!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>任务接力预览</title>
+<style>body{font:14px system-ui;background:#eef3ef;padding:24px}iframe{border:0;width:320px;height:80px}button{padding:8px;margin:6px}</style>
+<h1>任务接力</h1><p>模拟数据，不操作真实任务。查看或确认后接下一张；左右切换不删除记录。</p>
+<button id="add">新增完成任务</button><button id="fail">下一次操作模拟失败</button><iframe title="完成任务接力" id="preview"></iframe>
+<script>
+let items=[1,2,3].map(i=>({id:String(i),title:`任务 ${i} 已完成`})),serial=3,fail=false,update;
+document.getElementById('add').onclick=()=>{items.push({id:String(++serial),title:`任务 ${serial} 已完成`});update?.(items)};
+document.getElementById('fail').onclick=()=>fail=true;
+fetch('../../src/completions.html').then(r=>r.text()).then(html=>{const bridge=`<base href="/src/"><script>window.metaBot={onCompletions(fn){parent.update=fn;fn(parent.items)},async completionAction(id,action){if(parent.fail){parent.fail=false;return{ok:false,error:'模拟打开失败，请重试'}}if(action==='open')return{ok:true};parent.items=parent.items.filter(i=>i.id!==id);parent.update(parent.items);return{ok:true}}};<`+'/script>';Object.defineProperties(window,{items:{get:()=>items,set:v=>items=v},update:{get:()=>update,set:v=>update=v},fail:{get:()=>fail,set:v=>fail=v}});document.getElementById('preview').srcdoc=html.replace('<head>','<head>'+bridge)});
+</script></html>

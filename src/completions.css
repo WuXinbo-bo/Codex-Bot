@@ -1,0 +1,47 @@
+* { box-sizing: border-box; }
+html, body { margin: 0; height: 100%; background: transparent; overflow: hidden; }
+body { padding: 5px; font: 12px "Segoe UI", "Microsoft YaHei", sans-serif; color: #233b2e; }
+main { height: 100%; padding: 0 5px; background: rgba(255,255,255,.98); border: 1px solid #dce6df; border-radius: 8px; display: flex; flex-direction: column; }
+body[data-phase="entering"] main { animation: panel-enter var(--panel-duration,360ms) cubic-bezier(.2,.8,.2,1); }
+body[data-phase="leaving"] main { animation: panel-leave var(--panel-duration,240ms) ease-in; }
+@keyframes panel-enter { from{opacity:0;transform:translateY(10px) scale(.94)} 70%{transform:translateY(-2px) scale(1.01)} to{opacity:1;transform:none} }
+@keyframes panel-leave { from{opacity:1;transform:none} to{opacity:0;transform:translateY(7px) scale(.96)} }
+#completedList { overflow-y: auto; min-height: 0; flex: 1; }
+.completion { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 6px; height: 36px; transform-origin: 50% 50%; }
+.completion + .completion { border-top: 1px solid #e5ebe7; }
+.status { font-size: 11px; color: #527060; white-space: nowrap; }
+.title { line-height: 18px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.completion.failed .title { color: #ac3636; }
+.actions { display: flex; gap: 4px; }
+button { position: relative; width: 28px; height: 28px; border: 1px solid #e0e8e2; background: #f4f8f5; color: #22613c; border-radius: 6px; display: grid; place-items: center; cursor: pointer; }
+button svg { width: 15px; height: 15px; }
+button:hover { background: #dfefe3; }
+button:focus-visible { outline: 2px solid #25945a; }
+button:disabled { opacity: .5; cursor: wait; }
+#error { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.relay-navigation{display:flex;align-items:center;justify-content:center;gap:12px;height:26px;border-top:1px solid #e5ebe7;color:#63786b;font-size:11px;}
+.relay-navigation button{width:22px;height:22px;background:transparent;border:0;}
+.relay-navigation[hidden],.completion[hidden]{display:none;}
+.completion.arriving{animation:board-throw .48s cubic-bezier(.2,.8,.2,1);}
+@keyframes relay-arrive{from{transform:translateX(12px);opacity:.3}to{transform:translateX(0);opacity:1}}
+main[data-stage="1"] .completion{animation:relay-nudge .8s ease-in-out 1}
+main[data-stage="2"] .completion{animation:relay-shake .48s ease-in-out 1}
+main[data-stage="3"] .completion,main[data-stage="4"] .completion{animation:relay-shake .48s ease-in-out 3}
+main[data-stage="4"] .status{color:#b23832;font-weight:600}
+.title{cursor:grab;touch-action:none;user-select:none}.title:active{cursor:grabbing}
+@keyframes board-throw{0%{transform:translate(35px,8px) rotate(8deg) scale(.7);opacity:0}65%{transform:translate(-3px,0) rotate(-1deg) scale(1.01);opacity:1}100%{transform:none;opacity:1}}
+.no-animation .completion{animation:none!important}
+@media(prefers-reduced-motion:reduce){.completion{animation:none!important}}
+@keyframes relay-nudge{0%,82%,100%{transform:translateX(0)}88%{transform:translateX(-3px)}94%{transform:translateX(3px)}}
+@keyframes relay-shake{0%,100%{transform:translateX(0) rotate(0)}25%{transform:translateX(-7px) rotate(-1deg)}50%{transform:translateX(7px) rotate(1deg)}75%{transform:translateX(-5px) rotate(-.5deg)}}
+@media(prefers-reduced-motion:reduce){.completion.arriving{animation:none;}}
+/* Animate the entire white board, not its clipped text row. */
+.completion.arriving,main[data-stage] .completion{animation:none}
+main{transform-origin:95% 50%}
+main.board-arriving{animation:board-launch .9s cubic-bezier(.2,.7,.2,1)}
+@keyframes board-launch{0%{transform:translateX(20px) scale(.7);opacity:0}60%{transform:scale(.96) rotate(-.7deg);opacity:1}80%{transform:scale(.99) rotate(.5deg)}100%{transform:none}}
+main[data-stage="1"]{animation:board-tug 1s ease-in-out 2}
+main[data-stage="2"],main[data-stage="3"],main[data-stage="4"]{animation:board-tug .5s ease-in-out 4}
+@keyframes board-tug{0%,100%{transform:none}25%{transform:translateX(-3px) rotate(-.5deg)}75%{transform:translateX(3px) rotate(.5deg)}}
+main.no-animation{animation:none!important}
+@media(prefers-reduced-motion:reduce){main{animation:none!important}}

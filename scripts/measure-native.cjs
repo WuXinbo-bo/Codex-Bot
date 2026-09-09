@@ -1,0 +1,12 @@
+const fs = require('node:fs');
+const path = require('node:path');
+const crypto = require('node:crypto');
+const root = path.resolve(__dirname,'..');
+const size = folder => fs.readdirSync(folder,{withFileTypes:true}).reduce((sum,e)=>sum+(e.isDirectory()?size(path.join(folder,e.name)):fs.statSync(path.join(folder,e.name)).size),0);
+const release=require('../src-tauri/tauri.conf.json');
+const artifacts=['src-tauri/target/release/meta-bot.exe',`src-tauri/target/release/bundle/nsis/${release.productName}_${release.version}_x64-setup.exe`].map(file=>{const bytes=fs.readFileSync(path.join(root,file));return {file,bytes:bytes.length,MiB:Number((bytes.length/1048576).toFixed(3)),sha256:crypto.createHash('sha256').update(bytes).digest('hex')};});
+const previous=size(path.join(root,'node_modules/electron/dist'));
+const report={measuredAt:new Date().toISOString(),platform:'windows-x64',artifacts,previousElectronRuntimeBytes:previous,exeReductionPercent:Number(((1-artifacts[0].bytes/previous)*100).toFixed(2)),exclusions:['shared system WebView2','installed Codex','development dependencies and build cache','runtime memory']};
+fs.mkdirSync(path.join(root,'output/release'),{recursive:true});
+fs.writeFileSync(path.join(root,'output/release/size-report.json'),JSON.stringify(report,null,2)+'\n');
+console.log(JSON.stringify(report,null,2));

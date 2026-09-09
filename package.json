@@ -1,0 +1,34 @@
+{
+  "name": "meta-bot",
+  "version": "0.3.0",
+  "license": "Apache-2.0",
+  "private": true,
+  "description": "Meta Bot companion for Meta Code and Codex task status",
+  "main": "desktop/entry.cjs",
+  "scripts": {
+    "start": "node scripts/start.cjs",
+    "dev:native": "node scripts/tauri.cjs dev",
+    "start:electron": "cross-env METABOT_LEGACY=1 electron .",
+    "build:native": "node scripts/tauri.cjs build",
+    "check:native": "node scripts/tauri.cjs check",
+    "test:native": "node scripts/test-native.cjs",
+    "size:native": "node scripts/measure-native.cjs",
+    "release:manifest": "node scripts/release-manifest.cjs",
+    "release:check": "node scripts/release-check.cjs",
+    "test": "node --test test/*.test.cjs",
+    "test:desktop": "cross-env METABOT_HOME=.runtime/test-home METABOT_TEST_EXIT_MS=2500 electron desktop/main.cjs",
+    "test:interaction": "cross-env METABOT_HOME=.runtime/interaction-home METABOT_INTERACTION_TEST=1 electron desktop/main.cjs",
+    "test:connection": "cross-env METABOT_HOME=.runtime/connection-home METABOT_CONNECTION_TEST=1 electron desktop/main.cjs"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "cross-env": "^7.0.3",
+    "electron": "^42.11.2",
+    "esbuild": "^0.28.2",
+    "events": "^3.3.0"
+  },
+  "dependencies": {
+    "lucide": "^0.468.0",
+    "uiohook-napi": "^1.5.5"
+  }
+}

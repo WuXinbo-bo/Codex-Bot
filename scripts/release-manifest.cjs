@@ -1,0 +1,12 @@
+const fs=require('node:fs'),path=require('node:path');
+const config=require('../src-tauri/tauri.conf.json'),source=require('../release/update.json');
+const folder=path.resolve('src-tauri/target/release/bundle/nsis');
+const name=`${config.productName}_${config.version}_x64-setup.exe`;
+const signature=fs.readFileSync(path.join(folder,name+'.sig'),'utf8').trim();
+if(!signature||!fs.statSync(path.join(folder,name)).size)throw Error('Missing signed installer');
+const manifest={version:config.version,notes:fs.readFileSync('CHANGELOG.md','utf8').split(/\n## /)[1]?.split('\n').slice(1).join('\n').trim()||'Stability improvements',pub_date:new Date().toISOString(),platforms:{'windows-x86_64':{signature,url:`https://github.com/${source.repository}/releases/download/v${config.version}/${encodeURIComponent(name)}`}}};
+fs.mkdirSync('release-artifacts',{recursive:true});
+fs.copyFileSync(path.join(folder,name),path.join('release-artifacts',name));
+fs.copyFileSync(path.join(folder,name+'.sig'),path.join('release-artifacts',name+'.sig'));
+fs.writeFileSync('release-artifacts/latest.json',JSON.stringify(manifest,null,2)+'\n');
+console.log(`Prepared signed release v${config.version}`);
