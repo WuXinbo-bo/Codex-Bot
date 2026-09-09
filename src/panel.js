@@ -29,33 +29,11 @@
   for(const id of ['librarySearch','libraryFavorites'])$(id).oninput=()=>{libraryPage=1;renderLibrary();};
   $('libraryPrev').onclick=()=>{libraryPage--;renderLibrary();};$('libraryNext').onclick=()=>{libraryPage++;renderLibrary();};
   document.querySelector('[data-settings-tab="library"]').addEventListener('click',async()=>{try{const value=await window.metaBot?.getPerformanceLibrary?.();libraryItems=value?.items||[];renderLibrary();}catch(error){feedback(error.message,true);}});
-  for(const [id,meta] of Object.entries(MetaBotAppearance.ART_STYLES))$('artStyle').add(new Option(meta.label,id));
-  for(const [id,meta] of Object.entries(MetaBotAppearance.PERSONALITIES))$('personality').add(new Option(meta.label,id));
-  for(const [group,label] of [['base','常驻眼型'],['emotion','情境眼神']]){
-    const options=document.createElement('optgroup');options.label=label;
-    for(const [id,meta] of Object.entries(MetaBotAppearance.EYE_PRESETS))if(meta.group===group)options.append(new Option(meta.label,id));
-    $('eyeStyle').append(options);
-  }
   window.metaBot?.getNotificationSettings?.().then(settings => {
     if (!settings) return;
     $('retainCompletions').checked = settings.retainCompletions;
     if(settings.completionEscalation) $('completionEscalation').value=settings.completionEscalation;
-    const a = settings.appearance || {};
-    $('artStyle').value=a.artStyle||'classic';$('personality').value=a.personality||'attentive';$('storiesToggle').checked=a.stories!==false;
-    for(const [key,id] of Object.entries({skin:'skinSelect',shape:'shapeSelect',motion:'motionSelect',eyeStyle:'eyeStyle',maskStyle:'maskStyle',maskFrequency:'maskFrequency'}))if(a[key])$(id).value=a[key];
-    if (a.particles != null) $('particlesToggle').checked = a.particles;
-    if (a.random != null) $('randomToggle').checked = a.random;
-    $('maskAuto').checked=a.maskAuto!==false;
-    $('emojiMask').checked=a.masks!==false&&a.emoji!==false;
   }).catch(error => feedback(error.message, true));
-  const appearanceControls = ['skinSelect','shapeSelect','emojiMask','motionSelect','particlesToggle','randomToggle','maskAuto','maskStyle','maskFrequency','eyeStyle','artStyle','personality','storiesToggle'];
-  const saveAppearance = async () => {
-    const value = { skin: $('skinSelect').value, shape: $('shapeSelect').value, emoji: $('emojiMask').checked, motion: $('motionSelect').value, particles: $('particlesToggle').checked, random: $('randomToggle').checked };
-    Object.assign(value,{eyeStyle:$('eyeStyle').value,masks:$('emojiMask').checked,maskAuto:$('maskAuto').checked,maskStyle:$('maskStyle').value,maskFrequency:$('maskFrequency').value});
-    Object.assign(value,{artStyle:$('artStyle').value,personality:$('personality').value,stories:$('storiesToggle').checked});
-    try { if (!window.metaBot?.setAppearance) throw new Error('当前预览不支持保存外观'); const result = await window.metaBot.setAppearance(value); if (!result?.ok) throw new Error(result?.error || '保存失败'); feedback('外观与动作设置已保存'); } catch (error) { feedback(error.message, true); }
-  };
-  for (const id of appearanceControls) $(id).onchange = saveAppearance;
   $('retainCompletions').onchange = async event => {
     const toggle = event.target; const previous = !toggle.checked; toggle.disabled = true;
     try { const result = await window.metaBot?.setRetainCompletions?.(toggle.checked); if (!result?.ok) throw new Error(result?.error || '保存失败'); }

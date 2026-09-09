@@ -106,7 +106,13 @@
     let appearance = Appearance?.normalize(options.appearance) || {};
     let bodyShape='circle', oldShape='circle', shapeAt=-Infinity, shapeDue=0, maskArtKey='';
     const maskController=Masks?.createController({now:nowTime,random});
-    maskController?.configure({...appearance,coordinated:true});
+    let maskPreferenceKey='';
+    function configureMasks(value){
+      const key=JSON.stringify(['masks','emoji','maskAuto','maskFrequency','random'].map(name=>value[name]));
+      if(key===maskPreferenceKey)return;
+      maskPreferenceKey=key;maskController?.configure({...value,coordinated:true});
+    }
+    configureMasks(appearance);
     let performanceContext={};
     let current = Rig.getExpression(expression);
     let source = current;
@@ -406,10 +412,14 @@
     function setExpression(name, settings = {}) {
       const now = nowTime();
       samplePose(now);
+      if(settings.appearance){
+        const next=Appearance.normalize(settings.appearance);
+        if(next.shape!==appearance.shape)shapeDue=0;
+        appearance=next;configureMasks(appearance);
+      }
       expression = Rig.EXPRESSIONS[name] ? name : "neutral";
       if(Appearance && (!performanceContext.theater || shapeDue===0) && (now>=shapeDue || appearance.shape==='circle')) {
-        const artShape=Appearance.ART_STYLES[appearance.artStyle]?.shape;
-        const pool=appearance.shape==='random'?Appearance.SHAPES:artShape?[artShape]:Appearance.pool(expression);
+        const pool=appearance.shape==='random'?Appearance.SHAPES:Appearance.pool(expression);
         oldShape=bodyShape;
         const choices=pool.filter(s=>s!==bodyShape);
         bodyShape=Appearance.SHAPES.includes(appearance.shape)?appearance.shape:appearance.random?choices[Math.floor(random()*choices.length)] || pool[0]:pool[0];
@@ -473,7 +483,7 @@
     function setAppearance(value) {
       const next=Appearance.normalize(value);
       if(Object.keys(next).every(key=>next[key]===appearance[key]))return;
-      appearance=next;maskController?.configure({...appearance,coordinated:true});shapeDue=0;
+      appearance=next;configureMasks(appearance);shapeDue=0;
       setExpression(expression,{pose:authoredPose,performanceId,performanceMs});wake();
     }
     function resetIdle() { nextBlink = Math.min(nextBlink, nowTime() + 3200); wake(); }
@@ -490,7 +500,7 @@
       clearMask(immediate=false){maskController?.clear(immediate);wake();},
       getMaskState:()=>maskController?.state(),
       setGaze, clearGaze, setMotion, setMotionLevel, setActive, resetIdle, destroy,
-      getState: () => ({ expression, motionLevel, active, transitioning: transitionDuration > 0, gaze: { ...gaze }, motion: { ...motion }, pose: Rig.interpolate(current, current, 0) }) };
+      getState: () => ({ expression, appearance:{...appearance},shape:bodyShape,motionLevel, active, transitioning: transitionDuration > 0, gaze: { ...gaze }, motion: { ...motion }, pose: Rig.interpolate(current, current, 0) }) };
   }
   return { create, FX_PATHS };
 });

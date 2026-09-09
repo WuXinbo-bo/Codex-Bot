@@ -64,6 +64,8 @@
     const standbyAfter = Math.max(intervalMs, Number(options.standbyAfter || 60_000));
     const sleepAfter = Math.max(standbyAfter, Number(options.sleepAfter || 180_000));
     let preferences=Appearance.normalize(options.appearance),library={},requestedReplay=null;
+    const appearanceDirector=Appearance.createDirector(preferences,{now:options.appearanceNow||now,random:options.appearanceRandom||createSeededRandom((options.seed??now())+7919)});
+    let resolvedAppearance=appearanceDirector.sample();
     const memory=Memory.create(now);
     const personality=()=>Appearance.PERSONALITIES[preferences.personality];
     const eligibleFrequency=name=>library[name]?.frequency!=='less'||random()<.2;
@@ -267,7 +269,7 @@
           theaterCounts.set(name, (theaterCounts.get(name) || 0) + 1);
           activityHistory.set(name, now());
           lastTheater = name;
-          nextTheaterAt = now() + (status === "running" ? 90000 + random()*60000 : 45000 + random()*45000);
+          nextTheaterAt = now() + (status === "running" ? 90000 + random()*60000 : 45000 + random()*45000)*personality().interval;
         } else nextTheaterAt = now() + 15000;
       }
       if (activityTimer !== null) unschedule(activityTimer);
@@ -301,7 +303,7 @@
         options.onPerformance?.(true);
       }
       if (!resume && !Activities.THEATERS[name]) activityHistory.set(name, now());
-      nextActivityAt = now() + 12000 + random() * 8000;
+      nextActivityAt = now() + (12000 + random() * 8000)*personality().interval;
       if(Activities.THEATERS[name]){
         activity.tempo=resume?.tempo||(.96+random()*.08);
         options.onPerformance?.(true);
@@ -313,7 +315,7 @@
         theaterEvent(resume ? "resumed" : "started", name);
         nextActivityAt=now()+15000*activity.tempo+15000;
       }
-      if(!resume&&priority<60)activity.tempo*=personality().tempo*Appearance.ART_STYLES[preferences.artStyle].tempo;
+      if(!resume&&priority<60)activity.tempo*=personality().tempo;
       const reminderKey = priority === 50 ? taskKey : null;
       const advance = () => {
         if (!activity) return;
@@ -358,7 +360,8 @@
         settings={...settings,pose:{...settings.pose,gaze:{x:side==='right'?.8:-.8,y:.2},arms:{[side]:{x:4,y:70,bendX:2,bendY:83,opacity:1},[other]:{opacity:0}}}};
       }
       current = name;
-      setExpression(name, { duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs, auto: settings.auto !== false });
+      resolvedAppearance=appearanceDirector.sample({expression:name,boundary:!activity||activity.index===1,blocked:dragging||Boolean(suspendedActivity)||(panelContact&&now()<panelContact.until)||transient?.priority>=50||motionLevel==='reduced'||options.isAppearanceBlocked?.()});
+      setExpression(name, { appearance:resolvedAppearance, duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs, auto: settings.auto !== false });
       return true;
     }
 
@@ -746,9 +749,17 @@
       if(!randomEnabled&&(Activities.THEATERS[activity?.name]||Activities.NARRATIVES[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
     }
     options.onRandomControl?.(setRandomEnabled);
-    options.onBehaviorControl?.(value=>{preferences=Appearance.normalize(value);if(!preferences.stories){memory.reset();if(Activities.NARRATIVES[activity?.name])restoreBase();}});
+    options.onAppearanceControl?.({snapshot:()=>appearanceDirector.snapshot(),shuffle:()=>{
+      resolvedAppearance=appearanceDirector.sample({expression:current||'neutral',force:true});
+      options.onResolvedAppearance?.(resolvedAppearance);return resolvedAppearance;
+    }});
+    options.onBehaviorControl?.(value=>{
+      preferences=Appearance.normalize(value);appearanceDirector.configure(preferences);
+      resolvedAppearance=appearanceDirector.sample({blocked:true});options.onResolvedAppearance?.(resolvedAppearance);
+      if(!preferences.stories){memory.reset();if(Activities.NARRATIVES[activity?.name])restoreBase();}
+    });
     setMotionLevel(motionLevel);
-    options.onPerformanceDiagnostics?.(()=>({history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
+    options.onPerformanceDiagnostics?.(()=>({history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
     return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 

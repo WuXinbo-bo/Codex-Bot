@@ -46,8 +46,8 @@
   <h1>Meta Bot M1</h1>
   <p><a href="task-relay.html">任务接力交互演示：逐条查看 / 确认 / 保留切换</a></p>
   <p id="catalogCount"></p>
-  <div class="toolbar"><label>整套画风 <select id="artPreview"></select></label><label>眼睛风格 <select id="eyePreview"><option value="auto">随场景变化</option></select></label><label>性格节奏 <select id="personalityPreview"></select></label></div>
-  <div class="toolbar"><label>预览皮肤 <select id="skinPreview"></select></label><label>身体形态 <select id="shapePreview"></select></label><label>动态 <select id="motionPreview"><option value="full">丰富</option><option value="soft">柔和</option><option value="reduced">低动态</option></select></label></div>
+  <div class="toolbar"><label>整套画风 <select id="artPreview"><option value="auto">自动轮换</option></select></label><label>眼睛风格 <select id="eyePreview"><option value="auto">自动变化</option></select></label><label>陪伴模式 <select id="companionPreview"></select></label></div>
+  <div class="toolbar"><label>预览皮肤 <select id="skinPreview"><option value="auto">随机换色</option></select></label><label>身体形态 <select id="shapePreview"></select></label><label><input id="reducedPreview" type="checkbox">减少动态</label></div>
   <div class="toolbar"><select id="activitySelect" aria-label="活动"></select><button id="play" aria-label="播放">▶</button><select id="statusSelect" aria-label="Codex 状态"><option value="running">Codex 正在工作</option><option value="needs_attention">Codex 需要处理</option><option value="completed">Codex 已完成</option><option value="failed">Codex 执行失败</option><option value="offline">空闲</option></select></div>
   <div id="preview" class="avatar"></div>
   <p id="activityCount"></p>
@@ -140,7 +140,7 @@
     }
     const preview = MetaBotM1.create(document.getElementById('preview'));
     let configurePreview=()=>{};
-    const previewDirector = MetaBotExpressionController.createExpressionController({ onBehaviorControl:fn=>configurePreview=fn,setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
+    const previewDirector = MetaBotExpressionController.createExpressionController({ onResolvedAppearance:preview.setAppearance,onBehaviorControl:fn=>configurePreview=fn,setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
     previewDirector.update('running', 1);
     let previewTimer = null;
     let interactive = true;
@@ -251,8 +251,8 @@
     window.review = { instances, live, director, preview, previewDirector, play, scenario, startInteractive };
     const A=MetaBotAppearance,M=MetaBotMaskSystem;
     for(const [id,meta] of Object.entries(A.ART_STYLES)){document.getElementById('artPreview').add(new Option(meta.label,id));tile('artStyles','special_covert',meta.label).setAppearance({artStyle:id,shape:'morph',maskAuto:false});}
-    for(const [id,meta] of Object.entries(A.PERSONALITIES))document.getElementById('personalityPreview').add(new Option(meta.label,id));
-    document.getElementById('personalityPreview').value='attentive';
+    for(const [id,meta] of Object.entries(A.COMPANION_MODES))document.getElementById('companionPreview').add(new Option(meta.label,id));
+    document.getElementById('companionPreview').value='natural';
     document.getElementById('catalogCount').textContent=`${Object.keys(MetaBotM1Rig.EXPRESSIONS).length} 神态 / ${Object.keys(MetaBotActivities.CLIPS).length} 活动 / ${Object.keys(A.SKINS).length} 皮肤 / ${A.SHAPES.length} 形态 / ${M.names.length} 面具 / ${M.CHAINS.length} 佩戴动作 / ${MetaBotM1Rig.ACCESSORIES.length} 配件`;
     for(const name of Object.keys(A.SKINS)) {document.getElementById('skinPreview').add(new Option(name,name));const bot=tile('skins','neutral',name);bot.setAppearance({skin:name,shape:'circle',maskAuto:false});bot.setMotionLevel('reduced');}
     document.getElementById('skinPreview').value='lemon';
@@ -260,9 +260,9 @@
     for(const name of A.SHAPES){const bot=tile('shapes','neutral',name);bot.setAppearance({shape:name,maskAuto:false});bot.setMotionLevel('reduced');}
     for(const name of MetaBotM1Rig.ACCESSORIES)tile('accessoryTiles','neutral',name).setExpression('neutral',{duration:0,pose:{accessories:{[name]:{opacity:1}}}});
     for(const [id,meta] of Object.entries(A.EYE_PRESETS))document.getElementById('eyePreview').add(new Option(meta.label,id));
-    const settings=()=>({eyeStyle:document.getElementById('eyePreview').value,artStyle:document.getElementById('artPreview').value,personality:document.getElementById('personalityPreview').value,skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
-    function applyPreview(){preview.setAppearance(settings());configurePreview(settings());preview.setMotionLevel(document.getElementById('motionPreview').value);}
-    for(const id of ['skinPreview','shapePreview','motionPreview','artPreview','personalityPreview','eyePreview'])document.getElementById(id).onchange=applyPreview;
+    const settings=()=>A.normalize({eyeStyle:document.getElementById('eyePreview').value,artStyle:document.getElementById('artPreview').value,companionMode:document.getElementById('companionPreview').value,reducedMotion:document.getElementById('reducedPreview').checked,skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
+    function applyPreview(){const value=settings();configurePreview(value);preview.setMotionLevel(value.motion);previewDirector.setMotionLevel(value.motion);}
+    for(const id of ['skinPreview','shapePreview','reducedPreview','artPreview','companionPreview','eyePreview'])document.getElementById(id).onchange=applyPreview;
     for(const id of M.names)document.getElementById('maskSelect').add(new Option(M.MASKS[id].label,id));
     const chainLabels=['身后取出','探头试戴','翻转戴上','歪戴扶正','滑落扶正','花式举起'];
     M.CHAINS.forEach((id,i)=>document.getElementById('maskChain').add(new Option(chainLabels[i],id)));

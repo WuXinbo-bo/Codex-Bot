@@ -40,7 +40,7 @@
     const selected=normalizeEye(appearance.eyeStyle),explicit=selected!=='auto';
     const authoredId=normalizeEye(authored),context=EYE_PRESETS[authoredId]?.group==='emotion'?authoredId:EYE_CONTEXT[expression];
     const id=explicit?selected:normalizeEye(ART_STYLES[appearance.artStyle]?.eye||(EYE_PRESETS[authoredId]?.group==='base'?authoredId:'classic'));
-    const emotion=EYE_PRESETS[id]?.group==='emotion'?id:explicit?null:context;
+    const emotion=EYE_PRESETS[id]?.group==='emotion'?id:context;
     const baseId=EYE_PRESETS[id]?.base||id;
     const base=EYE_PRESETS[baseId]||EYE_PRESETS.classic,detail=EYE_PRESETS[emotion]||{};
     return {id,baseId,emotion,eye:base.eye||{},pupil:base.pupil||{},design:{...base.design,...detail.design},mood:detail.mood||{},gaze:explicit?detail.gaze:null,tempo:detail.tempo||1};
@@ -55,11 +55,59 @@
     rubber:{label:'橡皮管',eye:'retro',shape:null,tempo:1.1,amplitude:1.15}
   };
   const PERSONALITIES={quiet:{label:'安静搭档',interval:1.5,tempo:1.1,social:.45},attentive:{label:'认真助手',interval:1,tempo:1,social:.7},playful:{label:'俏皮伙伴',interval:.85,tempo:1.05,social:1}};
+  const COMPANION_MODES={quiet:{label:'安静',personality:'quiet',motion:'soft'},natural:{label:'自然',personality:'attentive',motion:'full'},lively:{label:'活泼',personality:'playful',motion:'full'}};
   function normalizeBase(value = {}) {
-    return {eyeStyle:normalizeEye(value.eyeStyle),skin: Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
+    return {eyeStyle:normalizeEye(value.eyeStyle),skin: value.skin==='auto'||Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
   }
   function normalize(value={}) {
-    return {...normalizeBase(value),artStyle:Object.hasOwn(ART_STYLES,value.artStyle)?value.artStyle:'classic',personality:Object.hasOwn(PERSONALITIES,value.personality)?value.personality:'attentive',stories:value.stories!==false};
+    const companionMode=Object.hasOwn(COMPANION_MODES,value.companionMode)?value.companionMode:value.personality==='quiet'||value.motion==='soft'?'quiet':value.personality==='playful'?'lively':'natural';
+    const reducedMotion=value.reducedMotion===true||(value.reducedMotion==null&&value.motion==='reduced');
+    return {...normalizeBase(value),schemaVersion:2,artStyle:Object.hasOwn(ART_STYLES,value.artStyle)?value.artStyle:'auto',companionMode,reducedMotion,motion:reducedMotion?'reduced':COMPANION_MODES[companionMode].motion,personality:COMPANION_MODES[companionMode].personality,stories:value.stories!==false};
+  }
+  function migrate(value={}) {
+    // Older releases persisted the default classic style without recording user intent.
+    return normalize(value.schemaVersion===2?value:{...value,artStyle:value.artStyle==='classic'?'auto':value.artStyle});
+  }
+
+  function createDirector(value={},options={}) {
+    const now=options.now||Date.now,random=options.random||Math.random;
+    let preferences=normalize(value),current={},due={},history={},counts={},events=[];
+    const ranges={artStyle:[120000,300000],eyeStyle:[30000,90000],shape:[10000,20000],skin:[180000,480000]};
+    const draw=()=>Math.max(0,Math.min(.999999,Number(random())||0));
+    const automatic=key=>key==='shape'?['morph','random'].includes(preferences.shape):preferences[key]==='auto';
+    function pick(key,candidates,preferred) {
+      const recent=history[key]||[],fresh=candidates.filter(id=>!recent.slice(-2).includes(id));
+      const available=fresh.length?fresh:candidates.filter(id=>id!==current[key]);
+      const choices=available.length?available:candidates;
+      const weight=id=>(id===preferred?1.6:1)/(1+(counts[key]?.[id]||0)*.35);
+      let cursor=draw()*choices.reduce((sum,id)=>sum+weight(id),0);
+      const id=choices.find(id=>(cursor-=weight(id))<0)||choices.at(-1);
+      history[key]=[...recent,id].slice(-8);counts[key]||={};counts[key][id]=(counts[key][id]||0)+1;
+      return id;
+    }
+    function change(key,expression,time) {
+      const art=ART_STYLES[current.artStyle]||ART_STYLES.classic;
+      const candidates=key==='artStyle'?Object.keys(ART_STYLES):key==='skin'?Object.keys(SKINS):key==='eyeStyle'?Object.keys(EYE_PRESETS).filter(id=>EYE_PRESETS[id].group==='base'&&(current.artStyle!=='pixel'||['pixel','soft_square','classic','bean'].includes(id))):preferences.shape==='random'?SHAPES:pool(expression);
+      current[key]=automatic(key)?pick(key,candidates,key==='eyeStyle'?art.eye:key==='shape'?art.shape:null):preferences[key];
+      due[key]=time+ranges[key][0]+draw()*(ranges[key][1]-ranges[key][0]);
+      events.push({key,value:current[key],at:time});events=events.slice(-40);
+    }
+    function sample({expression='neutral',boundary=true,blocked=false,force=false}={}) {
+      const time=now();
+      for(const key of Object.keys(ranges))if(!current[key])change(key,expression,time);
+      // Only one automatic dimension changes per safe boundary; never catch up in a burst.
+      if(force){for(const key of Object.keys(ranges))if(automatic(key))change(key,expression,time);}
+      else if(boundary&&!blocked&&!preferences.reducedMotion){
+        const key=Object.keys(ranges).filter(key=>automatic(key)&&time>=due[key]).sort((a,b)=>due[a]-due[b])[0];
+        if(key)change(key,expression,time);
+      }
+      return {...preferences,...current};
+    }
+    return {sample,configure(value){
+      const next=normalize(value);
+      for(const key of Object.keys(ranges))if(next[key]!==preferences[key]){delete current[key];delete due[key];}
+      preferences=next;
+    },snapshot:()=>({preferences:{...preferences},current:{...current},due:{...due},history:JSON.parse(JSON.stringify(history)),counts:JSON.parse(JSON.stringify(counts)),events:events.map(e=>({...e}))})};
   }
   function points(name) {
     return Array.from({length:120},(_,i)=>{
@@ -100,5 +148,5 @@
     if(/focus|scan|think|steady|code/.test(expression)) return ['square','hexagon','pentagon','capsule'];
     return ['circle','cloud','blob','drop'];
   }
-  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,normalize,points,path,pool};
+  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,COMPANION_MODES,normalize,migrate,createDirector,points,path,pool};
 });

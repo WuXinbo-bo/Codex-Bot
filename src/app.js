@@ -25,6 +25,8 @@
 
   const expressions = window.MetaBotExpressionController?.createExpressionController({
     setExpression: (name, options) => ball?.setExpression(name, options),
+    onResolvedAppearance: detail => ball?.setAppearance(detail),
+    isAppearanceBlocked: () => Boolean(ball?.getMaskState()?.current),
     setGaze: (x, y) => ball?.setGaze(x, y),
     clearGaze: () => ball?.clearGaze(),
     setMotion: renderMotion,
@@ -76,7 +78,6 @@
   window.metaBot?.onAppearancePreference?.((detail = {}) => {
     configureBehavior(detail);
     theaterMasksEnabled = detail.emoji !== false && detail.maskAuto !== false && detail.masks !== false;
-    ball?.setAppearance(detail);
     setRandomEnabled(detail.random !== false);
     app.dataset.skin = detail.skin || "green";
     app.dataset.shape = detail.shape || "morph";

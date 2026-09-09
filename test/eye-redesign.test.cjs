@@ -40,6 +40,6 @@ test('context changes eye attitude, not the selected base identity',()=>{
   assert.equal(A.eyeConfig('neutral',{eyeStyle:'auto'}).emotion,undefined);
   assert.equal(A.eyeConfig('emotion_setback_1',{eyeStyle:'auto'}).emotion,'tender');
   const fixed=A.eyeConfig('special_covert',{eyeStyle:'anime'},'asymmetric');
-  assert.equal(fixed.baseId,'anime');assert.equal(fixed.emotion,null);
+  assert.equal(fixed.baseId,'anime');assert.equal(fixed.emotion,'curious');
   assert.equal(A.eyeConfig('neutral',{eyeStyle:'sleepy'}).tempo,1.7);
 });

@@ -20,7 +20,9 @@ async(page)=>{
     await page.locator('iframe[title="panel"]').screenshot({path:`output/playwright/settings-${label}.png`});
   }
   await frame.getByRole('button',{name:'外观皮肤',exact:true}).click();
+  await frame.locator('#shapeMode').selectOption('fixed');
   await frame.locator('#shapeSelect').selectOption('cushion');
+  await frame.getByRole('button',{name:'应用',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.stored['config.json'].appearance.shape==='cushion');
   await frame.getByRole('button',{name:'设置与连接诊断',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.windows.panel.height===154);

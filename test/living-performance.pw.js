@@ -62,7 +62,9 @@ async(page)=>{
   const panel=page.frameLocator('iframe[title="panel"]');
   await panel.getByRole('button',{name:'设置与连接诊断',exact:true}).click();
   await panel.locator('[data-settings-tab="appearance"]').click();
+  await panel.locator('#eyeMode').selectOption('fixed');
   await panel.locator('#eyeStyle').selectOption('anime');
+  await panel.getByRole('button',{name:'应用',exact:true}).click();
   await page.waitForTimeout(400);
   if(await panel.locator('#eyeStyle').inputValue()!=='anime')throw Error('Eye setting failed');
   await page.waitForFunction(()=>panelDemo.stored['config.json'].appearance.eyeStyle==='anime'&&panelDemo.frames.ball.contentDocument.querySelector('svg[data-eye-style="anime"]'));

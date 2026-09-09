@@ -20,6 +20,10 @@ import { createUpdateManager } from "../shared/update-manager.cjs";
 export async function startCoordinator({ invoke, listen, receive, workbenchAdapter = null }) {
   const boot = await invoke("bootstrap");
   let config = boot.stored["config.json"] || {};
+  if(config.appearance?.schemaVersion!==2){
+    config={...config,appearance:Appearance.migrate(config.appearance)};
+    await invoke('store',{name:'config.json',value:config});
+  }
   // Old timed-hide preferences are migrated once; unconfirmed records never expire.
   if(config.notifications?.autoCloseCompletions||Object.hasOwn(config.notifications||{},'completionCloseMinutes')){
     config={...config,notifications:{...config.notifications,...CompletionPolicy.normalize(config.notifications)}};
@@ -657,7 +661,10 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     }
     if (type === "appearance") {
       const value = a && typeof a === "object" ? a : {};
-      const next = { ...config, appearance: Appearance.normalize({ ...config.appearance, ...value }) };
+      const merged={...config.appearance,...value};
+      if(Object.hasOwn(value,'motion')&&!Object.hasOwn(value,'reducedMotion'))merged.reducedMotion=value.motion==='reduced';
+      if(!Object.hasOwn(value,'companionMode')&&(Object.hasOwn(value,'personality')||Object.hasOwn(value,'motion')))delete merged.companionMode;
+      const next = { ...config, appearance: Appearance.normalize(merged) };
       await persist("config.json", next); config = next;
       await publish("ball", "appearance:preference", config.appearance);
       return { ok: true, appearance: config.appearance };

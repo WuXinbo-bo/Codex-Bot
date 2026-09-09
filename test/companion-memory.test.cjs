@@ -3,7 +3,7 @@ const Memory=require('../src/companion-memory'),Library=require('../src/performa
 test('six whole-body styles and three personalities normalize independently',()=>{
   assert.equal(Object.keys(Appearance.ART_STYLES).length,7);assert.equal(Object.keys(Appearance.PERSONALITIES).length,3);
   for(const artStyle of Object.keys(Appearance.ART_STYLES))assert.equal(Appearance.normalize({artStyle,eyeStyle:'anime',personality:'quiet'}).artStyle,artStyle);
-  assert.equal(Appearance.normalize({artStyle:'bad'}).artStyle,'classic');assert.equal(Appearance.normalize({stories:false}).stories,false);
+  assert.equal(Appearance.normalize({artStyle:'bad'}).artStyle,'auto');assert.equal(Appearance.normalize({stories:false}).stories,false);
 });
 test('practice changes delivery, confirmation releases afterglow, three completions unlock cleanup',()=>{
   let time=0;const m=Memory.create(()=>time);

@@ -68,10 +68,12 @@ async(page)=>{
   const panel=page.frameLocator('iframe[title="panel"]');
   await panel.getByRole('button',{name:'设置与连接诊断',exact:true}).click();
   await panel.locator('[data-settings-tab="appearance"]').click();
-  if(await panel.locator('#eyeStyle option').count()!==19)throw Error('Incomplete settings registry');
+  if(await panel.locator('#eyeStyle option').count()!==18)throw Error('Incomplete settings registry');
+  await panel.locator('#eyeMode').selectOption('fixed');
   const ids=await panel.locator('#eyeStyle option').evaluateAll(options=>options.map(o=>o.value).filter(v=>v!=='auto'));
   for(const id of ids){
     await panel.locator('#eyeStyle').selectOption(id);
+    if(await panel.getByRole('button',{name:'应用',exact:true}).isEnabled())await panel.getByRole('button',{name:'应用',exact:true}).click();
     await page.waitForFunction(id=>panelDemo.stored['config.json'].appearance.eyeStyle===id&&panelDemo.frames.ball.contentDocument.querySelector('svg').dataset.eyeStyle===id,id);
   }
   await page.evaluate(()=>{panelDemo.frames.panel.srcdoc=panelDemo.frames.panel.srcdoc;});

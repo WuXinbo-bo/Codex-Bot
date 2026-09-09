@@ -24,9 +24,11 @@ async(page)=>{
   await page.getByRole('button',{name:'展开面板',exact:true}).click();
   const panel=page.frameLocator('iframe[title="panel"]');
   await panel.getByRole('button',{name:'设置与连接诊断',exact:true}).click();
-  await panel.locator('[data-settings-tab="appearance"]').click();await panel.locator('#artStyle').selectOption('paper');
+  await panel.locator('[data-settings-tab="appearance"]').click();await panel.locator('#artMode').selectOption('fixed');await panel.locator('#artStyle').selectOption('paper');
+  await panel.getByRole('button',{name:'应用',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.stored['config.json'].appearance.artStyle==='paper'&&panelDemo.frames.ball.contentDocument.querySelector('svg[data-art-style="paper"]'));
-  await panel.locator('[data-settings-tab="motion"]').click();await panel.locator('#personality').selectOption('quiet');
+  await panel.locator('[data-settings-tab="motion"]').click();await panel.locator('#companionMode').selectOption('quiet');
+  await panel.getByRole('button',{name:'应用',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getPerformanceState().personality==='quiet');
   const seen=await page.evaluate(()=>Object.keys(panelDemo.stored['config.json'].performanceLibrary)[0]);
   await panel.locator('[data-settings-tab="library"]').click();await panel.locator('#librarySearch').fill(seen);
