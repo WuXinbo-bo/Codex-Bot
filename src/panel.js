@@ -39,7 +39,6 @@
   window.metaBot?.getNotificationSettings?.().then(settings => {
     if (!settings) return;
     $('retainCompletions').checked = settings.retainCompletions;
-    $('autoCloseCompletions').checked = settings.autoCloseCompletions === true;
     if(settings.completionEscalation) $('completionEscalation').value=settings.completionEscalation;
     const a = settings.appearance || {};
     $('artStyle').value=a.artStyle||'classic';$('personality').value=a.personality||'attentive';$('storiesToggle').checked=a.stories!==false;
@@ -63,12 +62,9 @@
     catch (error) { toggle.checked = previous; feedback(error.message, true); }
     finally { toggle.disabled = false; }
   };
-  window.metaBot?.getNotificationSettings?.().then(s=>{if(s){$('completionCloseMinutes').value=String(s.completionCloseMinutes||15);$('boardAnimation').checked=s.boardAnimation!==false;}}).catch(e=>feedback(e.message,true));
-  for(const id of ['autoCloseCompletions','completionEscalation','completionCloseMinutes','boardAnimation']) $(id).onchange=async()=>{try{const result=await window.metaBot?.setCompletionPreferences?.({autoCloseCompletions:$('autoCloseCompletions').checked,completionEscalation:$('completionEscalation').value,completionCloseMinutes:Number($('completionCloseMinutes').value),boardAnimation:$('boardAnimation').checked});if(!result?.ok)throw Error(result?.error||'保存失败');}catch(error){feedback(error.message,true);}};
+  window.metaBot?.getNotificationSettings?.().then(s=>{if(s)$('boardAnimation').checked=s.boardAnimation!==false;}).catch(e=>feedback(e.message,true));
+  for(const id of ['completionEscalation','boardAnimation']) $(id).onchange=async()=>{try{const result=await window.metaBot?.setCompletionPreferences?.({completionEscalation:$('completionEscalation').value,boardAnimation:$('boardAnimation').checked});if(!result?.ok)throw Error(result?.error||'保存失败');}catch(error){feedback(error.message,true);}};
   const icons = () => window.lucide?.createIcons({ attrs: { "stroke-width": 1.8 } });
-  function explainCompletionConflict(){ $('completionConflict').textContent=$('autoCloseCompletions').checked&&Number($('completionCloseMinutes').value)<2&&$('completionEscalation').value!=='off'?'当前 1 分钟即隐藏，早于首次催促（2 分钟）；如需催促，请关闭自动关闭或选择至少 5 分钟。':''; }
-  for(const id of ['autoCloseCompletions','completionCloseMinutes','completionEscalation'])$(id).addEventListener('change',explainCompletionConflict);
-  setTimeout(explainCompletionConflict,1000);
   const statusText = task => task.stale ? '连接中断 · 状态可能已过期' : task.status === 'running' && task.quiet ? '执行中 · 暂无新输出' : task.status === 'unknown' && task.quiet ? '上次执行中 · 当前状态未核实' : task.waitReason === "approval" ? "等待批准" : task.waitReason === "input" ? "等待你的回答" : labels[task.status] || "状态确认中";
   const color = status => status === "needs_attention" ? "needs-attention" : status;
   const visibleTasks = () => view.tasks.filter(e => e.active ?? (['running','queued','paused','needs_attention'].includes(e.task.status) || (e.task.status === 'unknown' && e.task.trackedActive === true)));

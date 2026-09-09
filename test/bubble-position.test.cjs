@@ -60,3 +60,7 @@ test('crowded layouts keep all requested panels visible without overlapping one 
     for(let i=0;i<out.length;i++)for(let j=i+1;j<out.length;j++)assert.ok(!(out[i].x<out[j].x+out[j].width&&out[i].x+out[i].width>out[j].x&&out[i].y<out[j].y+out[j].height&&out[i].y+out[i].height>out[j].y));
   }
 });
+test('crowded layout defers transient toast before persistent completion board',()=>{
+  const out=panelLayout({x:0,y:120,width:128,height:128},{x:0,y:0,width:320,height:300},[{type:'panel',width:280,height:154},{type:'completions',width:280,height:76,persistent:true},{type:'toast',width:280,height:82}],8);
+  assert.ok(out.some(p=>p.type==='completions'&&!p.deferred));assert.ok(out.some(p=>p.type==='toast'&&p.deferred));
+});

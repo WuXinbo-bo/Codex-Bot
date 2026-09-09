@@ -14,11 +14,18 @@ import Appearance from "../src/appearance.js";
 import PerformanceLibrary from "../src/performance-library.js";
 import CompletionPolicy from "../shared/completion-policy.cjs";
 import { panelLayout, overlap } from "../shared/panel-layout.cjs";
+import { NoticeLane } from '../shared/notice-lane.cjs';
 import { createUpdateManager } from "../shared/update-manager.cjs";
 
 export async function startCoordinator({ invoke, listen, receive, workbenchAdapter = null }) {
   const boot = await invoke("bootstrap");
   let config = boot.stored["config.json"] || {};
+  // Old timed-hide preferences are migrated once; unconfirmed records never expire.
+  if(config.notifications?.autoCloseCompletions||Object.hasOwn(config.notifications||{},'completionCloseMinutes')){
+    config={...config,notifications:{...config.notifications,...CompletionPolicy.normalize(config.notifications)}};
+    delete config.notifications.completionCloseMinutes;
+    await invoke('store',{name:'config.json',value:config});
+  }
   let setupVisible = !config.onboarding?.status && !boot.testMode;
   let settingsVisible = false;
   const panelSize = () => rect(setupVisible ? 360 : 280, setupVisible ? 430 : settingsVisible ? 380 : 154);
@@ -61,6 +68,21 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     );
   };
   let updateSnapshot=null, updateToast=false, updateNoticeFlight=false;
+  const noticeLane=new NoticeLane();let toastKey=null,noticeFlight=Promise.resolve(),noticeHovered=false;
+  function armNoticeTimer(){
+    clearTimeout(toastTimer);
+    const notice=noticeLane.peek(),shown=toastVisible&&visibleWindows.get('toast')&&!layoutSuppressed.has('toast')&&!noticeHovered;
+    noticeLane.presented(shown);const remaining=noticeLane.remaining();
+    if(shown&&remaining!==null)toastTimer=setTimeout(()=>{noticeLane.expire(notice.id);syncNotices().catch(diagnostic);},remaining);
+  }
+  function syncNotices(){const result=noticeFlight.then(async()=>{
+    const notice=noticeLane.peek();toastVisible=!!notice;updateToast=!!notice?.update;
+    clearTimeout(toastTimer);
+    const key=JSON.stringify(notice);
+    if(key!==toastKey){toastKey=key;await win('toast','passthrough',{value:!notice?.persistent&&!notice?.update});await publish('toast','interaction:update',notice||{});}
+    await placeChildren();
+    armNoticeTimer();
+  });noticeFlight=result.catch(diagnostic);return result;}
   const updateNotices=new Map();
   const updates=createUpdateManager({
     invoke,
@@ -74,11 +96,9 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(updateNoticeFlight||!value?.notify||!['available','ready'].includes(value.phase)||toastVisible||completionVisible||panelVisible||boardDrag||Date.now()-(updateNotices.get(key)||0)<86400000)return;
     updateNoticeFlight=true;
     try{
-      updateNotices.set(key,Date.now());updateToast=true;
-      await win('toast','passthrough',{value:false});
-      await publish('toast','interaction:update',{label:value.phase==='ready'?'更新已下载':'发现新版本',title:'Codex Bot '+value.version,update:true});
-      toastVisible=true;await placeChildren();clearTimeout(toastTimer);
-      toastTimer=setTimeout(()=>{toastVisible=false;updateToast=false;win('toast','passthrough',{value:true}).then(placeChildren).catch(diagnostic);},10000);
+      updateNotices.set(key,Date.now());
+      noticeLane.push({id:'update:'+key,label:value.phase==='ready'?'更新已下载':'发现新版本',title:'Codex Bot '+value.version,update:true,duration:10000});
+      await syncNotices();
     }finally{updateNoticeFlight=false;}
   }
   const win = (label, action, args = {}) =>
@@ -115,42 +135,48 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   const panelTargets=new Map();
   let nextBoardLook=Date.now()+45000;
   let layoutQueue=Promise.resolve();
+  let layoutRevision=0;const phaseVersions=new Map();
+  const requested=label=>label==='completions'?retainCompletions(config)&&inbox.items.size>0:label==='panel'?panelVisible:toastVisible;
+  const phase=async(label,data)=>{const version=(phaseVersions.get(label)||0)+1;phaseVersions.set(label,version);await publish(label,'panel:phase',{...data,version});await publish('ball','panel:phase',{...data,version});};
   async function transitionWindow(label,show,focus=false){
-    if(visibleWindows.get(label)===show)return;
+    const revision=layoutRevision;
+    if(visibleWindows.get(label)===show){if(show)await publish(label,'panel:ensure-visible',true);return;}
     const target=panelTargets.get(label);
     const side=target&&target.x+target.width/2<geometry.x+geometry.width/2?'left':'right';
     const duration=config.appearance?.motion==='reduced'||config.notifications?.boardAnimation===false||!target?0:(show?220:160);
     if(show&&duration){
-      await publish(label,'panel:phase',{phase:'preparing',duration:0,label,side});
+      await phase(label,{phase:'preparing',duration:0,label,side});
       await publish('ball','panel:phase',{phase:'preparing',duration:100,label,side});
       await new Promise(r=>setTimeout(r,100));
+      if(revision!==layoutRevision)return;
     }
-    const phase={phase:show?'entering':'leaving',duration,label,side};
-    if(show)await win(label,'show',{focus});
-    await publish(label,'panel:phase',phase);
-    await publish('ball','panel:phase',phase);
+    const motion={phase:show?'entering':'leaving',duration,label,side};
+    if(show){await win(label,'show',{focus});visibleWindows.set(label,true);}
+    await phase(label,motion);
     // Animate the surface on the compositor, not through per-frame native IPC.
     if(duration)await new Promise(r=>setTimeout(r,duration));
+    if(revision!==layoutRevision){if(requested(label))await phase(label,{phase:'visible',duration:0,label,side});return;}
     if(!show)await win(label,'hide');
     visibleWindows.set(label,show);
-    await publish(label,'panel:phase',{phase:show?'visible':'hidden',duration:0,label,side});
-    await publish('ball','panel:phase',{phase:show?'visible':'hidden',duration:0,label,side});
+    await phase(label,{phase:show?'visible':'hidden',duration:0,label,side});
   }
   async function placeChildren() {
+    layoutRevision++;
     const result=layoutQueue.then(layoutChildren);
     layoutQueue=result.catch(diagnostic);return result;
   }
   async function layoutChildren() {
+    completionVisible=requested('completions');
     const specs=[];
-    if(panelVisible) specs.push({type:'panel',width:panelSize().width,height:panelSize().height});
+    if(panelVisible) specs.push({type:'panel',width:panelSize().width,height:panelSize().height,minHeight:rect(0,100).height});
     if(completionVisible) specs.push({type:'completions',width:rect(280, visibleCompletions().length > 1 ? 76 : 50).width,height:rect(280, visibleCompletions().length > 1 ? 76 : 50).height});
-    if(toastVisible) specs.push({type:'toast',width:rect(280,82).width,height:rect(280,82).height});
+    if(toastVisible) specs.push({type:'toast',width:rect(280,82).width,height:rect(280,82).height,persistent:!!noticeLane.peek()?.persistent});
     const laid=panelLayout(geometry,geometry.area,specs,8*geometry.scale);
     const byType=type=>laid.find(p=>p.type===type);
     for(const p of laid)panelTargets.set(p.type,p);
     layoutSuppressed.clear();
-    for(const p of laid)if(p.suppressed)layoutSuppressed.add(p.type);
-    if (panelVisible) {
+    for(const p of laid)if(p.deferred)layoutSuppressed.add(p.type);
+    if (panelVisible&&!layoutSuppressed.has('panel')) {
       const next=byType('panel');
       panelBounds = bubblePosition(
         geometry,
@@ -172,15 +198,17 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       const next=byType('completions');
       const size = {width:next.width,height:next.height};
       let pos=constrain({ x:next.x+boardOffset.x, y:next.y+boardOffset.y },size);
-      if(next.docked||!boardDrag&&(overlap({...pos,...size},geometry)||laid.some(p=>p.type!=='completions'&&!p.suppressed&&overlap({...pos,...size},p)))){boardOffset={x:0,y:0};pos=next;}
+      if(next.docked||!boardDrag&&(overlap({...pos,...size},geometry)||laid.some(p=>p.type!=='completions'&&!p.deferred&&overlap({...pos,...size},p)))){boardOffset={x:0,y:0};pos=next;}
       panelTargets.set('completions',{...pos,...size});await bounds("completions",pos,size);
     }
-    if (toastVisible) {
+    if (toastVisible&&!layoutSuppressed.has('toast')) {
       const next=byType('toast');
       const size = {width:next.width,height:next.height};
       await bounds('toast',constrain({x:next.x,y:next.y},size),size);
     }
-    for(const [label,requested] of [['panel',panelVisible],['completions',completionVisible],['toast',toastVisible]])await transitionWindow(label,requested&&!layoutSuppressed.has(label));
+    for(const [label,wanted] of [['completions',completionVisible],['panel',panelVisible],['toast',toastVisible]])await transitionWindow(label,wanted&&!layoutSuppressed.has(label));
+    await publish('completions','completion:visible',completionVisible);
+    armNoticeTimer();
     await publish('panel','panel:overflow',{count:layoutSuppressed.has('completions')?visibleCompletions().length:0});
   }
   async function showPanel(show, focus = false) {
@@ -203,7 +231,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await placeChildren();
     await publish('completions','completion:visible',completionVisible&&!layoutSuppressed.has('completions'));
   }
-  function visibleCompletions(){return [...inbox.items.values()].filter(i=>!CompletionPolicy.evaluate(i,config.notifications).hidden);}
+  function visibleCompletions(){return [...inbox.items.values()];}
   async function checkCompletionPolicy(){
     if(stopping||policyFlight)return;policyFlight=true;
     try{
@@ -213,7 +241,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         const p=panelTargets.get('completions');
         await publish('ball','panel:phase',{phase:'attending',duration:650,label:'completions',side:p&&p.x+ p.width/2<geometry.x+geometry.width/2?'left':'right'});
       }
-      if(completionVisible&&(!items.length||CompletionPolicy.normalize(config.notifications).autoCloseCompletions))await renderCompletions();
+      if(completionVisible!==requested('completions'))await renderCompletions();
       if(!completionVisible||boardDrag)return;
       const candidate=items.map(item=>({item,...CompletionPolicy.evaluate(item,config.notifications)})).sort((a,b)=>b.stage-a.stage)[0];
       if(!candidate?.stage)return;
@@ -236,6 +264,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await renderCompletions();
   }
   center.on("update", (view) => {
+    noticeLane.reconcile(view);syncNotices().catch(diagnostic);
     publish("panel", "status:update", view).catch(diagnostic);
     publish("ball", "indicator:update", view.indicator);
     persist("task-notices.json", center.saved).catch(() => {});
@@ -247,6 +276,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         targetTask: center.entries.get(e.taskId)?.task,
       });
     interact("task-lifecycle", { events });
+    // Notifications do not depend on whether an optional avatar performance runs.
+    actions=actions.then(()=>action('ball','lifecycle',[events.map(e=>e.id)])).catch(diagnostic);
   });
   const sourceChanged = () => {
     clearTimeout(changeTimer);
@@ -483,7 +514,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       "quit",
     ]),
     completions: new Set(["ready", "completion", "board-drag", "nudge-played"]),
-    toast: new Set(["ready"]),
+    toast: new Set(["ready",'notice-open','notice-ack','notice-next','notice-hover']),
   };
   let actions = Promise.resolve();
   for(const type of ['update-state','update-check','update-download','update-install','update-preferences','update-dismiss','update-open'])allowed.panel.add(type);
@@ -492,6 +523,14 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (!allowed[from]?.has(type))
       throw new Error("Unauthorized window action");
     const [a, b] = args || [];
+    if(type==='notice-hover'){noticeHovered=a===true;armNoticeTimer();return {ok:true};}
+    if(type==='notice-next'){noticeLane.next();await syncNotices();return {ok:true};}
+    if(type==='notice-open'||type==='notice-ack'){
+      const notice=noticeLane.peek();if(!notice?.persistent||notice.id!==a)return {ok:false,error:'提醒已变化'};
+      if(type==='notice-open')await invoke('open',{url:taskTarget(notice.task,config)});
+      else {const entry=center.entries.get(notice.key);if(!entry||entry.eventId!==a)return {ok:false};const saved={...center.saved,[notice.key]:{eventId:entry.eventId,acknowledged:true,unread:false,snoozedUntil:0}};await persist('task-notices.json',saved);center.action(notice.key,'ack');}
+      await syncNotices();return {ok:true};
+    }
     if(type==='performance-library')return {items:PerformanceLibrary.catalog(config.performanceLibrary)};
     if(type==='performance-record'||type==='performance-preference'){
       if(type==='performance-record'&&(!PerformanceLibrary.valid(a?.name)||typeof a.completed!=='boolean'))throw Error('Invalid performance record');
@@ -516,11 +555,11 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(type==='update-preferences')return updates.preferences(a);
     if(type==='update-dismiss'){
       await updates.dismiss(a===true);
-      if(updateToast){clearTimeout(toastTimer);toastVisible=false;updateToast=false;await win('toast','passthrough',{value:true});await placeChildren();}
+      noticeLane.removeUpdates();await syncNotices();
       return {ok:true};
     }
     if(type==='update-open'){
-      if(updateToast){clearTimeout(toastTimer);toastVisible=false;updateToast=false;await win('toast','passthrough',{value:true});}
+      noticeLane.removeUpdates();await syncNotices();
       settingsVisible=true;setupVisible=false;await showPanel(true,true);
       await publish('panel','setup:visible',false);await publish('panel','update:open',true);
       await publish('panel','update:state',updates.snapshot());return {ok:true};
@@ -577,6 +616,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       await placeChildren();return {ok:true};
     }
     if (type === "ready") {
+      if(from==='toast'){toastKey=null;await syncNotices();}
       if(from==='panel')await publish(from,'update:state',updates.snapshot());
       await publish(from, "native:ready", true);
       if(from==='panel')await publish(from,'setup:visible',setupVisible);
@@ -633,10 +673,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
           "completion-inbox.json",
           [...inbox.items.values()].filter((i) => i.id !== a),
         );
-        if(visibleWindows.get('completions')&&visibleCompletions().length>1){
-          const retrieval=layoutQueue.then(()=>transitionWindow('completions',false));
-          layoutQueue=retrieval.catch(diagnostic);await retrieval;
-        }
         inbox.acknowledge(a);
         const current = center.entries.get(item.taskId);
         if (
@@ -653,10 +689,12 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     }
     if (type === "lifecycle") {
       const events = (a || []).map((id) => lifecycle.get(id)).filter(Boolean);
+      const kinds=[...new Set(events.map(e=>e.kind))];
+      if(kinds.length>1){for(const kind of kinds)await action('ball','lifecycle',[events.filter(e=>e.kind===kind).map(e=>e.id)]);return true;}
       for (const e of events) lifecycle.delete(e.id);
       if (!events.length) return true;
-      if(updateToast){clearTimeout(toastTimer);updateToast=false;toastVisible=false;await win('toast','passthrough',{value:true});await placeChildren();}
-      if (events[0].kind === "completed" && retainCompletions(config)) {
+      noticeLane.removeUpdates();
+      if (events[0].kind === "completed") {
         for (const e of events)
           if (e.targetTask) {
             const { targetTask, ...notice } = e;
@@ -664,6 +702,9 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
           }
         await persist("completion-inbox.json", [...inbox.items.values()]);
         await renderCompletions();
+        await syncNotices();
+      } else if(['failed','attention'].includes(events[0].kind)) {
+        noticeLane.reconcile(center.view());await syncNotices();
       } else {
         const labels = {
           started: "开始任务",
@@ -673,20 +714,13 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
           attention: "需要你处理",
           stopped: "任务已停止",
         };
-        updateToast=false;
-        await win('toast','passthrough',{value:true});
-        await publish("toast", "interaction:update", {
+        noticeLane.push({
+          id:events.map(e=>e.id).join('|'),taskIds:events.map(e=>e.taskId),
           label: labels[events[0].kind],
           title: events[0].title,
           count: events.length,
         });
-        toastVisible = true;
-        await placeChildren();
-        clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => {
-          toastVisible = false;
-          placeChildren().catch(diagnostic);
-        }, 4000);
+        await syncNotices();
       }
       return true;
     }
@@ -757,7 +791,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       }
     };
     if (
-      ["completion", "retention", "source", "task", "lifecycle"].includes(
+      ["completion", "retention", "source", "task", "lifecycle",'notice-ack','completion-preferences'].includes(
         request.action,
       )
     )
@@ -922,7 +956,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       await action('panel','completion-preferences',[{autoCloseCompletions:true,completionCloseMinutes:1}]);
       inbox.items.get(testId).receivedAt=Date.now()-61000;
       await renderCompletions();
-      if((await invoke('inspect')).completions.visible||!inbox.items.has(testId))throw Error('Auto close did not hide non-destructively');
+      if(!(await invoke('inspect')).completions.visible||!inbox.items.has(testId))throw Error('Legacy timeout dismissed an unconfirmed completion');
       await action('panel','completion-preferences',[{autoCloseCompletions:false,completionEscalation:'angry'}]);
       const dragBefore=await invoke('inspect');
       // Drag away from the avatar so collision recovery does not mask DPI movement.

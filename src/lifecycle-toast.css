@@ -3,11 +3,12 @@ html, body { margin: 0; width: 100%; height: 100%; overflow: hidden; background:
 body { padding: 5px; font-family: "Segoe UI", "Microsoft YaHei", sans-serif; color: #25352d; }
 main { height: 100%; padding: 10px 12px; border: 1px solid #dfe7e2; border-radius: 8px; background: rgba(255, 255, 255, .97); overflow:auto; }
 strong { display: block; font-size: 11px; line-height: 16px; color: #527162; }
-#updateToastActions { display:flex; gap:8px; margin-top:3px; }
-#updateToastActions[hidden] { display:none; }
-#updateToastActions button { border:0; background:transparent; color:#25654a; padding:0; font-size:11px; cursor:pointer; }
+#updateToastActions, #noticeActions { display:flex; gap:8px; margin-top:3px; }
+#updateToastActions[hidden],#noticeActions[hidden],button[hidden] { display:none; }
+#updateToastActions button,#noticeActions button { border:0; background:transparent; color:#25654a; padding:0; font-size:11px; cursor:pointer; }
+#noticeError:empty{display:none} #noticeError{color:#a33;font-size:10px}
+main:has(#noticeActions:not([hidden])){padding:5px 10px}
+main:has(#noticeActions:not([hidden])) #title{-webkit-line-clamp:1;margin-top:0}
 #title { margin-top: 3px; font-size: 12px; line-height: 16px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
-body[data-phase="entering"] main { animation: toast-enter var(--panel-duration,360ms) cubic-bezier(.2,.8,.2,1); }
-body[data-phase="leaving"] main { animation: toast-leave var(--panel-duration,240ms) ease-in; }
 @keyframes toast-enter { from{opacity:0;transform:translateY(8px) scale(.9)} to{opacity:1;transform:none} }
 @keyframes toast-leave { from{opacity:1} to{opacity:0;transform:translateY(-5px) scale(.96)} }

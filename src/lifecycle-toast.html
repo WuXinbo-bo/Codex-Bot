@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="./lifecycle-toast.css">
 </head>
 <body>
-  <main role="status" aria-live="polite"><strong id="label"></strong><div id="title"></div><div id="updateToastActions" hidden><button id="updateToastOpen" type="button">查看更新</button><button id="updateToastLater" type="button">明天提醒</button></div></main>
+  <main role="status" aria-live="polite"><strong id="label"></strong><div id="title"></div><div id="noticeActions" hidden><button id="noticeOpen" type="button">查看任务</button><button id="noticeNext" type="button" hidden>下一项</button><button id="noticeAck" type="button">确认提醒</button></div><div id="updateToastActions" hidden><button id="updateToastOpen" type="button">查看更新</button><button id="updateToastLater" type="button">明天提醒</button></div><output id="noticeError" role="status"></output></main>
   <script src="./panel-motion.js"></script><script src="./lifecycle-toast.js"></script>
 </body>
 </html>
