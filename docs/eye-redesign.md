@@ -1,10 +1,9 @@
 # Eye redesign
 
-The registry in `src/appearance.js` contains 18 presets: ten persistent eye
-designs and eight contextual looks. Classic and anime retain their neutral
+The registry in `src/appearance.js` contains 15 presets: eight persistent eye
+designs and seven contextual looks. Classic and anime retain their neutral
 eye dimensions, pupils and anime highlights. The other designs replace the
-previous overlay-line implementation; pixel eyes include whites and movable
-pupils instead of opaque blocks.
+previous overlay-line implementation.
 
 ## Ownership
 
@@ -16,10 +15,11 @@ task status is inferred from an eye preset.
 
 `Rig.styleEyes` applies a preset to an unmodified authored pose. Repeated
 appearance updates cannot compound dimensions or restart the same animation.
-Retired IDs migrate as follows: minimal to bean, neon to glass, ink to manga,
-asymmetric to curious. Manga, pixel and sleepy IDs keep compatible names but
-use new geometry. Existing special expressions and art styles reference the
-new registry.
+Legacy IDs migrate as follows: minimal to bean, neon to glass, asymmetric to
+curious. Removed manga, pixel, smug and the older ink alias normalize to auto,
+including schema-v2 saved preferences. The coordinator persists that migration.
+Pixel art keeps its grid body and cadence, with soft_square as its suggested
+eye design. Proud expressions retain their authored eyelids and gestures.
 
 ## Rendering
 
@@ -34,10 +34,10 @@ worn and reveal the selected eye design after removal.
 
 ## Verification
 
-- Unit matrix: all 149 expressions with all 18 presets, immutable source poses,
+- Unit matrix: all 257 expressions with all 15 presets, immutable source poses,
   finite geometry, registry migration and classic/anime compatibility.
 - Browser matrix: seven expressions per preset, near-closed eye cleanup,
-  repeated settings, 18 transitions, all 18 body shapes per eye preset.
+  repeated settings, 15 transitions, all 18 body shapes per eye preset.
 - Paged desktop/mobile catalog and real coordinator/settings/lifecycle checks.
 
 The main gallery remains paginated. The eye selector previews a selected

@@ -17,7 +17,7 @@ test('108 authored base scores cover 24 families, 12 mixed thoughts and 18 expli
   }
   assert.equal(accents.size,18);for(const group of Object.values(E.families))assert.equal(group.items.length,4);
 });
-test('base eye emotion survives all 18 drawing styles, not just classic eyes',()=>{
+test('base eye emotion survives all 15 drawing styles, not just classic eyes',()=>{
   for(const id of Object.keys(E.entries))for(const eyeStyle of A.EYE_STYLES){
     const pose=Rig.getExpression(id),config=A.eyeConfig(id,{eyeStyle},pose.eyeStyle),styled=Rig.styleEyes(pose,config);
     assert.deepEqual(styled.gaze,pose.gaze);assert.deepEqual(config.mood,{});assert.equal(config.design.tear,undefined);

@@ -3,13 +3,40 @@ const assert=require('node:assert/strict');
 const A=require('../src/appearance.js');
 const R=require('../src/m1-rig.js');
 
-test('eighteen eye presets have ten base designs and eight contextual looks',()=>{
+test('fifteen eye presets have eight base designs and seven contextual looks',()=>{
   assert.deepEqual(A.EYE_STYLES.slice(0,2),['classic','anime']);
-  assert.equal(A.EYE_STYLES.length,18);
-  assert.equal(Object.values(A.EYE_PRESETS).filter(v=>v.group==='base').length,10);
+  assert.equal(A.EYE_STYLES.length,15);
+  assert.equal(Object.values(A.EYE_PRESETS).filter(v=>v.group==='base').length,8);
+  assert.equal(Object.values(A.EYE_PRESETS).filter(v=>v.group==='emotion').length,7);
   for(const [old,next] of Object.entries(A.LEGACY_EYES))assert.equal(A.normalize({eyeStyle:old}).eyeStyle,next);
   for(const id of ['__proto__','constructor','toString','invalid'])assert.equal(A.normalize({eyeStyle:id}).eyeStyle,'auto');
   for(const artStyle of Object.keys(A.ART_STYLES))assert.ok(A.EYE_PRESETS[A.eyeConfig('neutral',{artStyle}).baseId]);
+});
+
+test('retired eye selections migrate to automatic without retiring pixel art or proud poses',()=>{
+  for(const eyeStyle of ['pixel','manga','smug','ink'])for(const schemaVersion of [1,2]){
+    assert.ok(!A.EYE_STYLES.includes(eyeStyle));
+    const next=A.migrate({schemaVersion,eyeStyle,artStyle:'pixel',skin:'pink',shape:'star'});
+    assert.equal(next.eyeStyle,'auto');assert.equal(next.artStyle,'pixel');
+    assert.equal(next.skin,'pink');assert.equal(next.shape,'star');
+    assert.deepEqual(A.migrate(next),next);
+  }
+  assert.ok(A.pixelPath('square',{cx:64,cy:64,rx:50,ry:50}).includes('H '));
+  assert.ok(R.EXPRESSIONS.special_smug);assert.ok(R.EXPRESSIONS.proud_soft);
+  for(const art of Object.values(A.ART_STYLES))if(art.eye)assert.ok(A.EYE_PRESETS[art.eye]);
+  for(const preset of Object.values(A.EYE_PRESETS))if(preset.base)assert.ok(A.EYE_PRESETS[preset.base]);
+  for(const name of Object.keys(R.EXPRESSIONS)){
+    const pose=R.getExpression(name),config=A.eyeConfig(name,{},pose.eyeStyle);
+    assert.ok(!['pixel','manga','smug'].includes(pose.eyeStyle),name);
+    if(config.emotion)assert.ok(A.EYE_PRESETS[config.emotion],name);
+  }
+  let seed=73;const random=()=>((seed=(seed*1664525+1013904223)>>>0)/4294967296);
+  const director=A.createDirector({eyeStyle:'auto'},{random});const seen=new Set();
+  for(let i=0;i<2000;i++){
+    const result=director.sample({force:true});seen.add(result.eyeStyle);
+    assert.ok(A.EYE_PRESETS[result.eyeStyle]);assert.ok(!['pixel','manga','smug'].includes(result.eyeStyle));
+  }
+  assert.equal(seen.size,8);
 });
 
 test('classic and anime preserve original neutral eyes and anime highlights',()=>{

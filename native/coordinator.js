@@ -19,7 +19,7 @@ import { createUpdateManager } from "../shared/update-manager.cjs";
 export async function startCoordinator({ invoke, listen, receive, workbenchAdapter = null }) {
   const boot = await invoke("bootstrap");
   let config = boot.stored["config.json"] || {};
-  if(config.appearance?.schemaVersion!==2||(config.appearance.artStyle!=='auto'&&!Object.hasOwn(Appearance.ART_STYLES,config.appearance.artStyle))){
+  if(config.appearance?.schemaVersion!==2||(config.appearance.artStyle!=='auto'&&!Object.hasOwn(Appearance.ART_STYLES,config.appearance.artStyle))||config.appearance.eyeStyle!==Appearance.normalizeEye(config.appearance.eyeStyle)){
     config={...config,appearance:Appearance.migrate(config.appearance)};
     await invoke('store',{name:'config.json',value:config});
   }

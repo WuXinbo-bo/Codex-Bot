@@ -4,7 +4,7 @@ async(page)=>{
   await page.setViewportSize({width:1080,height:940});
   await page.waitForFunction(()=>Boolean(window.review));
   await page.evaluate(()=>review.showCatalog('eyeStyles'));
-  if(await page.locator('#catalogTotal').textContent()!=='18 项')throw Error('Wrong eye count');
+  if(await page.locator('#catalogTotal').textContent()!=='15 项')throw Error('Wrong eye count');
   await page.locator('#eyeStyles').screenshot({path:'output/playwright/eyes-redesign-1.png'});
   await page.locator('#catalogNext').click();
   await page.locator('#eyeStyles').screenshot({path:'output/playwright/eyes-redesign-2.png'});
@@ -45,7 +45,7 @@ async(page)=>{
     await page.locator('#eye-motion-check').screenshot({path:'output/playwright/eye-settled-'+eyeStyle+'.png'});
   }
   const shapes=await page.evaluate(async()=>{
-    eyeCheck.setAppearance({eyeStyle:'pixel',maskAuto:false});eyeCheck.setMotionLevel('reduced');let checks=0;
+    eyeCheck.setAppearance({eyeStyle:'soft_square',maskAuto:false});eyeCheck.setMotionLevel('reduced');let checks=0;
     const frame=()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
     await frame();
     if(Number(document.querySelector('#eye-motion-check [data-part="eye-left"]').parentElement.getAttribute('opacity'))!==1)throw Error('Reduced motion retained a switching blink');
@@ -68,7 +68,7 @@ async(page)=>{
   const panel=page.frameLocator('iframe[title="panel"]');
   await panel.getByRole('button',{name:'设置与连接诊断',exact:true}).click();
   await panel.locator('[data-settings-tab="appearance"]').click();
-  if(await panel.locator('#eyeStyle option').count()!==18)throw Error('Incomplete settings registry');
+  if(await panel.locator('#eyeStyle option').count()!==15)throw Error('Incomplete settings registry');
   await panel.locator('#eyeMode').selectOption('fixed');
   const ids=await panel.locator('#eyeStyle option').evaluateAll(options=>options.map(o=>o.value).filter(v=>v!=='auto'));
   for(const id of ids){
@@ -78,6 +78,17 @@ async(page)=>{
   }
   await page.evaluate(()=>{panelDemo.frames.panel.srcdoc=panelDemo.frames.panel.srcdoc;});
   await page.waitForFunction(()=>panelDemo.frames.panel.contentDocument.querySelector('#eyeStyle')?.value==='tender');
+  for(const eyeStyle of ['pixel','manga','smug','ink']){
+    await page.evaluate(eyeStyle=>{
+      panelDemo.stored['config.json'].appearance={schemaVersion:2,eyeStyle,artStyle:'pixel',skin:'pink',shape:'star'};
+      panelDemo.frames.ball.srcdoc=panelDemo.frames.ball.srcdoc;
+    },eyeStyle);
+    await page.waitForFunction(()=>{
+      const saved=panelDemo.stored['config.json'].appearance;
+      const runtime=panelDemo.frames.ball.contentWindow.__metaBotDebug?.getPerformanceState().appearance;
+      return saved.eyeStyle==='auto'&&saved.artStyle==='pixel'&&saved.skin==='pink'&&saved.shape==='star'&&runtime?.preferences.eyeStyle==='auto'&&runtime.current.artStyle==='pixel';
+    });
+  }
   if(errors.length)throw Error(errors.join('\n'));
-  return {presets:18,matrix,shapes,transitions:18,persisted:18,errors};
+  return {presets:15,matrix,shapes,transitions:15,persisted:15,migrated:4,errors};
 }

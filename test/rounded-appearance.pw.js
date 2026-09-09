@@ -32,7 +32,7 @@ async(page)=>{
     }
   });
   await page.locator('#rounded-review').screenshot({path:'output/playwright/rounded-bodies-desktop.png'});
-  await page.evaluate(()=>roundedBots.forEach((b,i)=>{b.setAppearance({artStyle:'pixel',shape:MetaBotAppearance.SHAPES[i],eyeStyle:'pixel',skin:'lemon',maskAuto:false});b.setMotionLevel('reduced');}));
+  await page.evaluate(()=>roundedBots.forEach((b,i)=>{b.setAppearance({artStyle:'pixel',shape:MetaBotAppearance.SHAPES[i],eyeStyle:'soft_square',skin:'lemon',maskAuto:false});b.setMotionLevel('reduced');}));
   await page.locator('#rounded-review').screenshot({path:'output/playwright/rounded-pixel-bodies.png'});
   await page.evaluate(()=>roundedBots.forEach((b,i)=>{b.setAppearance({artStyle:'classic',shape:MetaBotAppearance.SHAPES[i],eyeStyle:'classic',skin:'lemon',maskAuto:false});b.setMotionLevel('reduced');}));
   await page.setViewportSize({width:390,height:844});

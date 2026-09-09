@@ -63,7 +63,7 @@ uses the main preview and has a unique performance ID to support replay.
 
 `test/base-emotions.test.cjs` covers registry integrity, full contextual coverage,
 state gates, drawing preservation, repeat avoidance, timer holds and priority.
-`test/base-emotions.pw.js` checks every gallery page, 1,944 eye combinations,
+`test/base-emotions.pw.js` checks every gallery page, 1,620 eye combinations,
 1,944 shape combinations, 540 art combinations, 108 micro scores, accessibility,
 mobile layout and the actual native-coordinator rendering path. Existing catalog,
 panel, appearance and native smoke suites remain required release gates.

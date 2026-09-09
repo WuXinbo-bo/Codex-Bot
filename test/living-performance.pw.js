@@ -3,7 +3,7 @@ async(page)=>{
   await page.goto('http://127.0.0.1:4187/test/fixtures/m1-visual.html');
   await page.waitForFunction(()=>Boolean(window.review));
   await page.evaluate(()=>review.showCatalog('eyeStyles'));
-  if(await page.locator('#eyeStyles figure').count()!==12||await page.locator('#catalogTotal').textContent()!=='18 项')throw Error('Missing paged eye styles');
+  if(await page.locator('#eyeStyles figure').count()!==12||await page.locator('#catalogTotal').textContent()!=='15 项')throw Error('Missing paged eye styles');
   await page.locator('#eyeStyles').screenshot({path:'output/playwright/living-eyes.png'});
   await page.evaluate(()=>{
     review.startInteractive('running');
@@ -78,5 +78,5 @@ async(page)=>{
   await panel.locator('#eyeStyle').screenshot({path:'output/playwright/living-eye-setting-narrow.png'});
   await page.setViewportSize({width:1280,height:900});
   if(errors.length)throw Error(errors.join('\n'));
-  return {started,specials:15,eyeStyles:18,scores,persisted:true,errors};
+  return {started,specials:15,eyeStyles:15,scores,persisted:true,errors};
 }

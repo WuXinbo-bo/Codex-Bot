@@ -30,7 +30,7 @@ async(page)=>{
     const host=document.createElement('section');host.style.cssText='display:grid;grid-template-columns:repeat(6,128px);';document.body.append(host);
     let eyeChecks=0,shapeChecks=0,artChecks=0,motions=0;
     try{
-      for(let i=0;i<18;i++){const cell=document.createElement('div');cell.style.cssText='width:128px;height:128px';host.append(cell);hosts.push(cell);bots.push(MetaBotM1.create(cell,{now:()=>time,motionLevel:'reduced',appearance:{shape:'circle',eyeStyle:A.EYE_STYLES[i],artStyle:'classic',maskAuto:false}}));}
+      for(let i=0;i<Math.max(A.EYE_STYLES.length,A.SHAPES.length);i++){const cell=document.createElement('div');cell.style.cssText='width:128px;height:128px';host.append(cell);hosts.push(cell);bots.push(MetaBotM1.create(cell,{now:()=>time,motionLevel:'reduced',appearance:{shape:'circle',eyeStyle:A.EYE_STYLES[i]||'classic',artStyle:'classic',maskAuto:false}}));}
       const check=(cell,id)=>{
         if(/NaN|Infinity|undefined/.test(cell.innerHTML))throw Error('Invalid geometry '+id);
         const left=cell.querySelector('[data-part="eye-left"]').getBoundingClientRect(),right=cell.querySelector('[data-part="eye-right"]').getBoundingClientRect();
@@ -41,12 +41,12 @@ async(page)=>{
       };
       for(const id of Object.keys(E.entries)){
         bots.forEach(b=>b.setExpression(id,{duration:0}));frame(16);
-        hosts.forEach(h=>{check(h,id);eyeChecks++;});
+        hosts.slice(0,A.EYE_STYLES.length).forEach(h=>{check(h,id);eyeChecks++;});
       }
-      bots.forEach((b,i)=>b.setAppearance({shape:A.SHAPES[i],eyeStyle:'classic',artStyle:'classic',maskAuto:false}));
+      bots.slice(0,A.SHAPES.length).forEach((b,i)=>b.setAppearance({shape:A.SHAPES[i],eyeStyle:'classic',artStyle:'classic',maskAuto:false}));
       for(const id of Object.keys(E.entries)){
         bots.forEach(b=>b.setExpression(id,{duration:0}));frame(16);
-        hosts.forEach(h=>{check(h,id);shapeChecks++;});
+        hosts.slice(0,A.SHAPES.length).forEach(h=>{check(h,id);shapeChecks++;});
       }
       for(const artStyle of Object.keys(A.ART_STYLES)){
         bots[0].setAppearance({artStyle,shape:'circle',eyeStyle:'auto',maskAuto:false});

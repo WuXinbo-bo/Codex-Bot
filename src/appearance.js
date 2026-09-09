@@ -12,29 +12,26 @@
     bean:{label:'豆豆圆瞳',group:'base',eye:{width:.88,height:.88},pupil:{width:1.3,height:1.16}},
     retro:{label:'复古动画眼',group:'base',eye:{width:.9,height:1.08},pupil:{width:1.12,height:1.16},design:{retro:1}},
     glass:{label:'清透玻璃眼',group:'base',eye:{width:1,height:.98},design:{iris:1,shine:1,tone:1},pupil:{width:.85,height:.88}},
-    manga:{label:'手绘漫画眼',group:'base',eye:{width:1,height:.88,kx:.65,ky:.33},design:{rim:1},pupil:{width:1.08,height:1}},
     soft_square:{label:'软方机械眼',group:'base',eye:{width:.9,height:.91,kx:.88,ky:.88},pupil:{width:.94,height:.86},design:{shine:.55}},
-    pixel:{label:'精品像素眼',group:'base',eye:{width:.96,height:.94},design:{pixel:1,shine:1},pupil:{width:1,height:.92}},
     droplet:{label:'水滴幼态眼',group:'base',eye:{width:1,height:1.06,kx:.7,ky:.6,bottomK:.32},pupil:{width:1.08,height:1.07},design:{shine:.8}},
     focus:{label:'专注锐眼',group:'emotion',base:'almond',mood:{upper:.2,lower:.02,tilt:5}},
     crescent:{label:'温柔月牙眼',group:'emotion',base:'almond',mood:{lower:.16,arc:-8}},
     curious:{label:'好奇探头眼',group:'emotion',base:'classic',mood:{asymmetry:.12}},
     sleepy:{label:'困倦半眠眼',group:'emotion',base:'almond',mood:{upper:.46,lower:.03},tempo:1.7},
     shy:{label:'害羞躲闪眼',group:'emotion',base:'droplet',mood:{lower:.1,tilt:-3},gaze:{x:-.45,y:.3},tempo:1.6},
-    smug:{label:'得意挑眼',group:'emotion',base:'manga',mood:{upper:.1,lower:.04,asymmetry:.06,oneLid:.18}},
     astonished:{label:'惊讶定睛眼',group:'emotion',base:'classic',mood:{widen:.12,pupil:.76}},
     tender:{label:'委屈含光眼',group:'emotion',base:'glass',mood:{lower:.06,tilt:-7},design:{tear:1},gaze:{x:0,y:.24},tempo:1.6}
   };
   const EYE_STYLES = Object.keys(EYE_PRESETS);
-  const LEGACY_EYES = {minimal:'bean',neon:'glass',ink:'manga',asymmetric:'curious'};
+  const LEGACY_EYES = {minimal:'bean',neon:'glass',ink:'auto',asymmetric:'curious'};
   const normalizeEye = id => Object.hasOwn(EYE_PRESETS,id)?id:Object.hasOwn(LEGACY_EYES,id)?LEGACY_EYES[id]:'auto';
   const EYE_CONTEXT = {
     deep_focus:'focus',squint_focus:'focus',thinking:'focus',code:'focus',
     curious:'curious',curious_split:'curious',brow_raise:'curious',side_peek:'curious',
-    complete:'crescent',relief:'crescent',soften:'crescent',proud_soft:'smug',
+    complete:'crescent',relief:'crescent',soften:'crescent',
     sleepy_peek:'sleepy',fatigue:'sleepy',shy_squint:'shy',surprise:'astonished',wide_listen:'astonished',
     emotion_setback_1:'tender',emotion_closeness_0:'shy',emotion_recovery_0:'sleepy',
-    emotion_achievement_1:'smug',emotion_achievement_3:'crescent'
+    emotion_achievement_3:'crescent'
   };
   function eyeConfig(expression,appearance={},authored='classic') {
     const selected=normalizeEye(appearance.eyeStyle),explicit=selected!=='auto';
@@ -51,7 +48,7 @@
     classic:{label:'经典',eye:null,shape:null,tempo:1,amplitude:1},
     mime:{label:'无声默剧',eye:'bean',shape:null,tempo:1.15,amplitude:.7},
     clay:{label:'黏土软团',eye:'classic',shape:'blob',tempo:1.2,amplitude:.8},
-    pixel:{label:'像素掌机',eye:'pixel',shape:'square',tempo:1.1,amplitude:.8},
+    pixel:{label:'像素掌机',eye:'soft_square',shape:'square',tempo:1.1,amplitude:.8},
     rubber:{label:'橡皮管',eye:'retro',shape:null,tempo:1.1,amplitude:1.15}
   };
   const PERSONALITIES={quiet:{label:'安静搭档',interval:1.5,tempo:1.1,social:.45},attentive:{label:'认真助手',interval:1,tempo:1,social:.7},playful:{label:'俏皮伙伴',interval:.85,tempo:1.05,social:1}};
@@ -87,7 +84,7 @@
     }
     function change(key,expression,time) {
       const art=ART_STYLES[current.artStyle]||ART_STYLES.classic;
-      const candidates=key==='artStyle'?Object.keys(ART_STYLES):key==='skin'?Object.keys(SKINS):key==='eyeStyle'?Object.keys(EYE_PRESETS).filter(id=>EYE_PRESETS[id].group==='base'&&(current.artStyle!=='pixel'||['pixel','soft_square','classic','bean'].includes(id))):preferences.shape==='random'?SHAPES:pool(expression);
+      const candidates=key==='artStyle'?Object.keys(ART_STYLES):key==='skin'?Object.keys(SKINS):key==='eyeStyle'?Object.keys(EYE_PRESETS).filter(id=>EYE_PRESETS[id].group==='base'&&(current.artStyle!=='pixel'||['soft_square','classic','bean'].includes(id))):preferences.shape==='random'?SHAPES:pool(expression);
       current[key]=automatic(key)?pick(key,candidates,key==='eyeStyle'?art.eye:key==='shape'?art.shape:null):preferences[key];
       due[key]=time+ranges[key][0]+draw()*(ranges[key][1]-ranges[key][0]);
       events.push({key,value:current[key],at:time});events=events.slice(-40);
