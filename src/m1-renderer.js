@@ -35,6 +35,10 @@
     const accessories = Accessories?.create(svgElement, backProps, frontProps) || {};
     const shape = svgElement("g", { "data-layer": "shape" });
     const body = svgElement("path", { fill: Rig.COLORS.body, "data-part": "body" });
+    const finish=svgElement('g',{'data-layer':'art-finish','pointer-events':'none'});
+    const finishLine=svgElement('path',{fill:'none',stroke:Rig.COLORS.ink,'stroke-width':1.4});
+    const finishHighlight=svgElement('path',{fill:'#FFFFFF','fill-opacity':.28});
+    finish.append(finishHighlight,finishLine);
     const face = svgElement("g", { "data-layer": "face" });
     const decorations = svgElement('g', {'data-layer':'emotion'});
     for (const x of [31,97]) decorations.append(svgElement('ellipse',{cx:x,cy:77,rx:8,ry:4,fill:'#F58499',opacity:.6}));
@@ -54,7 +58,7 @@
     const leftArm = svgElement("path", { fill: "none", stroke: Rig.COLORS.ink, "stroke-width": 3.5, "stroke-linecap": "round", "data-part": "arm-left" });
     const rightArm = svgElement("path", { fill: "none", stroke: Rig.COLORS.ink, "stroke-width": 3.5, "stroke-linecap": "round", "data-part": "arm-right" });
     arms.append(leftArm, rightArm);
-    shape.append(body, arms);
+    shape.append(body, finish, arms);
     const eyes = {};
     for (const side of ["left", "right"]) {
       const outerClip = svgElement("clipPath", { id: `${prefix}-${side}-outline`, clipPathUnits: "userSpaceOnUse" });
@@ -128,6 +132,7 @@
 
     function samplePose(now) {
       if (!transitionDuration) return;
+      if(appearance.artStyle==='pixel')now=transitionStarted+Math.floor((now-transitionStarted)/90)*90;
       const amount = ease((now - transitionStarted) / transitionDuration);
       current = Rig.interpolate(source, destination, amount);
       // Eyes register intent first; the body follows rather than snapping in unison.
@@ -137,7 +142,8 @@
     }
 
     function render(pose, now) {
-      const strength = motionLevel === "reduced" ? 0 : motionLevel === "soft" ? 0.5 : 1;
+      const art=Appearance?.ART_STYLES[appearance.artStyle] || Appearance.ART_STYLES.classic;
+      const strength = (motionLevel === "reduced" ? 0 : motionLevel === "soft" ? 0.5 : 1)*art.amplitude;
       const breathe = active ? Math.sin((now - started) / 1250) * pose.breathe * strength : 0;
       const b = pose.body;
       const sx = (motion.stretch + acting.squash) * strength;
@@ -166,6 +172,19 @@
       shape.setAttribute("transform", `translate(64 64) matrix(${a} ${off} ${off} ${d} 0 0) translate(-64 -64)`);
       body.setAttribute("d", Appearance ? Appearance.path(bodyShape,b,oldShape,motionLevel==='reduced'?1:ease((now-shapeAt)/550)) : Rig.bodyPath(b));
       body.setAttribute('fill',Appearance?.SKINS[appearance.skin]?.[0] || Rig.COLORS.body);
+      svg.dataset.artStyle=appearance.artStyle;
+      const artStyle=appearance.artStyle;
+      finish.setAttribute('transform',`translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52})`);
+      finishLine.setAttribute('d',artStyle==='paper'?'M -29 23 L 0 39 L 29 23 M 0 39 L 0 47':artStyle==='doodle'?'M -41 -22 Q -29 -48 -3 -45 M 16 45 Q 43 38 46 12 M -46 4 l -3 9 m 7 15 l 5 6':'');
+      finishLine.setAttribute('stroke-dasharray',artStyle==='doodle'?'3 3':'none');
+      finishHighlight.setAttribute('d',artStyle==='clay'?'M -35 -19 Q -30 -41 -9 -39 Q -16 -28 -35 -19':artStyle==='paper'?'M -29 23 L 0 39 L -21 36 Z':'');
+      svg.setAttribute('shape-rendering',artStyle==='pixel'?'crispEdges':'geometricPrecision');
+      if(artStyle==='pixel'){
+        const points=Appearance.points(bodyShape).map(p=>[Math.round((b.cx+b.rx*p.x)/5)*5,Math.round((b.cy+b.ry*p.y)/5)*5]);
+        body.setAttribute('d',points.map(([x,y],i)=>`${i?'L':'M'} ${x} ${y}`).join(' ')+' Z');
+      }
+      for(const arm of [leftArm,rightArm])arm.setAttribute('stroke-width',artStyle==='rubber'?5.5:artStyle==='doodle'?2.5:3.5);
+      for(const layer of [frontProps,backProps])layer.setAttribute('stroke-linejoin',artStyle==='paper'||artStyle==='pixel'?'miter':'round');
       svg.dataset.shape=bodyShape;
       svg.dataset.skin=appearance.skin || 'green';
       decorations.setAttribute('opacity', Math.max(pose.accents.blush,/delight|victory|shy|complete|curious|love|think|focus|closeness|caring|achievement/.test(expression) ? 1 : 0));
@@ -352,7 +371,7 @@
       const wanted = tracking ? gazeTarget : current.gaze;
       gaze.x += (wanted.x - gaze.x) * gazeEase;
       gaze.y += (wanted.y - gaze.y) * gazeEase;
-      armPose = Rig.interpolate(armPose, current.arms, reduced ? 1 : 1 - Math.exp(-dt * (motionMode==='dragging'?22:12)));
+      armPose = Rig.interpolate(armPose, current.arms, reduced ? 1 : 1 - Math.exp(-dt * (motionMode==='dragging'?22:appearance.artStyle==='clay'?7:appearance.artStyle==='rubber'?9:12)));
       for (let step = 0; step < 4; step += 1) {
         for (const key of Object.keys(REST)) {
           const acceleration = (motionTarget[key] - motion[key]) * 320 - velocity[key] * (motionMode === "settling" ? 24 : 36);
@@ -377,7 +396,8 @@
       samplePose(now);
       expression = Rig.EXPRESSIONS[name] ? name : "neutral";
       if(Appearance && (!performanceContext.theater || shapeDue===0) && (now>=shapeDue || appearance.shape==='circle')) {
-        const pool=appearance.shape==='random'?Appearance.SHAPES:Appearance.pool(expression);
+        const artShape=Appearance.ART_STYLES[appearance.artStyle]?.shape;
+        const pool=appearance.shape==='random'?Appearance.SHAPES:artShape?[artShape]:Appearance.pool(expression);
         oldShape=bodyShape;
         const choices=pool.filter(s=>s!==bodyShape);
         bodyShape=Appearance.SHAPES.includes(appearance.shape)?appearance.shape:appearance.random?choices[Math.floor(random()*choices.length)] || pool[0]:pool[0];
@@ -385,7 +405,7 @@
       }
       source = current;
       destination = Rig.merge(Rig.getExpression(expression), settings.pose || {});
-      const eyeStyle = appearance.eyeStyle && appearance.eyeStyle!=='auto' ? appearance.eyeStyle : destination.eyeStyle;
+      const eyeStyle = appearance.eyeStyle && appearance.eyeStyle!=='auto' ? appearance.eyeStyle : Appearance.ART_STYLES[appearance.artStyle]?.eye || destination.eyeStyle;
       destination.eyeDesign=Object.fromEntries(Object.keys(destination.eyeDesign).map(id=>[id,id===eyeStyle?1:0]));
       if(eyeStyle==='sleepy')destination.eyes=Rig.merge(destination.eyes,{left:{upper:.5},right:{upper:.5}});
       svg.dataset.eyeStyle=eyeStyle;
@@ -393,7 +413,7 @@
       const nextPerformanceId=settings.performanceId || expression;
       if(performanceId!==nextPerformanceId){performanceStarted=now;performanceId=nextPerformanceId;}
       transitionStarted = now;
-      transitionDuration = motionLevel === "reduced" ? 0 : Math.max(0, Number(settings.duration ?? 240));
+      transitionDuration = motionLevel === "reduced" ? 0 : Math.max(0, Number(settings.duration ?? 240))*(Appearance.ART_STYLES[appearance.artStyle]?.tempo||1);
       if (!transitionDuration) { current = destination; armPose = current.arms; }
       wake();
       return expression;

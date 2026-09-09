@@ -6,8 +6,21 @@
   const SKINS = {green:['#02AD45','#87F8AD'],ocean:['#249AD9','#A0EDFF'],sunset:['#F58C40','#FFE0A2'],pink:['#ED83B6','#FFD9EA'],violet:['#9872DE','#E0CAFF'],lemon:['#EDCB42','#FFF5AE'],night:['#536178','#AEBFD8'],neon:['#54DAB9','#CB98FF']};
   const SHAPES = ['circle','square','triangle','pentagon','hexagon','star','drop','capsule','cloud','diamond','flower','blob','pancake','bean','bell','kite','cushion','spring'];
   const EYE_STYLES = ['classic','anime','manga','minimal','pixel','neon','ink','sleepy','asymmetric'];
-  function normalize(value = {}) {
+  const ART_STYLES = {
+    classic:{label:'经典',eye:null,shape:null,tempo:1,amplitude:1},
+    mime:{label:'无声默剧',eye:'minimal',shape:null,tempo:1.15,amplitude:.7},
+    clay:{label:'黏土软团',eye:'classic',shape:'blob',tempo:1.2,amplitude:.8},
+    paper:{label:'折纸伙伴',eye:'ink',shape:'diamond',tempo:1.1,amplitude:.7},
+    doodle:{label:'手绘涂鸦',eye:'ink',shape:null,tempo:1.05,amplitude:.9},
+    pixel:{label:'像素掌机',eye:'pixel',shape:'square',tempo:1.1,amplitude:.8},
+    rubber:{label:'橡皮管',eye:'asymmetric',shape:null,tempo:1.1,amplitude:1.15}
+  };
+  const PERSONALITIES={quiet:{label:'安静搭档',interval:1.5,tempo:1.1,social:.45},attentive:{label:'认真助手',interval:1,tempo:1,social:.7},playful:{label:'俏皮伙伴',interval:.85,tempo:1.05,social:1}};
+  function normalizeBase(value = {}) {
     return {eyeStyle:['auto',...EYE_STYLES].includes(value.eyeStyle)?value.eyeStyle:'auto',skin: Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
+  }
+  function normalize(value={}) {
+    return {...normalizeBase(value),artStyle:Object.hasOwn(ART_STYLES,value.artStyle)?value.artStyle:'classic',personality:Object.hasOwn(PERSONALITIES,value.personality)?value.personality:'attentive',stories:value.stories!==false};
   }
   function points(name) {
     return Array.from({length:120},(_,i)=>{
@@ -48,5 +61,5 @@
     if(/focus|scan|think|steady|code/.test(expression)) return ['square','hexagon','pentagon','capsule'];
     return ['circle','cloud','blob','drop'];
   }
-  return {SKINS,SHAPES,EYE_STYLES,normalize,points,path,pool};
+  return {SKINS,SHAPES,EYE_STYLES,ART_STYLES,PERSONALITIES,normalize,points,path,pool};
 });

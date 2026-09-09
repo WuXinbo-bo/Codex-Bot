@@ -46,6 +46,7 @@
         <button type="button" class="settings-tab active" data-settings-tab="connection">连接与同步</button>
         <button type="button" class="settings-tab" data-settings-tab="appearance">外观皮肤</button>
         <button type="button" class="settings-tab" data-settings-tab="motion">动作与随机</button>
+        <button type="button" class="settings-tab" data-settings-tab="library">表演收藏</button>
         <button type="button" class="settings-tab" data-settings-tab="updates">关于更新</button>
       </nav>
       <div class="settings-section" data-settings-section="updates" hidden>
@@ -66,6 +67,7 @@
         <div id="updateConfirm" hidden><p>安装会退出并重启机器人，Codex 任务不受影响。</p><button id="updateConfirmInstall" type="button">确认安装并重启</button><button id="updateCancelInstall" type="button">取消</button></div>
       </div>
       <div class="settings-section" data-settings-section="appearance" hidden>
+        <label>整套画风<select id="artStyle"></select></label>
         <label>皮肤<select id="skinSelect"><option value="green">草木绿</option><option value="ocean">深海蓝</option><option value="sunset">日落橙</option><option value="pink">樱花粉</option><option value="violet">紫罗兰</option><option value="lemon" selected>柠檬黄</option><option value="night">暗夜</option><option value="neon">霓虹</option></select></label>
         <label>形态<select id="shapeSelect"><option value="morph">情绪变形</option><option value="circle">固定圆形</option><option value="random">自由变形</option><option value="square">软方形</option><option value="triangle">软三角</option><option value="star">星星</option><option value="cloud">云朵</option><option value="hexagon">六边形</option></select></label>
         <label>眼睛风格<select id="eyeStyle"><option value="auto">随剧情变化</option><option value="classic">经典</option><option value="anime">动漫高光</option><option value="manga">漫画眼线</option><option value="minimal">极简线条</option><option value="pixel">像素</option><option value="neon">霓虹扫描</option><option value="ink">墨线</option><option value="sleepy">慵懒</option><option value="asymmetric">俏皮不对称</option></select></label>
@@ -75,9 +77,17 @@
         <label>面具最小间隔<select id="maskFrequency"><option value="rare">偶尔 · 120 秒</option><option value="normal" selected>标准 · 65 秒</option><option value="lively">活泼 · 40 秒</option></select></label>
       </div>
       <div class="settings-section" data-settings-section="motion" hidden>
+        <label>性格节奏<select id="personality"></select></label>
+        <label><input id="storiesToggle" type="checkbox" checked> 连贯小故事</label>
         <label>动画强度<select id="motionSelect"><option value="full">丰富</option><option value="soft">标准</option><option value="reduced">低动态</option></select></label>
         <label><input id="particlesToggle" type="checkbox" checked> 粒子与庆祝特效</label>
         <label><input id="randomToggle" type="checkbox" checked> 随机动作</label>
+      </div>
+      <div class="settings-section" data-settings-section="library" hidden>
+        <input id="librarySearch" type="search" placeholder="搜索表演" aria-label="搜索表演">
+        <label><input id="libraryFavorites" type="checkbox"> 只看收藏</label>
+        <output id="libraryCount" role="status"></output><div id="libraryList"></div>
+        <div class="library-pager"><button id="libraryPrev" class="icon-button" title="上一页" aria-label="上一页"><i data-lucide="chevron-left"></i></button><output id="libraryPage"></output><button id="libraryNext" class="icon-button" title="下一页" aria-label="下一页"><i data-lucide="chevron-right"></i></button></div>
       </div>
       <div class="settings-section" data-settings-section="connection">
       <button id="setupReopen" type="button">连接向导与修复</button>

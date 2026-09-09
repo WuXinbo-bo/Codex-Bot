@@ -11,6 +11,7 @@ import { bubblePosition } from "../shared/bubble-position.cjs";
 import { NativeCodex } from "./codex.js";
 import { createSourcePoller } from "./source-poller.js";
 import Appearance from "../src/appearance.js";
+import PerformanceLibrary from "../src/performance-library.js";
 import CompletionPolicy from "../shared/completion-policy.cjs";
 import { panelLayout, overlap } from "../shared/panel-layout.cjs";
 import { createUpdateManager } from "../shared/update-manager.cjs";
@@ -231,6 +232,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await publish("ball", "indicator:update", view.indicator);
     await publish("ball", "motion:preference", config.appearance?.motion || config.motion?.level || "full");
     await publish("ball", "appearance:preference", Appearance.normalize(config.appearance));
+    await interact('library-preferences',{records:PerformanceLibrary.normalize(config.performanceLibrary)});
     await renderCompletions();
   }
   center.on("update", (view) => {
@@ -461,7 +463,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     publish("ball", "input:fallback", true);
   });
   const allowed = {
-    ball: new Set(["ready", "toggle", "show", "hide", "lifecycle"]),
+    ball: new Set(["ready", "toggle", "show", "hide", "lifecycle", "performance-record"]),
     panel: new Set([
       "ready",
       "settings",
@@ -476,6 +478,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       "task",
       "source",
       "appearance",
+      "performance-library", "performance-preference", "performance-replay",
       "more",
       "quit",
     ]),
@@ -489,6 +492,20 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (!allowed[from]?.has(type))
       throw new Error("Unauthorized window action");
     const [a, b] = args || [];
+    if(type==='performance-library')return {items:PerformanceLibrary.catalog(config.performanceLibrary)};
+    if(type==='performance-record'||type==='performance-preference'){
+      if(type==='performance-record'&&(!PerformanceLibrary.valid(a?.name)||typeof a.completed!=='boolean'))throw Error('Invalid performance record');
+      const records=type==='performance-record'?PerformanceLibrary.record(config.performanceLibrary,a.name,a.completed):PerformanceLibrary.preference(config.performanceLibrary,a,b);
+      const next={...config,performanceLibrary:records};await persist('config.json',next);config=next;
+      if(type==='performance-preference')await interact('library-preferences',{records});
+      await publish('panel','performance:library',{items:PerformanceLibrary.catalog(records)});return {ok:true};
+    }
+    if(type==='performance-replay'){
+      if(!PerformanceLibrary.valid(a)||!config.performanceLibrary?.[a]?.seen)return {ok:false,error:'尚未遇到这个表演'};
+      if(drag.isActive()||center.view().activeCount>0)return {ok:false,error:'任务或拖拽进行中，请稍后回放'};
+      if(config.appearance?.motion==='reduced')return {ok:false,error:'请先关闭低动态模式'};
+      await interact('library-replay',{name:a});return {ok:true};
+    }
     if(type==='update-state')return updates.snapshot();
     if(type==='update-check'){updates.check(true).catch(diagnostic);return {ok:true};}
     if(type==='update-download'){updates.download().catch(diagnostic);return {ok:true};}
@@ -628,6 +645,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         )
           center.action(item.taskId, "ack");
         await renderCompletions();
+        await interact('completion-confirmed');
         return { ok: true };
       } catch (e) {
         return { ok: false, error: String(e) };
@@ -907,10 +925,12 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       if((await invoke('inspect')).completions.visible||!inbox.items.has(testId))throw Error('Auto close did not hide non-destructively');
       await action('panel','completion-preferences',[{autoCloseCompletions:false,completionEscalation:'angry'}]);
       const dragBefore=await invoke('inspect');
+      // Drag away from the avatar so collision recovery does not mask DPI movement.
+      const dragDx=dragBefore.completions.x<dragBefore.ball.x?-20:20;
       await action('completions','board-drag',[{phase:'start',x:100,y:100}]);
-      await action('completions','board-drag',[{phase:'end',x:120,y:110}]);
+      await action('completions','board-drag',[{phase:'end',x:100+dragDx,y:100}]);
       const dragAfter=await invoke('inspect');
-      if(Math.abs(dragAfter.completions.x-dragBefore.completions.x-20*geometry.scale)>2)throw Error('Board drag DPI mismatch');
+      if(Math.abs(dragAfter.completions.x-dragBefore.completions.x-dragDx*geometry.scale)>2)throw Error(`Board drag DPI mismatch: ${JSON.stringify({before:dragBefore.completions,after:dragAfter.completions,scale:geometry.scale,dragDx})}`);
       await action('completions','board-drag',[{phase:'reset'}]);
       if (boot.testMode !== "hold")
         await action("completions", "completion", [

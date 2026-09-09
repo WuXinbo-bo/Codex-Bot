@@ -297,6 +297,33 @@
     });
     return frames;
   }
+  const NARRATIVES={};
+  const narrativeScores={
+    practice:['偷偷练习递卡','idle',[
+      ['special_covert',900,reach('card')],['special_gingerly',1400,object('card',{x:10,rotate:-15},hand(A.present))],
+      ['special_caught_red',900,object('card',{x:-12,y:15,rotate:32},hand(A.down,A.brace))],['special_composed',1600,object('card',{y:0,rotate:0},hand(A.present,A.present))]]],
+    delivery:['练习后的熟练交付','completed',[
+      ['special_expectant',650,reach('card')],['special_understood',1100,object('card',{y:-4},hand(A.present))],['special_smug',1200,object('card',{rotate:0},hand(A.open,A.open))]]],
+    acknowledge:['收到确认后松口气','confirmation',[
+      ['special_bashful',400,hand(A.open)],['special_companion',650,hand(A.rest,A.rest,{cy:68})]]],
+    fidget:['悄悄玩方块','idle',[
+      ['special_covert',900,reach('cube')],['special_gingerly',1300,object('cube',{y:-10,rotate:25},hand(A.point))],['special_smug',1600,object('cube',{y:4,rotate:-30},hand(A.present))]]],
+    hide_cube:['被发现后藏好方块','observation',[
+      ['special_caught_red',500,object('cube',{y:0},hand(A.brace))],['special_composed',900,object('cube',{back:1,y:18,scale:.7},hand(A.think))]]],
+    resume_cube:['等你走开再继续','idle',[
+      ['special_covert',950,hand(A.think)],['special_gingerly',1200,object('cube',{back:1,y:12},hand(A.grip))],['special_bashful',1600,object('cube',{rotate:35},hand(A.present))]]],
+    letter:['把纸张慢慢折好','idle',[
+      ['special_gingerly',1100,object('card',{rotate:-12},hand(A.present,A.present))],['focus',1800,object('card',{scale:.8,rotate:20},hand(A.think,A.think))],['special_understood',1600,object('plane',{rotate:10},hand(A.present))]]],
+    return_letter:['忙完取回那张纸','idle',[
+      ['special_covert',900,reach('card')],['special_gingerly',1500,object('card',{scale:.8,rotate:20},hand(A.think,A.think))],['special_companion',1600,object('plane',{rotate:10},hand(A.present))]]],
+    cleanup:['忙完整理桌面','idle',[
+      ['special_composed',900,object('notebook',{x:-10},hand(A.present))],['special_gingerly',1500,object('notebook',{back:1,y:25},hand(A.down))],['special_understood',1100,object('pencil',{y:8,rotate:0},hand(A.think))],['special_companion',1100,object('pencil',{back:1,y:16},hand(A.grip))]]]
+  };
+  for(const [key,[label,route,beats]] of Object.entries(narrativeScores)){
+    const name='story_'+key;LABELS[name]=label;NARRATIVES[name]={label,route};
+    CLIPS[name]=beats.map(([expression,duration,pose])=>({...step(expression,duration,Rig.merge(pose,{effects:{complete:0,input:0,error:0}})),transition:Math.min(600,duration*.7)}));
+    CLIPS[name].push({...step('calm',450,{effects:{complete:0,input:0,error:0}}),transition:400});
+  }
   const family=name=>{
     const props=new Set((CLIPS[name]||[]).flatMap(f=>Object.entries(f.pose.accessories||{}).filter(([,v])=>v.opacity>0).map(([k])=>k)));
     for(const [family,items] of [['magic',['topHat','wand']],['art',['brush','drawing','beret']],['play',['cube','plane']],['rest',['cup','pillow','sleepHat','hourglass']],['inspect',['lens','detectiveHat']],['work',['glasses','card','notebook','pencil','stamp']],['signal',['flag']],['costume',['shades','cape']]])if(items.some(p=>props.has(p)))return family;
@@ -311,5 +338,5 @@
     for(let i=0;i<keys.length;i++){r-=weights[i];if(r<0){key=keys[i];break;}}
     const pool=groups[key];return pool?.[Math.min(pool.length-1,Math.floor(random()*pool.length))];
   }
-  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
+  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, NARRATIVES, theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
 });

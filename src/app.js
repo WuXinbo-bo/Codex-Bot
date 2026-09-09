@@ -9,6 +9,7 @@
   let setRandomEnabled = () => {};
   let theaterMasksEnabled = true;
   let performanceDiagnostics = () => ({});
+  let configureBehavior=()=>{};
 
   const ball = window.MetaBotM1?.create(ballEl, { expression: "neutral", motionLevel: effectiveMotionLevel() });
   const color = (status) => ({ running: "running", completed: "completed", failed: "failed", needs_attention: "needs-attention", queued: "queued", paused: "paused", offline: "offline", idle: "idle", stopped: "stopped", unknown: "unknown" })[status] || "offline";
@@ -32,6 +33,8 @@
     onTheaterMask: id => id&&theaterMasksEnabled?ball?.setMask(id,'classic'):ball?.clearMask(true),
     onPerformance: active => ball?.setPerformanceContext({ theater: active }),
     onPerformanceDiagnostics: read => { performanceDiagnostics=read; },
+    onBehaviorControl: fn=>{configureBehavior=fn;},
+    onActivityEvent: event=>window.metaBot?.recordPerformance?.(event).catch(console.error),
     onLifecycle: detail => { window.metaBot?.showLifecycleToast?.(detail.events.map(event => event.id)); },
     motionLevel: effectiveMotionLevel(),
     intervalMs: 8500
@@ -71,6 +74,7 @@
     renderMotion({ mode: "idle" });
   });
   window.metaBot?.onAppearancePreference?.((detail = {}) => {
+    configureBehavior(detail);
     theaterMasksEnabled = detail.emoji !== false && detail.maskAuto !== false && detail.masks !== false;
     ball?.setAppearance(detail);
     setRandomEnabled(detail.random !== false);

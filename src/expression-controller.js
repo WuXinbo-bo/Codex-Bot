@@ -1,7 +1,7 @@
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"));
-  else root.MetaBotExpressionController = factory(root.MetaBotActivities);
-})(typeof self !== "undefined" ? self : globalThis, function (Activities) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'));
+  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory);
+})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory) {
   const POOLS = Object.freeze({
     offline: ["waiting", "calm", "neutral"],
     idle: ["neutral", "calm", "curious", "waiting"],
@@ -63,6 +63,10 @@
     const intervalMs = Math.max(2500, Number(options.intervalMs || 8500));
     const standbyAfter = Math.max(intervalMs, Number(options.standbyAfter || 60_000));
     const sleepAfter = Math.max(standbyAfter, Number(options.sleepAfter || 180_000));
+    let preferences=Appearance.normalize(options.appearance),library={},requestedReplay=null;
+    const memory=Memory.create(now);
+    const personality=()=>Appearance.PERSONALITIES[preferences.personality];
+    const eligibleFrequency=name=>library[name]?.frequency!=='less'||random()<.2;
 
     let status = "offline";
     let count = 0;
@@ -111,6 +115,8 @@
     let lastPanelStyle = -1;
     let panelStyle = 0;
     let emotionMemory = { name:'settled', intensity:.2, at:now() };
+    let panelContact=null;
+    const memoryEvents=new Set();
     function feel(name,intensity=.5){emotionMemory={name,intensity,at:now()};}
     function pickPerformance(kind) {
       const pool = (Activities.PERFORMANCES?.[kind === 'joined' ? 'started' : kind] || []).map(name=>`performance_${name}`);
@@ -185,6 +191,7 @@
 
     function playSocial(group, priority = 28) {
       if (dragging || transient?.priority >= 50 || transient?.priority > priority) return false;
+      if(preferences.personality==='quiet'&&['hover','dwell','return'].includes(group))return playTransient('attentive',{priority,duration:450,transition:300});
       const name = pickReaction(group);
       if (!name) return false;
       if (motionLevel === "reduced") return playTransient(Activities.CLIPS[name][0].expression, { priority, duration: 120 });
@@ -224,7 +231,10 @@
       const pool = authored.length ? authored.map(name => `performance_${name}`) : pools[kind];
       const eligible = pool.filter(name => name !== lifecycleCurrent?.clip);
       const choices = eligible.length ? eligible : pool;
-      const clip = pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
+      let narrative=null;
+      if(kind==='completed')for(const event of events)if(!memoryEvents.has(event.id)){memoryEvents.add(event.id);narrative=memory.observe('completed')||narrative;}
+      while(memoryEvents.size>128)memoryEvents.delete(memoryEvents.values().next().value);
+      const clip = (preferences.stories&&narrative) || pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
       lifecycleCurrent = { kind, events, clip };
       feel(({started:'engaged',joined:'engaged',completed:'satisfied',failed:'concerned',attention:'expectant',stopped:'settled'})[kind] || 'settled');
       if (kind === "completed") pleasedUntil = now() + 20000;
@@ -243,6 +253,10 @@
     }
 
     function cancelActivity(reason = "interrupted") {
+      if(activity){
+        if(reason==='completed')options.onActivityEvent?.({name:activity.name,completed:true});
+        if(Activities.NARRATIVES[activity.name]){memory.observe(reason==='completed'?'finished':'interrupted',activity.name);options.onPerformance?.(false);}
+      }
       if(activity?.name.startsWith('performance_')) options.onPerformance?.(false);
       if(Activities.THEATERS[activity?.name]) {
         const name = activity.name;
@@ -264,6 +278,7 @@
 
     function suspendActivity(priority = 60) {
       if (!activity || activity.priority > 20) return;
+      if(Activities.NARRATIVES[activity.name]){suspendedActivity=null;return;}
       if((Activities.THEATERS[activity.name] || activity.name.startsWith('performance_')) && (priority >= 50 && priority !== 60 || dragging)){suspendedActivity=null;return;}
       suspendedActivity = { ...activity, remaining: Math.max(1, activity.dueAt - now()), context: taskKey, expires: now() + 15000 };
     }
@@ -279,6 +294,8 @@
       clearTimer("transient");
       transient = { name, priority, token: ++token };
       activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
+      if(!resume)options.onActivityEvent?.({name,completed:false});
+      if(Activities.NARRATIVES[name]){activity.tempo=1;memory.started(name);options.onPerformance?.(true);}
       if(name.startsWith('performance_')) {
         activity.tempo=resume?.tempo || 1;
         options.onPerformance?.(true);
@@ -296,6 +313,7 @@
         theaterEvent(resume ? "resumed" : "started", name);
         nextActivityAt=now()+15000*activity.tempo+15000;
       }
+      if(!resume&&priority<60)activity.tempo*=personality().tempo*Appearance.ART_STYLES[preferences.artStyle].tempo;
       const reminderKey = priority === 50 ? taskKey : null;
       const advance = () => {
         if (!activity) return;
@@ -335,6 +353,10 @@
 
     function apply(name, settings = {}) {
       if (!name || (name === current && !settings.force)) return false;
+      if(panelContact&&now()<panelContact.until&&activity?.priority===55&&settings.performanceId){
+        const side=panelContact.side,other=side==='right'?'left':'right';
+        settings={...settings,pose:{...settings.pose,gaze:{x:side==='right'?.8:-.8,y:.2},arms:{[side]:{x:4,y:70,bendX:2,bendY:83,opacity:1},[other]:{opacity:0}}}};
+      }
       current = name;
       setExpression(name, { duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs, auto: settings.auto !== false });
       return true;
@@ -356,6 +378,7 @@
     }
 
     function chooseBase(first = false) {
+      if(preferences.stories&&memory.snapshot().afterglow&&['idle','completed'].includes(status))return 'special_smug';
       const inactive = status === "offline" && count === 0;
       const elapsed = now() - lastActivity;
       if (inactive && elapsed >= sleepAfter) return "fatigue";
@@ -369,7 +392,7 @@
     }
 
     function nextBaseDelay() {
-      return Math.round(intervalMs * (0.72 + clamp(random(), 0, 1) * 0.56));
+      return Math.round(intervalMs * personality().interval * (0.72 + clamp(random(), 0, 1) * 0.56));
     }
 
     function scheduleBase() {
@@ -392,6 +415,7 @@
       clearTimer("transient");
       if (pendingReminder && pendingReminder.key === taskKey && remind()) return;
       if (drainLifecycle()) return;
+      if(requestedReplay){const request=requestedReplay;requestedReplay=null;if(now()<request.until&&!dragging&&['idle','offline','completed'].includes(status)&&playActivity(request.name,40))return;}
       if(pendingPanel && !dragging) {
         const detail=pendingPanel;pendingPanel=null;
         if(now()-detail.at<2500){interact('panel-phase',detail);return;}
@@ -415,19 +439,22 @@
           const route=status==='offline'?'idle':status;
           const theaters=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route===route&&now()-(activityHistory.get(name)??-Infinity)>300000);
           if(now()>=nextTheaterAt&&theaters.length){
-            const selected=chooseTheater(theaters);
+            const allowed=theaters.filter(eligibleFrequency);
+            const selected=allowed.length?chooseTheater(allowed):null;
             if(playActivity(selected,5)){scheduleBase();return;}
           }
+          const story=preferences.stories?memory.next(status,pointerNear):null;
+          if(story&&random()<.2&&eligibleFrequency(story)&&playActivity(story,5)){scheduleBase();return;}
           const idle = ["offline", "idle"].includes(status);
           const date = new Date(now());
           const holiday = (date.getMonth() === 0 && date.getDate() === 1) || (date.getMonth() === 11 && date.getDate() === 25);
           const pool = Activities.POOLS[status] || (idle ? Activities.POOLS.idle.concat(now() - lastActivity >= sleepAfter ? ["nap"] : [], holiday ? ["gift"] : []) : []);
-          const eligible = pool.filter(name => name !== "mimic" && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
+          const eligible = pool.filter(name => name !== "mimic" && eligibleFrequency(name) && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
           const last=[...activityHistory].sort((a,b)=>b[1]-a[1])[0];
           const history=[...activityHistory].sort((a,b)=>b[1]-a[1]).slice(0,6);
           if(status==='running'&&random()<.25){
             const name=pickPerformance('running');
-            if(name&&playActivity(name,5)){scheduleBase();return;}
+            if(name&&eligibleFrequency(name)&&playActivity(name,5)){scheduleBase();return;}
           }
           if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
         }
@@ -541,9 +568,25 @@
 
     function interact(type, detail = {}) {
       if (!type) return current;
+      if(type==='library-preferences'){library=detail.records||{};return current;}
+      if(type==='library-replay'){
+        if(!Activities.CLIPS[detail.name]||dragging||!['idle','offline','completed'].includes(status))return current;
+        if(transient?.priority>=50)requestedReplay={name:detail.name,until:now()+10000};else playActivity(detail.name,40);
+        return current;
+      }
+      if(type==='completion-confirmed'){
+        const name=memory.observe('confirmed');
+        if(preferences.stories&&!dragging&&['idle','completed','offline'].includes(status)){
+          if(motionLevel==='reduced')playTransient('micro_confirm',{priority:57,duration:120});else playActivity(name,57);
+        }
+        return current;
+      }
       const local = detail.local || {};
+      if(preferences.stories&&activity?.name==='story_fidget'&&['hover-enter','proximity-enter'].includes(type)){
+        const name=memory.observe('noticed',activity.name);pointerNear=true;playActivity(name,28);setGaze(local.x||0,local.y||0);return current;
+      }
       // Passive pointer observation shares gaze, never takes ownership of a story.
-      if ((Activities.THEATERS[activity?.name] || activity?.name.startsWith('performance_')) && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
+      if ((Activities.NARRATIVES[activity?.name] || Activities.THEATERS[activity?.name] || activity?.name.startsWith('performance_')) && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
         pointerNear = !["pointer-leave", "bubble-hover"].includes(type);
         if (pointerNear) setGaze(local.x || 0, local.y || 0); else clearGaze();
         return current;
@@ -619,6 +662,8 @@
           break;
         }
         case "panel-phase":
+          if(['entering','leaving'].includes(detail.phase))panelContact={side:detail.side==='left'?'left':'right',until:now()+1400};
+          if(detail.phase==='hidden'){panelContact=null;break;}
           // Never erase a lifecycle performance just because its toast has entered.
           if(activity?.priority===55){
             if(detail.label==='panel')pendingPanel={...detail,at:now()};
@@ -658,7 +703,7 @@
         }
         case "bubble-open": panelOpen = true; if (transient?.priority < 35 || !transient) playSocial("panel", 35); break;
         case "bubble-close": panelOpen = false; reminderAt = now() + 60000; if (transient?.priority < 35 || !transient) playSocial("leave", 35); break;
-        case "activity-request": if ((Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
+        case "activity-request": if ((Activities.NARRATIVES[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
         case "refresh-start": playTransient("refreshing", { priority: 40 }); break;
         case "refresh-success":
         case "refresh-recovered": playTransient("micro_confirm", { priority: 40, duration: 520 }); break;
@@ -687,7 +732,7 @@
     function stop() {
       if (lifecycleTimer !== null) unschedule(lifecycleTimer);
       lifecycleTimer = null; lifecycleQueue.clear();
-      cancelActivity(); pendingReminder = null; pendingPanel=null; suspendedActivity = null; dragging = false; pointerNear = false;
+      cancelActivity(); pendingReminder = null; pendingPanel=null; panelContact=null; requestedReplay=null; suspendedActivity = null; dragging = false; pointerNear = false;
       clearTimer("base");
       clearTimer("transient");
       transient = null;
@@ -698,11 +743,12 @@
     function setRandomEnabled(value) {
       randomEnabled = value !== false;
       if (!randomEnabled) suspendedActivity = null;
-      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
+      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||Activities.NARRATIVES[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
     }
     options.onRandomControl?.(setRandomEnabled);
+    options.onBehaviorControl?.(value=>{preferences=Appearance.normalize(value);if(!preferences.stories){memory.reset();if(Activities.NARRATIVES[activity?.name])restoreBase();}});
     setMotionLevel(motionLevel);
-    options.onPerformanceDiagnostics?.(()=>({history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
+    options.onPerformanceDiagnostics?.(()=>({history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
     return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 

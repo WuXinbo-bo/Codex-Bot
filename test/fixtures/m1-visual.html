@@ -46,6 +46,7 @@
   <h1>Meta Bot M1</h1>
   <p><a href="task-relay.html">任务接力交互演示：逐条查看 / 确认 / 保留切换</a></p>
   <p id="catalogCount"></p>
+  <div class="toolbar"><label>整套画风 <select id="artPreview"></select></label><label>性格节奏 <select id="personalityPreview"></select></label></div>
   <div class="toolbar"><label>预览皮肤 <select id="skinPreview"></select></label><label>身体形态 <select id="shapePreview"></select></label><label>动态 <select id="motionPreview"><option value="full">丰富</option><option value="soft">柔和</option><option value="reduced">低动态</option></select></label></div>
   <div class="toolbar"><select id="activitySelect" aria-label="活动"></select><button id="play" aria-label="播放">▶</button><select id="statusSelect" aria-label="Codex 状态"><option value="running">Codex 正在工作</option><option value="needs_attention">Codex 需要处理</option><option value="completed">Codex 已完成</option><option value="failed">Codex 执行失败</option><option value="offline">空闲</option></select></div>
   <div id="preview" class="avatar"></div>
@@ -56,7 +57,7 @@
     <div class="catalog-controls"><select id="catalogCategory" aria-label="图册分类"></select><input id="catalogSearch" type="search" placeholder="搜索名称或编号" aria-label="搜索图册"><output id="catalogTotal" aria-live="polite"></output></div>
     <div class="catalog-controls"><button id="catalogPrev" aria-label="上一页" title="上一页">←</button><label>第 <input id="catalogPage" type="number" min="1" value="1" aria-label="页码"> 页</label><span id="catalogPages"></span><button id="catalogNext" aria-label="下一页" title="下一页">→</button></div>
     <div id="catalogContent">
-      <div id="skins" class="grid" hidden></div><div id="shapes" class="grid" hidden></div><div id="eyeStyles" class="grid" hidden></div>
+      <div id="artStyles" class="grid" hidden></div><div id="skins" class="grid" hidden></div><div id="shapes" class="grid" hidden></div><div id="eyeStyles" class="grid" hidden></div>
       <div id="symbols" class="grid" hidden></div><div id="activities" hidden></div><div id="proportions" class="grid" hidden></div>
       <div id="core" class="grid" hidden></div><div id="interactions" class="grid" hidden></div><div id="accessoryTiles" class="grid" hidden></div><div id="maskGallery" class="grid" hidden></div>
     </div>
@@ -80,10 +81,10 @@
   <script src="../../src/appearance.js"></script>
   <script src="../../src/mask-system.js"></script>
   <script src="../../src/m1-renderer.js"></script>
-  <script src="../../src/expression-controller.js"></script>
+  <script src="../../src/companion-memory.js"></script><script src="../../src/expression-controller.js"></script>
   <script>
     const instances = [];
-    const catalogs = Object.fromEntries(['core','interactions','activities','skins','shapes','eyeStyles','symbols','proportions','accessoryTiles','maskGallery'].map(id=>[id,[]]));
+    const catalogs = Object.fromEntries(['core','interactions','activities','artStyles','skins','shapes','eyeStyles','symbols','proportions','accessoryTiles','maskGallery'].map(id=>[id,[]]));
     // Store lightweight pose descriptions; only the selected page owns renderers.
     function tile(parent, name, label = name) {
       const item={name,label,pose:MetaBotM1Rig.getExpression(name),appearance:{maskAuto:false}};
@@ -138,7 +139,8 @@
       const option = document.createElement('option'); option.value = name; option.textContent = labels[name]||name; document.getElementById('activitySelect').append(option);
     }
     const preview = MetaBotM1.create(document.getElementById('preview'));
-    const previewDirector = MetaBotExpressionController.createExpressionController({ setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
+    let configurePreview=()=>{};
+    const previewDirector = MetaBotExpressionController.createExpressionController({ onBehaviorControl:fn=>configurePreview=fn,setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
     previewDirector.update('running', 1);
     let previewTimer = null;
     let interactive = true;
@@ -162,7 +164,7 @@
     function play(name) {
       clearDemo(); interactive = false;
       previewDirector.stop();
-      preview.setPerformanceContext({theater:name.startsWith('performance_')||name.startsWith('theater_')});
+      preview.setPerformanceContext({theater:name.startsWith('performance_')||name.startsWith('theater_')||name.startsWith('story_')});
       clearTimeout(previewTimer);
       let index = 0;
       function advance() {
@@ -248,15 +250,18 @@
     }, 500);
     window.review = { instances, live, director, preview, previewDirector, play, scenario, startInteractive };
     const A=MetaBotAppearance,M=MetaBotMaskSystem;
+    for(const [id,meta] of Object.entries(A.ART_STYLES)){document.getElementById('artPreview').add(new Option(meta.label,id));tile('artStyles','special_covert',meta.label).setAppearance({artStyle:id,shape:'morph',maskAuto:false});}
+    for(const [id,meta] of Object.entries(A.PERSONALITIES))document.getElementById('personalityPreview').add(new Option(meta.label,id));
+    document.getElementById('personalityPreview').value='attentive';
     document.getElementById('catalogCount').textContent=`${Object.keys(MetaBotM1Rig.EXPRESSIONS).length} 神态 / ${Object.keys(MetaBotActivities.CLIPS).length} 活动 / ${Object.keys(A.SKINS).length} 皮肤 / ${A.SHAPES.length} 形态 / ${M.names.length} 面具 / ${M.CHAINS.length} 佩戴动作 / ${MetaBotM1Rig.ACCESSORIES.length} 配件`;
     for(const name of Object.keys(A.SKINS)) {document.getElementById('skinPreview').add(new Option(name,name));const bot=tile('skins','neutral',name);bot.setAppearance({skin:name,shape:'circle',maskAuto:false});bot.setMotionLevel('reduced');}
     document.getElementById('skinPreview').value='lemon';
     for(const name of ['morph','random',...A.SHAPES])document.getElementById('shapePreview').add(new Option(name,name));
     for(const name of A.SHAPES){const bot=tile('shapes','neutral',name);bot.setAppearance({shape:name,maskAuto:false});bot.setMotionLevel('reduced');}
     for(const name of MetaBotM1Rig.ACCESSORIES)tile('accessoryTiles','neutral',name).setExpression('neutral',{duration:0,pose:{accessories:{[name]:{opacity:1}}}});
-    const settings=()=>({skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
-    function applyPreview(){preview.setAppearance(settings());preview.setMotionLevel(document.getElementById('motionPreview').value);}
-    for(const id of ['skinPreview','shapePreview','motionPreview'])document.getElementById(id).onchange=applyPreview;
+    const settings=()=>({artStyle:document.getElementById('artPreview').value,personality:document.getElementById('personalityPreview').value,skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
+    function applyPreview(){preview.setAppearance(settings());configurePreview(settings());preview.setMotionLevel(document.getElementById('motionPreview').value);}
+    for(const id of ['skinPreview','shapePreview','motionPreview','artPreview','personalityPreview'])document.getElementById(id).onchange=applyPreview;
     for(const id of M.names)document.getElementById('maskSelect').add(new Option(M.MASKS[id].label,id));
     const chainLabels=['身后取出','探头试戴','翻转戴上','歪戴扶正','滑落扶正','花式举起'];
     M.CHAINS.forEach((id,i)=>document.getElementById('maskChain').add(new Option(chainLabels[i],id)));
@@ -266,7 +271,7 @@
     document.getElementById('maskEvent').onclick=()=>{preview.setAppearance({...settings(),maskAuto:true});preview.setTaskStatus(document.getElementById('maskStatus').value);document.getElementById('preview').scrollIntoView({block:'center'});};
     const make=(tag,attrs)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;};
     for(const name of M.names)catalogs.maskGallery.push({name,label:M.MASKS[name].label});
-    const categoryLabels={core:'基础神态',interactions:'更多神态',activities:'全部活动',skins:'皮肤',shapes:'身体形状',eyeStyles:'眼睛风格',symbols:'特殊眼睛',proportions:'眼睛比例',accessoryTiles:'配件',maskGallery:'整脸面具'};
+    const categoryLabels={core:'基础神态',interactions:'更多神态',activities:'全部活动',artStyles:'整套画风',skins:'皮肤',shapes:'身体形状',eyeStyles:'眼睛风格',symbols:'特殊眼睛',proportions:'眼睛比例',accessoryTiles:'配件',maskGallery:'整脸面具'};
     const categorySelect=document.getElementById('catalogCategory'),search=document.getElementById('catalogSearch'),pageInput=document.getElementById('catalogPage');
     for(const [id,label] of Object.entries(categoryLabels))categorySelect.add(new Option(label,id));
     let category='core',pageNumber=1,searchTimer=null;

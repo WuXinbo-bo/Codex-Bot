@@ -49,6 +49,36 @@ function harness(settings = {}) {
   return { clock, controller, expressions, motions, gazes, active };
 }
 
+test('rehearsal and acknowledgement connect to real lifecycle without extra task events',()=>{
+  const events=[];let read;const h=harness({onLifecycle:event=>events.push(event.kind),onPerformanceDiagnostics:fn=>read=fn});
+  h.controller.update('idle',0,{quiet:true});h.controller.interact('activity-request',{name:'story_practice'});h.clock.advance(6000);
+  h.controller.interact('task-lifecycle',{events:[{id:'story-done',kind:'completed',taskId:'a'}]});h.clock.advance(180);
+  assert.equal(h.controller.getState().activity.name,'story_delivery');assert.deepEqual(events,['completed']);
+  h.controller.interact('completion-confirmed');assert.equal(h.controller.getState().activity.name,'story_acknowledge');assert.equal(read().story.afterglow,false);
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+test('noticed narrative hides its prop instead of resuming it immediately',()=>{
+  let read;const h=harness({onPerformanceDiagnostics:fn=>read=fn});h.controller.update('idle',0,{quiet:true});
+  h.controller.interact('activity-request',{name:'story_fidget'});h.controller.interact('hover-enter');
+  assert.equal(h.controller.getState().activity.name,'story_hide_cube');assert.equal(h.controller.getState().suspendedActivity,null);
+  h.clock.advance(2200);h.controller.interact('pointer-leave');assert.notEqual(h.controller.getState().activity?.name,'story_fidget');assert.equal(read().story.stored,'cube');
+  h.controller.stop();
+});
+test('personality applies through configuration and manual replay cannot override running work',()=>{
+  let configure,read;const h=harness({onBehaviorControl:fn=>configure=fn,onPerformanceDiagnostics:fn=>read=fn});
+  configure({personality:'quiet',stories:false});h.controller.update('idle',0,{quiet:true});h.controller.interact('hover-enter');assert.equal(h.controller.getCurrent(),'attentive');
+  assert.equal(read().personality,'quiet');h.controller.update('running',1,{quiet:true});h.controller.interact('library-replay',{name:'magic'});assert.notEqual(h.controller.getState().activity?.name,'magic');h.controller.stop();
+});
+test('disabling random animation stops an ambient narrative immediately',()=>{
+  let toggle;const h=harness({onRandomControl:fn=>toggle=fn});
+  h.controller.update('idle',0,{quiet:true});
+  for(let elapsed=0;elapsed<44000&&!h.controller.getState().activity;elapsed+=250)h.clock.advance(250);
+  assert.equal(h.controller.getState().activity.name,'story_practice');
+  assert.equal(h.controller.getState().activity.priority,5);
+  toggle(false);assert.equal(h.controller.getState().activity,null);
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
 test('long theater lasts about fifteen seconds and releases every mask',()=>{
   const masks=[];
   const h=harness({onTheaterMask:id=>masks.push(id)});
