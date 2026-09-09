@@ -5,19 +5,58 @@
 })(typeof self !== 'undefined' ? self : globalThis, function() {
   const SKINS = {green:['#02AD45','#87F8AD'],ocean:['#249AD9','#A0EDFF'],sunset:['#F58C40','#FFE0A2'],pink:['#ED83B6','#FFD9EA'],violet:['#9872DE','#E0CAFF'],lemon:['#EDCB42','#FFF5AE'],night:['#536178','#AEBFD8'],neon:['#54DAB9','#CB98FF']};
   const SHAPES = ['circle','square','triangle','pentagon','hexagon','star','drop','capsule','cloud','diamond','flower','blob','pancake','bean','bell','kite','cushion','spring'];
-  const EYE_STYLES = ['classic','anime','manga','minimal','pixel','neon','ink','sleepy','asymmetric'];
+  const EYE_PRESETS = {
+    classic:{label:'经典圆眼',group:'base'},
+    anime:{label:'动漫亮眼',group:'base',design:{iris:1,shine:1,secondary:1,anime:1}},
+    almond:{label:'柔和杏眼',group:'base',eye:{width:1,height:.85,kx:.75,ky:.3},pupil:{width:.94,height:.94}},
+    bean:{label:'豆豆圆瞳',group:'base',eye:{width:.88,height:.88},pupil:{width:1.3,height:1.16}},
+    retro:{label:'复古动画眼',group:'base',eye:{width:.9,height:1.08},pupil:{width:1.12,height:1.16},design:{retro:1}},
+    glass:{label:'清透玻璃眼',group:'base',eye:{width:1,height:.98},design:{iris:1,shine:1,tone:1},pupil:{width:.85,height:.88}},
+    manga:{label:'手绘漫画眼',group:'base',eye:{width:1,height:.88,kx:.65,ky:.33},design:{rim:1},pupil:{width:1.08,height:1}},
+    soft_square:{label:'软方机械眼',group:'base',eye:{width:.9,height:.91,kx:.88,ky:.88},pupil:{width:.94,height:.86},design:{shine:.55}},
+    pixel:{label:'精品像素眼',group:'base',eye:{width:.96,height:.94},design:{pixel:1,shine:1},pupil:{width:1,height:.92}},
+    droplet:{label:'水滴幼态眼',group:'base',eye:{width:1,height:1.06,kx:.7,ky:.6,bottomK:.32},pupil:{width:1.08,height:1.07},design:{shine:.8}},
+    focus:{label:'专注锐眼',group:'emotion',base:'almond',mood:{upper:.2,lower:.02,tilt:5}},
+    crescent:{label:'温柔月牙眼',group:'emotion',base:'almond',mood:{lower:.16,arc:-8}},
+    curious:{label:'好奇探头眼',group:'emotion',base:'classic',mood:{asymmetry:.12}},
+    sleepy:{label:'困倦半眠眼',group:'emotion',base:'almond',mood:{upper:.46,lower:.03},tempo:1.7},
+    shy:{label:'害羞躲闪眼',group:'emotion',base:'droplet',mood:{lower:.1,tilt:-3},gaze:{x:-.45,y:.3},tempo:1.6},
+    smug:{label:'得意挑眼',group:'emotion',base:'manga',mood:{upper:.1,lower:.04,asymmetry:.06,oneLid:.18}},
+    astonished:{label:'惊讶定睛眼',group:'emotion',base:'classic',mood:{widen:.12,pupil:.76}},
+    tender:{label:'委屈含光眼',group:'emotion',base:'glass',mood:{lower:.06,tilt:-7},design:{tear:1},gaze:{x:0,y:.24},tempo:1.6}
+  };
+  const EYE_STYLES = Object.keys(EYE_PRESETS);
+  const LEGACY_EYES = {minimal:'bean',neon:'glass',ink:'manga',asymmetric:'curious'};
+  const normalizeEye = id => Object.hasOwn(EYE_PRESETS,id)?id:Object.hasOwn(LEGACY_EYES,id)?LEGACY_EYES[id]:'auto';
+  const EYE_CONTEXT = {
+    deep_focus:'focus',squint_focus:'focus',thinking:'focus',code:'focus',
+    curious:'curious',curious_split:'curious',brow_raise:'curious',side_peek:'curious',
+    complete:'crescent',relief:'crescent',soften:'crescent',proud_soft:'smug',
+    sleepy_peek:'sleepy',fatigue:'sleepy',shy_squint:'shy',surprise:'astonished',wide_listen:'astonished',
+    emotion_setback_1:'tender',emotion_closeness_0:'shy',emotion_recovery_0:'sleepy',
+    emotion_achievement_1:'smug',emotion_achievement_3:'crescent'
+  };
+  function eyeConfig(expression,appearance={},authored='classic') {
+    const selected=normalizeEye(appearance.eyeStyle),explicit=selected!=='auto';
+    const authoredId=normalizeEye(authored),context=EYE_PRESETS[authoredId]?.group==='emotion'?authoredId:EYE_CONTEXT[expression];
+    const id=explicit?selected:normalizeEye(ART_STYLES[appearance.artStyle]?.eye||(EYE_PRESETS[authoredId]?.group==='base'?authoredId:'classic'));
+    const emotion=EYE_PRESETS[id]?.group==='emotion'?id:explicit?null:context;
+    const baseId=EYE_PRESETS[id]?.base||id;
+    const base=EYE_PRESETS[baseId]||EYE_PRESETS.classic,detail=EYE_PRESETS[emotion]||{};
+    return {id,baseId,emotion,eye:base.eye||{},pupil:base.pupil||{},design:{...base.design,...detail.design},mood:detail.mood||{},gaze:explicit?detail.gaze:null,tempo:detail.tempo||1};
+  }
   const ART_STYLES = {
     classic:{label:'经典',eye:null,shape:null,tempo:1,amplitude:1},
-    mime:{label:'无声默剧',eye:'minimal',shape:null,tempo:1.15,amplitude:.7},
+    mime:{label:'无声默剧',eye:'bean',shape:null,tempo:1.15,amplitude:.7},
     clay:{label:'黏土软团',eye:'classic',shape:'blob',tempo:1.2,amplitude:.8},
-    paper:{label:'折纸伙伴',eye:'ink',shape:'diamond',tempo:1.1,amplitude:.7},
-    doodle:{label:'手绘涂鸦',eye:'ink',shape:null,tempo:1.05,amplitude:.9},
+    paper:{label:'折纸伙伴',eye:'almond',shape:'diamond',tempo:1.1,amplitude:.7},
+    doodle:{label:'手绘涂鸦',eye:'manga',shape:null,tempo:1.05,amplitude:.9},
     pixel:{label:'像素掌机',eye:'pixel',shape:'square',tempo:1.1,amplitude:.8},
-    rubber:{label:'橡皮管',eye:'asymmetric',shape:null,tempo:1.1,amplitude:1.15}
+    rubber:{label:'橡皮管',eye:'retro',shape:null,tempo:1.1,amplitude:1.15}
   };
   const PERSONALITIES={quiet:{label:'安静搭档',interval:1.5,tempo:1.1,social:.45},attentive:{label:'认真助手',interval:1,tempo:1,social:.7},playful:{label:'俏皮伙伴',interval:.85,tempo:1.05,social:1}};
   function normalizeBase(value = {}) {
-    return {eyeStyle:['auto',...EYE_STYLES].includes(value.eyeStyle)?value.eyeStyle:'auto',skin: Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
+    return {eyeStyle:normalizeEye(value.eyeStyle),skin: Object.hasOwn(SKINS,value.skin) ? value.skin : 'lemon', shape: ['morph','random',...SHAPES].includes(value.shape) ? value.shape : 'morph', motion:['full','soft','reduced'].includes(value.motion) ? value.motion : 'full', emoji:value.emoji !== false, masks:value.masks !== false, maskAuto:value.maskAuto !== false, maskStyle:['sticker','paper','holo'].includes(value.maskStyle)?value.maskStyle:'sticker', maskFrequency:['rare','normal','lively'].includes(value.maskFrequency)?value.maskFrequency:'normal', particles:value.particles !== false, random:value.random !== false};
   }
   function normalize(value={}) {
     return {...normalizeBase(value),artStyle:Object.hasOwn(ART_STYLES,value.artStyle)?value.artStyle:'classic',personality:Object.hasOwn(PERSONALITIES,value.personality)?value.personality:'attentive',stories:value.stories!==false};
@@ -61,5 +100,5 @@
     if(/focus|scan|think|steady|code/.test(expression)) return ['square','hexagon','pentagon','capsule'];
     return ['circle','cloud','blob','drop'];
   }
-  return {SKINS,SHAPES,EYE_STYLES,ART_STYLES,PERSONALITIES,normalize,points,path,pool};
+  return {SKINS,SHAPES,EYE_STYLES,EYE_PRESETS,LEGACY_EYES,eyeConfig,normalizeEye,ART_STYLES,PERSONALITIES,normalize,points,path,pool};
 });

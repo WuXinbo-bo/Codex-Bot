@@ -46,7 +46,7 @@
   <h1>Meta Bot M1</h1>
   <p><a href="task-relay.html">任务接力交互演示：逐条查看 / 确认 / 保留切换</a></p>
   <p id="catalogCount"></p>
-  <div class="toolbar"><label>整套画风 <select id="artPreview"></select></label><label>性格节奏 <select id="personalityPreview"></select></label></div>
+  <div class="toolbar"><label>整套画风 <select id="artPreview"></select></label><label>眼睛风格 <select id="eyePreview"><option value="auto">随场景变化</option></select></label><label>性格节奏 <select id="personalityPreview"></select></label></div>
   <div class="toolbar"><label>预览皮肤 <select id="skinPreview"></select></label><label>身体形态 <select id="shapePreview"></select></label><label>动态 <select id="motionPreview"><option value="full">丰富</option><option value="soft">柔和</option><option value="reduced">低动态</option></select></label></div>
   <div class="toolbar"><select id="activitySelect" aria-label="活动"></select><button id="play" aria-label="播放">▶</button><select id="statusSelect" aria-label="Codex 状态"><option value="running">Codex 正在工作</option><option value="needs_attention">Codex 需要处理</option><option value="completed">Codex 已完成</option><option value="failed">Codex 执行失败</option><option value="offline">空闲</option></select></div>
   <div id="preview" class="avatar"></div>
@@ -104,7 +104,7 @@
     for (const name of MetaBotM1Rig.CORE_EXPRESSION_NAMES) tile('core', name);
     for (const name of Object.keys(MetaBotM1Rig.EXPRESSIONS).filter(n=>!MetaBotM1Rig.CORE_EXPRESSION_NAMES.includes(n))) tile('interactions', name,MetaBotM1Rig.SPECIALS[name]?.label||MetaBotM1Rig.EMOTIONS[name]?.label||name);
     for(const eyeStyle of MetaBotAppearance.EYE_STYLES){
-      tile('eyeStyles','neutral',eyeStyle).setAppearance({skin:'lemon',shape:'circle',eyeStyle,maskAuto:false});
+      tile('eyeStyles','neutral',MetaBotAppearance.EYE_PRESETS[eyeStyle].label).setAppearance({skin:'lemon',shape:'circle',eyeStyle,maskAuto:false});
     }
     const live = MetaBotM1.create(document.getElementById('live'));
     const panelBot = MetaBotM1.create(document.getElementById('panelBot'));
@@ -259,9 +259,10 @@
     for(const name of ['morph','random',...A.SHAPES])document.getElementById('shapePreview').add(new Option(name,name));
     for(const name of A.SHAPES){const bot=tile('shapes','neutral',name);bot.setAppearance({shape:name,maskAuto:false});bot.setMotionLevel('reduced');}
     for(const name of MetaBotM1Rig.ACCESSORIES)tile('accessoryTiles','neutral',name).setExpression('neutral',{duration:0,pose:{accessories:{[name]:{opacity:1}}}});
-    const settings=()=>({artStyle:document.getElementById('artPreview').value,personality:document.getElementById('personalityPreview').value,skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
+    for(const [id,meta] of Object.entries(A.EYE_PRESETS))document.getElementById('eyePreview').add(new Option(meta.label,id));
+    const settings=()=>({eyeStyle:document.getElementById('eyePreview').value,artStyle:document.getElementById('artPreview').value,personality:document.getElementById('personalityPreview').value,skin:document.getElementById('skinPreview').value,shape:document.getElementById('shapePreview').value,maskStyle:document.getElementById('maskStyle').value,maskAuto:false});
     function applyPreview(){preview.setAppearance(settings());configurePreview(settings());preview.setMotionLevel(document.getElementById('motionPreview').value);}
-    for(const id of ['skinPreview','shapePreview','motionPreview','artPreview','personalityPreview'])document.getElementById(id).onchange=applyPreview;
+    for(const id of ['skinPreview','shapePreview','motionPreview','artPreview','personalityPreview','eyePreview'])document.getElementById(id).onchange=applyPreview;
     for(const id of M.names)document.getElementById('maskSelect').add(new Option(M.MASKS[id].label,id));
     const chainLabels=['身后取出','探头试戴','翻转戴上','歪戴扶正','滑落扶正','花式举起'];
     M.CHAINS.forEach((id,i)=>document.getElementById('maskChain').add(new Option(chainLabels[i],id)));

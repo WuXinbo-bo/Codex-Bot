@@ -31,6 +31,11 @@
   document.querySelector('[data-settings-tab="library"]').addEventListener('click',async()=>{try{const value=await window.metaBot?.getPerformanceLibrary?.();libraryItems=value?.items||[];renderLibrary();}catch(error){feedback(error.message,true);}});
   for(const [id,meta] of Object.entries(MetaBotAppearance.ART_STYLES))$('artStyle').add(new Option(meta.label,id));
   for(const [id,meta] of Object.entries(MetaBotAppearance.PERSONALITIES))$('personality').add(new Option(meta.label,id));
+  for(const [group,label] of [['base','常驻眼型'],['emotion','情境眼神']]){
+    const options=document.createElement('optgroup');options.label=label;
+    for(const [id,meta] of Object.entries(MetaBotAppearance.EYE_PRESETS))if(meta.group===group)options.append(new Option(meta.label,id));
+    $('eyeStyle').append(options);
+  }
   window.metaBot?.getNotificationSettings?.().then(settings => {
     if (!settings) return;
     $('retainCompletions').checked = settings.retainCompletions;

@@ -6,7 +6,7 @@
   const COLORS = Object.freeze({ body: "#02AD45", eyes: "#F3F6F2", ink: "#181B20", attention: "#F4BE4F", error: "#F0645D" });
   const SYMBOLS = Object.freeze(["star", "heart", "spiral", "squeeze", "flat", "cross", "dot", "tear"]);
   const ACCESSORIES = Object.freeze(["glasses", "shades", "topHat", "wand", "cape", "sleepHat", "pillow", "beret", "brush", "card", "cube", "spark", "plane", "cup", "detectiveHat", "lens", "umbrella", "gift", "drawing", "notebook", "pencil", "hourglass", "stamp", "flag"]);
-  const eye = (cx) => ({ cx, cy: 54, rx: 18, ry: 21, rotate: 0, upper: 0, lower: 0, closed: 0, arc: 3, symbols: Object.fromEntries(SYMBOLS.map(name => [name, 0])) });
+  const eye = (cx) => ({ cx, cy: 54, rx: 18, ry: 21, kx:.55228475,ky:.55228475,bottomK:.55228475,rotate: 0, upper: 0, lower: 0, closed: 0, arc: 3, symbols: Object.fromEntries(SYMBOLS.map(name => [name, 0])) });
   const arm = (x = 9, y = 91, bendX = 8, bendY = 85, opacity = 1) => ({ x, y, bendX, bendY, opacity });
   const ARMS = {
     none: arm(13, 86, 12, 83, 0), rest: arm(), open: arm(6, 59, 2, 77),
@@ -25,7 +25,7 @@
     accessories: Object.fromEntries(ACCESSORIES.map(name => [name, { opacity: 0, x: 0, y: 0, rotate: 0, scale: 1, back:0 }])),
     performance: { bob: 0, sway: 0, tilt: 0, wave: 0, squash: 0, cycles: 2 },
     eyeStyle: 'classic',
-    eyeDesign: { anime:0,manga:0,minimal:0,pixel:0,neon:0,ink:0,sleepy:0,asymmetric:0 },
+    eyeDesign: { anime:0,iris:0,shine:0,secondary:0,tone:0,retro:0,rim:0,tear:0,pixel:0 },
     accents: { blush: 0, sweat: 0, glint: 0, stress: 0 },
     breathe: 0.003
   };
@@ -154,21 +154,21 @@
   emotionPoses.emotion_caring_1=merge(emotionPoses.emotion_caring_1,{arms:{right:ARMS.present},gaze:{x:.55,y:.05},body:{rotate:4}});
   // Authored poses, not aliases of the core catalog. No synthetic task signal.
   const SPECIAL = {
-    overload: ['认真过载','neon',{eyes:both({upper:.4}),gaze:{x:.45,y:.3},accents:{sweat:1,stress:.5},arms:{left:ARMS.think,right:ARMS.brace}}],
+    overload: ['认真过载','focus',{eyes:both({upper:.4}),gaze:{x:.45,y:.3},accents:{sweat:1,stress:.5},arms:{left:ARMS.think,right:ARMS.brace}}],
     eureka: ['灵光一现','anime',{eyes:both({ry:25}),pupils:both({rx:7,ry:9}),body:{rx:49,ry:55,cy:61},accents:{glint:1},arms:{right:ARMS.point}}],
-    covert: ['偷偷观察','asymmetric',{eyes:{left:{upper:.65},right:{ry:25}},gaze:{x:-.85,y:0},body:{rotate:-4},arms:{left:ARMS.grip}}],
-    caught_red: ['被抓包','manga',{eyes:both({ry:25}),pupils:both({rx:5,ry:6}),accents:{blush:1,sweat:.5},body:{rx:48,ry:55,cy:67},arms:{left:ARMS.brace,right:ARMS.brace}}],
+    covert: ['偷偷观察','curious',{eyes:{left:{upper:.65},right:{ry:25}},gaze:{x:-.85,y:0},body:{rotate:-4},arms:{left:ARMS.grip}}],
+    caught_red: ['被抓包','astonished',{eyes:both({ry:25}),pupils:both({rx:5,ry:6}),accents:{blush:1,sweat:.5},body:{rx:48,ry:55,cy:67},arms:{left:ARMS.brace,right:ARMS.brace}}],
     unravel: ['有点晕乎','pixel',{eyes:both({symbols:{spiral:1}}),body:{rx:56,ry:48,rotate:8},arms:{left:ARMS.down,right:ARMS.down},accents:{stress:.7}}],
-    composed: ['强装镇定','ink',{eyes:both({upper:.36}),gaze:{x:.6,y:.25},accents:{sweat:1},arms:{left:ARMS.grip,right:ARMS.grip},breathe:.006}],
-    smug: ['得意邀功','manga',{eyes:{left:{upper:.5},right:{lower:.3}},gaze:{x:0,y:-.3},body:{rotate:-8,cy:61},accents:{blush:.55},arms:{right:ARMS.salute}}],
-    companion: ['安心陪伴','minimal',{eyes:both({closed:1,arc:-8}),body:{cy:66},arms:{right:ARMS.rest},breathe:.005}],
-    juggling: ['忙而不乱','pixel',{eyes:{left:{upper:.15},right:{lower:.2}},gaze:{x:.75,y:0},arms:{left:ARMS.open,right:ARMS.point},accents:{sweat:.45}}],
+    composed: ['强装镇定','focus',{eyes:both({upper:.36}),gaze:{x:.6,y:.25},accents:{sweat:1},arms:{left:ARMS.grip,right:ARMS.grip},breathe:.006}],
+    smug: ['得意邀功','smug',{eyes:{left:{upper:.5},right:{lower:.3}},gaze:{x:0,y:-.3},body:{rotate:-8,cy:61},accents:{blush:.55},arms:{right:ARMS.salute}}],
+    companion: ['安心陪伴','crescent',{eyes:both({closed:1,arc:-8}),body:{cy:66},arms:{right:ARMS.rest},breathe:.005}],
+    juggling: ['忙而不乱','soft_square',{eyes:{left:{upper:.15},right:{lower:.2}},gaze:{x:.75,y:0},arms:{left:ARMS.open,right:ARMS.point},accents:{sweat:.45}}],
     expectant: ['翘首等候','anime',{eyes:both({ry:25,lower:.15}),gaze:{x:0,y:-.6},body:{rx:49,ry:54,cy:61},arms:{left:ARMS.grip,right:ARMS.grip}}],
-    understood: ['突然理解','neon',{eyes:both({rotate:-8,lower:.15}),body:{cy:61,rotate:3},accents:{glint:.7},arms:{right:ARMS.open}}],
-    gingerly: ['小心翼翼','ink',{eyes:both({upper:.18,rotate:5}),gaze:{x:.7,y:.4},body:{rotate:-5,rx:54,ry:50},arms:{left:ARMS.brace,right:ARMS.present}}],
-    bashful: ['害羞躲闪','anime',{eyes:{left:{closed:.95,arc:-7},right:{lower:.32}},accents:{blush:1},gaze:{x:-.6,y:.4},body:{rotate:9},arms:{left:ARMS.think}}],
+    understood: ['突然理解','glass',{eyes:both({rotate:-8,lower:.15}),body:{cy:61,rotate:3},accents:{glint:.7},arms:{right:ARMS.open}}],
+    gingerly: ['小心翼翼','almond',{eyes:both({upper:.18,rotate:5}),gaze:{x:.7,y:.4},body:{rotate:-5,rx:54,ry:50},arms:{left:ARMS.brace,right:ARMS.present}}],
+    bashful: ['害羞躲闪','shy',{eyes:{left:{closed:.95,arc:-7},right:{lower:.32}},accents:{blush:1},gaze:{x:-.6,y:.4},body:{rotate:9},arms:{left:ARMS.think}}],
     jubilant: ['闪耀庆典','anime',{eyes:both({symbols:{star:1}}),accents:{glint:1,blush:.5},body:{cy:60,rx:50,ry:54},arms:{left:ARMS.up,right:ARMS.up}}],
-    apologetic: ['认真致歉','sleepy',{eyes:both({upper:.4,rotate:-5}),gaze:{x:0,y:.7},body:{cy:69,rotate:2,rx:54,ry:50},arms:{left:ARMS.think,right:ARMS.think},accents:{sweat:.4}}]
+    apologetic: ['认真致歉','tender',{eyes:both({upper:.4,rotate:-5}),gaze:{x:0,y:.7},body:{cy:69,rotate:2,rx:54,ry:50},arms:{left:ARMS.think,right:ARMS.think},accents:{sweat:.4}}]
   };
   const SIGNATURE_MOTION = {
     overload:{sway:1,tilt:1,cycles:3},eureka:{bob:3,tilt:2,cycles:1},covert:{tilt:-3,cycles:1},
@@ -195,8 +195,28 @@
   }
 
   function eyePath(e) {
-    const k = 0.55228475;
-    return `M ${e.cx} ${e.cy - e.ry} C ${e.cx + e.rx * k} ${e.cy - e.ry} ${e.cx + e.rx} ${e.cy - e.ry * k} ${e.cx + e.rx} ${e.cy} C ${e.cx + e.rx} ${e.cy + e.ry * k} ${e.cx + e.rx * k} ${e.cy + e.ry} ${e.cx} ${e.cy + e.ry} C ${e.cx - e.rx * k} ${e.cy + e.ry} ${e.cx - e.rx} ${e.cy + e.ry * k} ${e.cx - e.rx} ${e.cy} C ${e.cx - e.rx} ${e.cy - e.ry * k} ${e.cx - e.rx * k} ${e.cy - e.ry} ${e.cx} ${e.cy - e.ry} Z`;
+    const kx=e.kx??.55228475,ky=e.ky??.55228475,kb=e.bottomK??kx;
+    return `M ${e.cx} ${e.cy - e.ry} C ${e.cx + e.rx * kx} ${e.cy - e.ry} ${e.cx + e.rx} ${e.cy - e.ry * ky} ${e.cx + e.rx} ${e.cy} C ${e.cx + e.rx} ${e.cy + e.ry * ky} ${e.cx + e.rx * kb} ${e.cy + e.ry} ${e.cx} ${e.cy + e.ry} C ${e.cx - e.rx * kb} ${e.cy + e.ry} ${e.cx - e.rx} ${e.cy + e.ry * ky} ${e.cx - e.rx} ${e.cy} C ${e.cx - e.rx} ${e.cy - e.ry * ky} ${e.cx - e.rx * kx} ${e.cy - e.ry} ${e.cx} ${e.cy - e.ry} Z`;
+  }
+
+  function styleEyes(pose,config) {
+    const result=merge({},pose),shape=config.eye,mood=config.mood;
+    result.eyeDesign={...BASE.eyeDesign,...config.design};
+    for(const side of ['left','right']){
+      const e=result.eyes[side],p=result.pupils[side],sign=side==='left'?1:-1;
+      const asym=1+(mood.asymmetry||0)*sign;
+      e.rx*=shape.width||1;e.ry*=(shape.height||1)*asym*(1+(mood.widen||0));
+      e.kx=shape.kx??BASE.eyes.left.kx;e.ky=shape.ky??BASE.eyes.left.ky;e.bottomK=shape.bottomK??e.kx;
+      e.upper=Math.max(e.upper,mood.upper||0)+(side==='left'?(mood.oneLid||0):0);
+      e.lower=Math.max(e.lower,mood.lower||0);e.rotate+=(mood.tilt||0)*sign;
+      const lids=e.upper+e.lower;
+      if(lids>.9){e.upper*=.9/lids;e.lower*=.9/lids;}
+      e.arc=mood.arc??e.arc;
+      p.rx*=(config.pupil.width||1)*(mood.pupil||1);p.ry*=(config.pupil.height||1)*(mood.pupil||1);
+      p.rx=Math.min(p.rx,e.rx*.8);p.ry=Math.min(p.ry,e.ry*.85);
+    }
+    if(config.gaze)result.gaze={...config.gaze};
+    return result;
   }
 
   // In ellipse-normalized space, the center offset plus pupil radius stays inside 1.
@@ -215,5 +235,5 @@
     }
     return amount < 0.5 ? from : to;
   }
-  return { COLORS, SYMBOLS, ACCESSORIES, ARMS, merge, CORE_EXPRESSION_NAMES, EXPRESSIONS, EMOTIONS, SPECIALS, getExpression, bodyPath, eyePath, constrainPupil, interpolate };
+  return { COLORS, SYMBOLS, ACCESSORIES, ARMS, merge, CORE_EXPRESSION_NAMES, EXPRESSIONS, EMOTIONS, SPECIALS, getExpression, bodyPath, eyePath, styleEyes, constrainPupil, interpolate };
 });

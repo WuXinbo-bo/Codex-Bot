@@ -1,18 +1,18 @@
 {
-  "measuredAt": "2026-09-09T11:11:27.008Z",
+  "measuredAt": "2026-09-09T11:38:17.681Z",
   "platform": "windows-x64",
   "artifacts": [
     {
       "file": "src-tauri/target/release/meta-bot.exe",
       "bytes": 5366272,
       "MiB": 5.118,
-      "sha256": "bbb9e7e8fec6a736747dec4ed85a9dcaa7520830768a99864874ff960fdb414e"
+      "sha256": "a232f62127b37a0e980f98c69781233b49659d0b16371345a90e962b7939432e"
     },
     {
       "file": "src-tauri/target/release/bundle/nsis/Codex Bot_0.5.0_x64-setup.exe",
-      "bytes": 2157398,
-      "MiB": 2.057,
-      "sha256": "539eb43422138c686ef67446775a7a9942d2d1e886d8a917b73425306a4d4ab5"
+      "bytes": 2161188,
+      "MiB": 2.061,
+      "sha256": "0af7a7aa3be082952983818e63341a24a1966e51c99eec8d58ee66802079e219"
     }
   ],
   "previousElectronRuntimeBytes": 374121515,

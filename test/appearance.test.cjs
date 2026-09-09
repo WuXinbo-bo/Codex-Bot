@@ -14,6 +14,6 @@ test('all eighteen shape paths have equal topology and finite bounded coordinate
 
 test('eye style defaults to authored auto and every fixed style survives persistence',()=>{
   assert.equal(A.normalize({eyeStyle:'invalid'}).eyeStyle,'auto');
-  assert.equal(A.EYE_STYLES.length,9);
+  assert.equal(A.EYE_STYLES.length,18);
   for(const eyeStyle of A.EYE_STYLES)assert.equal(A.normalize(JSON.parse(JSON.stringify({eyeStyle}))).eyeStyle,eyeStyle);
 });
