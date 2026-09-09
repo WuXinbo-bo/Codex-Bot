@@ -8,12 +8,12 @@ async (page) => {
   await page.waitForFunction(()=>panelDemo.frames.toast.contentDocument.body.dataset.phase==='entering');
   await page.screenshot({path:'output/playwright/panel-handoff-mid.png'});
   await page.waitForFunction(()=>panelDemo.frames.toast.contentDocument.body.dataset.phase==='visible');
-  await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState().activity?.name.startsWith('performance_start_'),null,{timeout:3000});
+  await page.waitForFunction(()=>{const w=panelDemo.frames.ball.contentWindow;return w.MetaBotActivities.PERFORMANCES.started.some(id=>'performance_'+id===w.__metaBotDebug.getExpressionState().activity?.name);},null,{timeout:3000});
   const start=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState());
   await page.screenshot({path:'output/playwright/panel-start.png'});
   await page.getByRole('button',{name:'完成任务'}).click();
   await page.waitForFunction(()=>panelDemo.frames.completions.contentDocument.body.dataset.phase==='visible',null,{timeout:15000});
-  await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState().activity?.name.startsWith('performance_done_'),null,{timeout:3000});
+  await page.waitForFunction(()=>{const w=panelDemo.frames.ball.contentWindow;return w.MetaBotActivities.PERFORMANCES.completed.some(id=>'performance_'+id===w.__metaBotDebug.getExpressionState().activity?.name);},null,{timeout:3000});
   const finish=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState());
   await page.screenshot({path:'output/playwright/panel-complete.png'});
   await page.frameLocator('iframe[title="completions"]').getByRole('button',{name:'确认并接下一项'}).click();

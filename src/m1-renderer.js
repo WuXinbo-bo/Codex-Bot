@@ -155,6 +155,7 @@
     let motionMode = "idle";
     let armPose = current.arms;
     let performanceStarted = started;
+    let beatStarted=started,beatMs=0,beatId=null;
     let performanceMs = 2600;
     let performanceId = null;
     let acting = { bob: 0, sway: 0, tilt: 0, wave: 0, squash: 0 };
@@ -419,7 +420,8 @@
       }
       const gazeEase = reduced ? 1 : 1 - Math.exp(-dt * 17);
       const micro=current.micro;
-      const pulse=(at)=>{const p=(age-at)/micro.span;return p>0&&p<1?Math.sin(Math.PI*p)**2:0;};
+      const microAge=beatMs?clamp((now-beatStarted)/beatMs,0,1):age;
+      const pulse=(at)=>{const p=(microAge-at)/micro.span;return p>0&&p<1?Math.sin(Math.PI*p)**2:0;};
       const thought=active&&!reduced?pulse(micro.at)+micro.second*pulse(Math.min(.75,micro.at+.35)):0;
       const rightThought=active&&!reduced?pulse(micro.at+micro.rightLag)+micro.second*pulse(Math.min(.75,micro.at+.35)+micro.rightLag):0;
       const wanted = tracking ? gazeTarget : {x:clamp(current.gaze.x+micro.gazeX*thought,-1,1),y:clamp(current.gaze.y+micro.gazeY*thought,-1,1)};
@@ -472,6 +474,8 @@
       performanceMs=Math.max(2200,Number(settings.performanceMs)||(Rig.BaseEmotions.entries[expression]?9000:2600));
       const nextPerformanceId=settings.performanceId || expression;
       if(performanceId!==nextPerformanceId){performanceStarted=now;performanceId=nextPerformanceId;}
+      if(settings.beatId!==beatId){beatStarted=now;beatId=settings.beatId;}
+      beatMs=Math.max(0,Number(settings.beatMs)||0);
       transitionStarted = now;
       transitionDuration = motionLevel === "reduced" ? 0 : Math.max(0, Number(settings.duration ?? 240))*(Appearance.ART_STYLES[appearance.artStyle]?.tempo||1);
       eyeTransitionDuration=transitionDuration?Math.max(250,Math.min(450,transitionDuration))*eyeConfig.tempo:0;
@@ -522,7 +526,7 @@
       const next=Appearance.normalize(value);
       if(Object.keys(next).every(key=>next[key]===appearance[key]))return;
       appearance=next;configureMasks(appearance);shapeDue=0;
-      setExpression(expression,{pose:authoredPose,performanceId,performanceMs});wake();
+      setExpression(expression,{pose:authoredPose,performanceId,performanceMs,beatId,beatMs});wake();
     }
     function resetIdle() { nextBlink = Math.min(nextBlink, nowTime() + 3200); wake(); }
     function destroy() { destroyed = true; if (frame !== null) cancelAnimationFrame(frame); target.textContent = ""; }

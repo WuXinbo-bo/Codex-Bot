@@ -11,7 +11,7 @@ async(page)=>{
   });
   await page.waitForTimeout(400);
   const started=await page.evaluate(()=>review.previewDirector.getState().activity?.name);
-  if(!started?.startsWith('performance_start_'))throw Error('Lifecycle not integrated');
+  if(!await page.evaluate(id=>MetaBotActivities.PERFORMANCES.started.some(name=>'performance_'+name===id),started))throw Error('Lifecycle not integrated');
   await page.evaluate(()=>review.previewDirector.interact('panel-phase',{label:'toast',phase:'entering',duration:220}));
   await page.waitForTimeout(1000);
   if(await page.evaluate(()=>review.previewDirector.getState().activity?.name)!==started)throw Error('Panel interrupted score');
@@ -31,17 +31,14 @@ async(page)=>{
   await page.locator('#living-contact').screenshot({path:'output/playwright/living-specials.png'});
   const scores=await page.evaluate(async()=>{
     const grid=document.createElement('div');grid.id='score-contact';grid.style.cssText='display:grid;grid-template-columns:repeat(5,128px);gap:8px;width:672px;padding:12px;background:white';document.body.prepend(grid);
-    const samples=[];
+    const target=document.createElement('div');grid.append(target);
+    const bot=MetaBotM1.create(target,{motionLevel:'reduced',appearance:{skin:'lemon',shape:'circle',maskAuto:false}});
+    bot.setPerformanceContext({theater:true});let checked=0;
     for(const name of Object.values(MetaBotActivities.PERFORMANCES).flat()){
       const id='performance_'+name;
       for(const frame of MetaBotActivities.CLIPS[id]){
-        const cell=document.createElement('div'),target=document.createElement('div');cell.style.font='10px system-ui';cell.append(target,document.createTextNode(name+' / '+frame.phase));grid.append(cell);
-        const bot=MetaBotM1.create(target,{appearance:{skin:'lemon',shape:'circle',maskAuto:false}});
-        bot.setPerformanceContext({theater:true});bot.setExpression(frame.expression,{pose:frame.pose,duration:0});bot.setActive(false);samples.push({target,frame,id});
-      }
-    }
-    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
-    for(const {target,frame,id} of samples){
+        bot.setExpression(frame.expression,{pose:frame.pose,duration:0});bot.setActive(false);
+        await new Promise(resolve=>requestAnimationFrame(resolve));
       if(/NaN|Infinity/.test(target.innerHTML))throw Error('Invalid geometry '+id);
       const bounds=target.querySelector('[data-part="body"]').getBBox();
       if(bounds.width<50||bounds.height<50)throw Error('Blank body '+id);
@@ -51,11 +48,12 @@ async(page)=>{
         if(expected?.opacity>0 && Number(prop.getAttribute('opacity'))<=0)throw Error('Missing prop '+id);
         if(expected?.back>.5 && prop.parentNode!==target.querySelector('[data-layer="character"]').firstElementChild)throw Error('Not behind body '+id);
       }
+      }
+      checked++;
     }
-    return new Set(samples.map(sample=>sample.id)).size;
+    bot.destroy();grid.remove();return checked;
   });
-  if(scores!==34)throw Error('Missing task scores');
-  await page.locator('#score-contact').screenshot({path:'output/playwright/living-scores.png'});
+  if(scores!==70)throw Error('Missing task scores');
   await page.goto('http://127.0.0.1:4187/test/fixtures/panel-system.html');
   await page.waitForFunction(()=>Boolean(window.panelDemo));
   await page.getByRole('button',{name:'展开面板',exact:true}).click();

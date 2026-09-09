@@ -89,6 +89,7 @@ if (tauri) {
     showLifecycleToast: (ids) =>
       request("lifecycle", [ids]).catch(console.error),
     completionAction: (id, action) => request("completion", [id, action]),
+    completionNavigate: () => request('completion-navigate',[]),
     getNotificationSettings: () => request("settings"),
     setSettingsVisible: (value) => request('panel-view',[value]),
     setRetainCompletions: (value) => request("retention", [value]),

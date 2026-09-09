@@ -110,6 +110,22 @@
     let panelOpen = false;
     let reminderAt = Infinity;
     const activityHistory = new Map();
+    const activityStats={},ambientSpans=[];
+    const panelHistory={};let pendingScore=null,panelSide='right',panelMoveStyle=0;
+    function pickPanel(route){
+      const names=Object.keys(Activities.Scores.meta).filter(id=>Activities.Scores.meta[id].type==='panel'&&Activities.Scores.meta[id].route===route);
+      const recent=panelHistory[route]||[],choices=names.filter(id=>!recent.includes(id));
+      const pool=choices.length?choices:names.filter(id=>id!==recent.at(-1));
+      const name=pool[Math.floor(random()*pool.length)];panelHistory[route]=[...recent,name].slice(-3);return name;
+    }
+    const ambientMs=()=>ambientSpans.reduce((sum,s)=>sum+Math.max(0,s.end-Math.max(s.start,now()-300000)),0)+(activity?.priority===5?Math.max(0,now()-Math.max(activity.startedAt,now()-300000)):0);
+    const activityReport=()=>({counts:structuredClone(activityStats),ambientMs:ambientMs()});
+    function ambientAllowed(name){
+      while(ambientSpans.length&&ambientSpans[0].end<now()-300000)ambientSpans.shift();
+      const limit=status==='running'?90000:150000;
+      const jitter=Activities.THEATERS[name]?1.04:Activities.LABELS[name]&&!Activities.Scores.meta[name]&&!Activities.PropScores.meta[name]&&!Activities.NARRATIVES[name]&&!name.startsWith('performance_')?1.1:1;
+      return ambientMs()+Activities.duration(name)*personality().tempo*jitter<=limit;
+    }
     const theaterCounts = new Map();
     const theaterEvents = [];
     let lastTheater = null;
@@ -212,6 +228,7 @@
     function receiveLifecycle(events = []) {
       for (const event of events) {
         if (!event?.id || lifecycleSeen.has(event.id)) continue;
+        if(activity&&[56,57].includes(activity.priority)){cancelActivity('new-task');clearTimer('transient');transient=null;}
         lifecycleSeen.add(event.id);
         const urgency={failed:6,attention:5,completed:4,stopped:3,started:2,joined:1};
         if(activity?.priority===55 && (urgency[event.kind]||0)>(urgency[lifecycleCurrent?.kind]||0)){
@@ -247,8 +264,8 @@
       while(memoryEvents.size>128)memoryEvents.delete(memoryEvents.values().next().value);
       const clip = (preferences.stories&&narrative) || pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
       lifecycleCurrent = { kind, events, clip };
-      if(kind==='completed'&&Activities.PropScores.meta[clip]){
-        for(const e of events)completionProps.set(JSON.stringify([e.taskId,e.turnId||'']),Activities.PropScores.meta[clip].prop);
+      if(kind==='completed'&&(Activities.PropScores.meta[clip]||Activities.Scores.meta[clip])){
+        for(const e of events)completionProps.set(JSON.stringify([e.taskId,e.turnId||'']),(Activities.PropScores.meta[clip]||Activities.Scores.meta[clip]).prop);
         while(completionProps.size>128)completionProps.delete(completionProps.keys().next().value);
       }
       feel(({started:'engaged',joined:'engaged',completed:'satisfied',failed:'concerned',attention:'expectant',stopped:'settled'})[kind] || 'settled');
@@ -269,6 +286,16 @@
 
     function cancelActivity(reason = "interrupted") {
       accountProps();propVisible=[];
+      if(activity){
+        const stats=activityStats[activity.name];
+        const elapsed=Math.max(0,now()-activity.startedAt);
+        stats.playedMs+=elapsed;stats[reason==='completed'?'completed':'interrupted']++;
+        stats.lastReason=reason;
+        if(activity.priority===5)ambientSpans.push({start:activity.startedAt,end:now()});
+        const followup=Activities.Scores.followups[activity.name];
+        if(followup&&preferences.stories&&randomEnabled&&motionLevel!=='reduced'&&activity.context===taskKey&&reason!=='task-changed'&&(reason==='completed'||activity.name==='activity_clip_edges'))pendingScore={name:followup,context:activity.context,at:now()+45000,expires:now()+600000};
+        if(Activities.Scores.meta[activity.name])options.onPerformance?.(false);
+      }
       if(reason==='completed'&&Activities.PropScores.followups[activity?.name])propFollowup={name:Activities.PropScores.followups[activity.name],at:now()+45000,expires:now()+600000};
       if(activity){
         if(Activities.NARRATIVES[activity.name]){memory.observe(reason==='completed'?'finished':'interrupted',activity.name);options.onPerformance?.(false);}
@@ -301,16 +328,19 @@
 
     function playActivity(name, priority = 5, resume = null, overrideFrames = null) {
       if (!Activities.CLIPS[name] || motionLevel === "reduced" || (transient && transient.priority > priority)) return false;
+      if(priority===5&&!resume&&!ambientAllowed(name))return false;
       const variants = [0,1,2].filter(value => value !== theaterVariants.get(name));
-      const varied=Activities.THEATERS[name]||Activities.PropScores.meta[name];
+      const varied=Activities.THEATERS[name]||Activities.PropScores.meta[name]||Activities.Scores.meta[name];
       const variant = varied ? resume?.variant ?? variants[Math.floor(random() * variants.length)] : 0;
-      const frames = overrideFrames || (Activities.PropScores.meta[name]?Activities.PropScores.frames(name,variant):Activities.THEATERS[name] ? Activities.theaterFrames(name, variant) : Activities.CLIPS[name]);
+      const frames = overrideFrames || resume?.frames || (Activities.Scores.meta[name]?Activities.Scores.frames(name,variant):Activities.PropScores.meta[name]?Activities.PropScores.frames(name,variant):Activities.THEATERS[name] ? Activities.theaterFrames(name, variant) : Activities.CLIPS[name]);
       if (priority >= 50 && priority !== 60 && (Activities.THEATERS[suspendedActivity?.name] || suspendedActivity?.name.startsWith('performance_'))) suspendedActivity = null;
       if (!resume && priority > 20) suspendActivity(priority);
       cancelActivity(resume ? "resume" : priority >= 50 ? "priority-event" : "social-response");
       clearTimer("transient");
       transient = { name, priority, token: ++token };
-      activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
+      activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, context:taskKey,startedAt:now(),appearance:resume?.appearance,tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
+      activityStats[name]||={started:0,completed:0,interrupted:0,playedMs:0,lastReason:null};activityStats[name].started++;
+      if(Activities.Scores.meta[name]){activity.frames=frames;activity.tempo=resume?.tempo||1;theaterVariants.set(name,variant);options.onPerformance?.(true);}
       if(Activities.PropScores.meta[name]){theaterVariants.set(name,variant);activity.tempo=resume?.tempo||1;}
       if(Activities.NARRATIVES[name]){activity.tempo=1;memory.started(name);options.onPerformance?.(true);}
       if(name.startsWith('performance_')) {
@@ -347,7 +377,7 @@
         if(Object.hasOwn(frame,'mask'))options.onTheaterMask?.(frame.mask);
         resume = null;
         const pose = name === "mimic" ? { ...frame.pose, gaze: { ...pointer }, body: { ...frame.pose.body, rotate: pointer.x * 12 } } : name === "lifted" && dragFace ? { ...frame.pose, eyes: dragFace.eyes } : frame.pose;
-        apply(frame.expression, { force: true, pose, duration: Math.min(duration*.8,frame.transition || (priority>=60?220:450)), performanceId:name, performanceMs:Activities.duration(name)*activity.tempo, auto: false });
+        apply(frame.expression, { force: true, pose, duration: Math.min(duration*.8,frame.transition || (priority>=60?220:450)), performanceId:name, performanceMs:Activities.duration(name)*activity.tempo,beatId:Activities.Scores?.meta[name]?`${name}:${token}:${activity.index}`:undefined,beatMs:Activities.Scores?.meta[name]?duration:undefined, auto: false });
         activity.dueAt = now() + duration;
         activityTimer = schedule(advance, duration);
       };
@@ -374,14 +404,19 @@
       if (!name || (name === current && !settings.force)) return false;
       if(panelContact&&now()<panelContact.until&&activity?.priority===55&&settings.performanceId){
         const side=panelContact.side,other=side==='right'?'left':'right';
-        const coordinated=Activities.PropScores.meta[settings.performanceId];
+        const coordinated=Activities.PropScores.meta[settings.performanceId]||Activities.Scores.meta[settings.performanceId];
         const props=coordinated?Object.fromEntries(Object.entries(settings.pose?.accessories||{}).map(([id,p])=>[id,{...p,hand:side==='left'?-1:0}])):(settings.pose?.accessories||{});
         settings={...settings,pose:{...settings.pose,accessories:props,gaze:{x:side==='right'?.8:-.8,y:.2},arms:{[side]:{x:4,y:70,bendX:2,bendY:83,opacity:1},[other]:coordinated?(settings.pose?.arms?.[other]||{opacity:0}):{opacity:0}}}};
       }
       current = name;
+      if(dragging&&panelOpen&&Activities.Scores){
+        const action=['catch','level','withdraw','offer'][panelMoveStyle],holding=Activities.Scores.blocking(null,action);
+        settings={...settings,pose:{...settings.pose,arms:panelSide==='left'?{left:holding.arms.right,right:holding.arms.left}:holding.arms,gaze:{x:panelSide==='left'?-.7:.7,y:.2}}};
+      }
       if(BaseEmotions.entries[name]&&settings.auto!==false)settings={...settings,duration:550,performanceMs:baseHoldMs};
-      resolvedAppearance=appearanceDirector.sample({expression:name,boundary:!activity||activity.index===1,blocked:dragging||Boolean(suspendedActivity)||(panelContact&&now()<panelContact.until)||transient?.priority>=50||motionLevel==='reduced'||options.isAppearanceBlocked?.()});
-      setExpression(name, { appearance:resolvedAppearance, duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs, auto: settings.auto !== false });
+      resolvedAppearance=activity?.appearance||appearanceDirector.sample({expression:name,boundary:!activity||activity.index===1,blocked:dragging||Boolean(suspendedActivity)||(panelContact&&now()<panelContact.until)||transient?.priority>=50||motionLevel==='reduced'||options.isAppearanceBlocked?.()});
+      if(activity)activity.appearance=resolvedAppearance;
+      setExpression(name, { appearance:resolvedAppearance, duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs,beatId:settings.beatId,beatMs:settings.beatMs, auto: settings.auto !== false });
       return true;
     }
 
@@ -457,27 +492,31 @@
         if (!panelOpen && now() >= reminderAt && ["needs_attention", "failed"].includes(status) && remind(true)) { scheduleBase(); return; }
         if (randomEnabled && now() >= nextActivityAt && motionLevel !== "reduced") {
           const route=status==='offline'?'idle':status;
+          if(pendingScore&&(now()>pendingScore.expires||pendingScore.context!==taskKey))pendingScore=null;
+          if(preferences.stories&&pendingScore&&now()>=pendingScore.at&&!pointerNear&&!panelOpen&&Activities.Scores.meta[pendingScore.name].route===route&&ambientAllowed(pendingScore.name)){
+            const name=pendingScore.name;pendingScore=null;if(playActivity(name,5)){scheduleBase();return;}
+          }
           if(propFollowup&&now()>propFollowup.expires)propFollowup=null;
           if(preferences.stories&&propFollowup&&now()>=propFollowup.at&&!pointerNear&&!panelOpen&&Activities.THEATERS[propFollowup.name]?.route===route){
-            const name=propFollowup.name;propFollowup=null;if(playActivity(name,5)){scheduleBase();return;}
+            const name=propFollowup.name;if(ambientAllowed(name)){propFollowup=null;if(playActivity(name,5)){scheduleBase();return;}}
           }
-          const theaters=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route===route&&now()-(activityHistory.get(name)??-Infinity)>300000);
+          const theaters=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route===route&&now()-(activityHistory.get(name)??-Infinity)>300000&&ambientAllowed(name));
           if(now()>=nextTheaterAt&&theaters.length){
             const selected=chooseTheater(theaters);
             if(playActivity(selected,5)){scheduleBase();return;}
           }
           const story=preferences.stories?memory.next(status,pointerNear):null;
-          if(story&&random()<.2&&playActivity(story,5)){scheduleBase();return;}
+          if(story&&ambientAllowed(story)&&random()<.2&&playActivity(story,5)){scheduleBase();return;}
           const idle = ["offline", "idle"].includes(status);
           const date = new Date(now());
           const holiday = (date.getMonth() === 0 && date.getDate() === 1) || (date.getMonth() === 11 && date.getDate() === 25);
           const pool = Activities.POOLS[status] || (idle ? Activities.POOLS.idle.concat(now() - lastActivity >= sleepAfter ? ["nap"] : [], holiday ? ["gift"] : []) : []);
-          const eligible = pool.filter(name => name !== "mimic" && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
+          const eligible = pool.filter(name => name !== "mimic" && ambientAllowed(name) && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
           const last=[...activityHistory].sort((a,b)=>b[1]-a[1])[0];
           const history=[...activityHistory].sort((a,b)=>b[1]-a[1]).slice(0,6);
           if(status==='running'&&random()<.25){
             const name=pickPerformance('running');
-            if(name&&playActivity(name,5)){scheduleBase();return;}
+            if(name&&ambientAllowed(name)&&playActivity(name,5)){scheduleBase();return;}
           }
           if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,propPrevious(last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null)), 5)) { scheduleBase(); return; }
         }
@@ -542,7 +581,7 @@
       const identityChanged = nextKey !== taskKey;
       const freshReminder = detail.quiet !== true && detail.fresh !== false && ["needs_attention", "failed", "completed"].includes(normalized) && !deliveredReminders.has(nextKey);
       const changed = !initialized || normalized !== status || numericCount !== count || identityChanged || freshReminder;
-      if (identityChanged) { suspendedActivity = null; pendingReminder = null; reminderAt = Infinity; }
+      if (identityChanged) { suspendedActivity = null; pendingScore=null; pendingReminder = null; reminderAt = Infinity; }
       taskKey = nextKey;
       freshState = detail.fresh !== false && detail.quiet !== true;
       if (!freshState) { pendingReminder = null; reminderAt = Infinity; }
@@ -595,7 +634,11 @@
         const name=memory.observe('confirmed');
         const key=JSON.stringify([detail.taskId,detail.turnId||'']),prop=completionProps.get(key);completionProps.delete(key);
         if(preferences.stories&&!dragging&&['idle','completed','offline'].includes(status)){
-          if(motionLevel==='reduced')playTransient('micro_confirm',{priority:57,duration:120});else playActivity(name,57,null,prop?Activities.PropScores.confirmationFrames(prop):null);
+          if(motionLevel==='reduced')playTransient('micro_confirm',{priority:57,duration:120});
+          else if(prop&&randomEnabled){
+            const selected=random()<.2?'theater_activity_take_delivery':pickPanel('confirm');
+            playActivity(selected,57,null,Activities.Scores.panelFrames(selected,panelSide,prop));
+          }else playActivity(name,57,null,prop?Activities.PropScores.confirmationFrames(prop):null);
         }
         return current;
       }
@@ -604,7 +647,7 @@
         const name=memory.observe('noticed',activity.name);pointerNear=true;playActivity(name,28);setGaze(local.x||0,local.y||0);return current;
       }
       // Passive pointer observation shares gaze, never takes ownership of a story.
-      if ((Activities.NARRATIVES[activity?.name] || Activities.THEATERS[activity?.name] || activity?.name.startsWith('performance_')) && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
+      if ((Activities.NARRATIVES[activity?.name] || Activities.THEATERS[activity?.name] || ['emotion','continuation'].includes(Activities.Scores.meta[activity?.name]?.type) || activity?.name.startsWith('performance_')) && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
         pointerNear = !["pointer-leave", "bubble-hover"].includes(type);
         if (pointerNear) setGaze(local.x || 0, local.y || 0); else clearGaze();
         return current;
@@ -661,10 +704,14 @@
           const pose = reactionPose(pressStreak >= 3 ? "hold_pose" : "press");
           playTransient("pressed", { priority: 60, transition: 120, replay: true, pose: { eyes: pose.eyes, arms: pose.arms } }); break;
         }
-        case "hold-ready": { const pose = reactionPose("hold_pose"); setMotion({ mode: "hold", stretch: 0.075, y: 1.5 }); playTransient("hold", { priority: 65, replay: true, pose: { eyes: pose.eyes, arms: pose.arms } }); break; }
+        case "hold-ready": {
+          const pose = reactionPose("hold_pose");setMotion({mode:'hold',stretch:.075,y:1.5});
+          if(motionLevel!=='reduced'&&randomEnabled){const choices=Object.keys(Activities.Scores.meta).filter(id=>Activities.Scores.meta[id].type==='social'&&Activities.Scores.meta[id].route==='hold');playActivity(Activities.chooseActivity(choices,random,{name:lastReaction?.name}),65);}
+          else playTransient('hold',{priority:65,replay:true,pose:{eyes:pose.eyes,arms:pose.arms}});break;
+        }
         case "ball-click":
         case "hold-release": clearGaze(); setMotion({ mode: "settling", intensity: 0.3 }); releaseTransient(65); playSocial(type === "hold-release" ? "release" : pressStreak >= 3 ? "hold" : "click", 45); break;
-        case "drag-start": deferLifecycle(); dragFace = reactionPose("drag"); dragging = true; orbited = false; dragPose = "slow_drag"; setMotion({ mode: "dragging", stretch: -0.08, y: -3 }); if (motionLevel === "reduced") playTransient("lifted", { priority: 70 }); else playActivity("lifted", 70); break;
+        case "drag-start": deferLifecycle(); dragFace = reactionPose("drag"); dragging = true; panelMoveStyle=(panelMoveStyle+1)%4;orbited = false; dragPose = "slow_drag"; setMotion({ mode: "dragging", stretch: -0.08, y: -3 }); if (motionLevel === "reduced") playTransient("lifted", { priority: 70 }); else playActivity("lifted", 70); break;
         case "drag-move": updateDragMotion(detail); break;
         case "drag-orbit": orbited = true; playTransient("orbit", { priority: 78, duration: 420, next: () => ({ name: dragPose, priority: 70 }) }); break;
         case "drag-end": {
@@ -675,11 +722,14 @@
           const edge = String(detail.edgeDirection || "");
           const impact = edge.includes("left") ? "edge_left" : edge.includes("right") ? "edge_right" : edge.includes("top") ? "edge_top" : edge.includes("bottom") ? "edge_bottom" : "edge_impact";
           if (orbited && !detail.edgeHit) { orbited = false; playActivity("dizzy", 80); }
-          else if (!detail.edgeHit && releaseSpeed < 100) restoreBase();
+          else if (!detail.edgeHit && releaseSpeed < 100) {
+            if(panelOpen&&motionLevel!=='reduced'){const selected=pickPanel('move');playActivity(selected,56,null,Activities.Scores.panelFrames(selected,panelSide));}else restoreBase();
+          }
           else playTransient(detail.edgeHit ? impact : "landing", { priority: 80, duration: detail.edgeHit ? 330 : 420, transition: 130 });
           break;
         }
         case "panel-phase":
+          panelSide=detail.side==='left'?'left':'right';
           if(['entering','leaving'].includes(detail.phase))panelContact={side:detail.side==='left'?'left':'right',until:now()+1400};
           if(detail.phase==='hidden'){panelContact=null;break;}
           // Never erase a lifecycle performance just because its toast has entered.
@@ -697,6 +747,11 @@
             if(!dragging&&!pointerNear&&!transient&&['idle','offline'].includes(status))playTransient('curious',{priority:25,duration:650,pose:{gaze:{x:detail.side==='left'?-.8:.8,y:.3}}});
             break;
           }
+          if(!['entering','leaving','preparing'].includes(detail.phase))break;
+          if(['entering','leaving'].includes(detail.phase)&&!dragging&&(!transient||transient.priority<56)&&motionLevel!=='reduced'){
+            const selected=pickPanel(detail.phase==='entering'?'enter':'switch');
+            playActivity(selected,56,null,Activities.Scores.panelFrames(selected,panelSide));break;
+          }
           if(!dragging && (!transient || transient.priority<60)){
             // Native preparing has zero duration and is not forwarded by app.js.
             if(detail.phase==='entering'){
@@ -710,6 +765,12 @@
             apply(name,{force:true,auto:false,duration:340,pose:{gaze:{x:side==='left'?-.8:.8,y:.2},arms:{[side]:{x:detail.phase==='preparing'?24:4,y:panelStyle===1?57:63,bendX:5,bendY:83,opacity:1},[other]:{opacity:0}},body:{rotate:(side==='left'?-1:1)*[6,3,8][panelStyle],cy:panelStyle===0?67:64}}});
           }
           break;
+        case 'panel-move':
+        case 'panel-switch':
+          if(!dragging&&motionLevel!=='reduced'&&(!transient||transient.priority<56)){
+            const selected=pickPanel(type==='panel-move'?'move':'switch');playActivity(selected,56,null,Activities.Scores.panelFrames(selected,panelSide));
+          }
+          break;
         case "completion-nudge": {
           if(dragging||['failed','needs_attention','running','queued'].includes(status)||transient?.priority>=50)break;
           const stage=clamp(detail.stage,1,3);
@@ -721,7 +782,7 @@
         }
         case "bubble-open": panelOpen = true; if (transient?.priority < 35 || !transient) playSocial("panel", 35); break;
         case "bubble-close": panelOpen = false; reminderAt = now() + 60000; if (transient?.priority < 35 || !transient) playSocial("leave", 35); break;
-        case "activity-request": if ((Activities.NARRATIVES[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.PropScores.meta[detail.name]?.type==='short'&&Activities.PropScores.meta[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
+        case "activity-request": if ((['emotion','continuation'].includes(Activities.Scores.meta[detail.name]?.type)&&Activities.Scores.meta[detail.name].route===(status==='offline'?'idle':status))||(Activities.NARRATIVES[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.THEATERS[detail.name]?.route===(status==='offline'?'idle':status))||(Activities.PropScores.meta[detail.name]?.type==='short'&&Activities.PropScores.meta[detail.name]?.route===(status==='offline'?'idle':status))||(["offline", "idle", "paused"].includes(status) && Activities.POOLS.idle.concat(["nap", "rain", "gift"]).includes(detail.name))) playActivity(detail.name,20); break;
         case "refresh-start": playTransient("refreshing", { priority: 40 }); break;
         case "refresh-success":
         case "refresh-recovered": playTransient("micro_confirm", { priority: 40, duration: 520 }); break;
@@ -738,6 +799,7 @@
       if (motionLevel === "reduced") {
         suspendedActivity = null;
         propFollowup=null;
+        pendingScore=null;
         if (activity?.priority === 50 || pendingReminder) deliveredReminders.add(taskKey);
         pendingReminder = null;
         cancelActivity(); clearTimer("transient"); transient = null;
@@ -753,6 +815,7 @@
       lifecycleTimer = null; lifecycleQueue.clear();
       cancelActivity(); pendingReminder = null; pendingPanel=null; panelContact=null; suspendedActivity = null; dragging = false; pointerNear = false;
       propFollowup=null;
+      pendingScore=null;
       completionProps.clear();
       clearTimer("base");
       clearTimer("transient");
@@ -763,8 +826,8 @@
 
     function setRandomEnabled(value) {
       randomEnabled = value !== false;
-      if (!randomEnabled) suspendedActivity = null;
-      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||Activities.NARRATIVES[activity?.name]||Activities.PropScores.meta[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
+      if (!randomEnabled) {suspendedActivity = null;pendingScore=null;}
+      if(!randomEnabled&&(Activities.THEATERS[activity?.name]||Activities.NARRATIVES[activity?.name]||Activities.PropScores.meta[activity?.name]||Activities.Scores.meta[activity?.name]||activity?.name.startsWith('performance_'))&&activity.priority===5)restoreBase();
     }
     options.onRandomControl?.(setRandomEnabled);
     options.onAppearanceControl?.({snapshot:()=>appearanceDirector.snapshot(),shuffle:()=>{
@@ -774,10 +837,10 @@
     options.onBehaviorControl?.(value=>{
       preferences=Appearance.normalize(value);appearanceDirector.configure(preferences);
       resolvedAppearance=appearanceDirector.sample({blocked:true});options.onResolvedAppearance?.(resolvedAppearance);
-      if(!preferences.stories){memory.reset();propFollowup=null;if(Activities.NARRATIVES[activity?.name])restoreBase();}
+      if(!preferences.stories){memory.reset();propFollowup=null;pendingScore=null;if(Activities.NARRATIVES[activity?.name]||Activities.Scores.meta[activity?.name]?.type==='continuation')restoreBase();}
     });
     setMotionLevel(motionLevel);
-    options.onPerformanceDiagnostics?.(()=>({props:{exposure:exposure(),source:options.getAccessoryExposure?'renderer':'timeline',followup:propFollowup?{...propFollowup}:null},base:baseDirector.snapshot(),history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
+    options.onPerformanceDiagnostics?.(()=>({activities:activityReport(),continuation:pendingScore?{...pendingScore}:null,props:{exposure:exposure(),source:options.getAccessoryExposure?'renderer':'timeline',followup:propFollowup?{...propFollowup}:null},base:baseDirector.snapshot(),history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
     return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 

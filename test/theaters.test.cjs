@@ -15,8 +15,8 @@ test('three acting variants preserve duration, cleanup and immutable source stor
   }
 });
 
-test('thirty-two complete fifteen-second stories have valid stages and clean exits',()=>{
-  assert.equal(Object.keys(A.THEATERS).length,32);
+test('forty-four ambient fifteen-second stories have valid stages and clean exits',()=>{
+  assert.equal(Object.keys(A.THEATERS).length,44);
   for(const [id,story] of Object.entries(A.THEATERS)){
     const frames=A.CLIPS[id];
     assert.equal(A.duration(id),15000,id);

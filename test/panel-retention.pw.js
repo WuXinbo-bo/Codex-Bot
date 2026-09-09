@@ -12,6 +12,12 @@ async(page)=>{
   const widths=await page.evaluate(()=>['panel','completions','toast'].map(id=>panelDemo.frames[id].contentDocument.querySelector('main').getBoundingClientRect().width));
   if(Math.max(...widths)-Math.min(...widths)>1)throw Error('Visible surface widths differ '+widths);
   const start=await page.evaluate(()=>({index:panelDemo.events.length,count:panelDemo.bot().inbox.items.size}));
+  await page.evaluate(()=>{window.navigationEvents=[];panelDemo.frames.ball.contentWindow.metaBot.onInteraction(e=>navigationEvents.push(e.type));});
+  for(const name of ['下一项，保留未确认','上一项，保留未确认']){
+    await page.frameLocator('iframe[title="completions"]').getByRole('button',{name,exact:true}).click();
+  }
+  await page.waitForFunction(()=>navigationEvents.filter(e=>e==='panel-switch').length===2);
+  if(await page.evaluate(()=>panelDemo.bot().inbox.items.size)!==start.count)throw Error('Navigation acknowledged a completion');
   for(const [x,y] of [[0,0],[772,0],[772,392],[0,392]]){
     await page.evaluate(({x,y})=>{
       const g=panelDemo.bot().geometry();

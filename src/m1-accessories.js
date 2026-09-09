@@ -14,7 +14,7 @@
   const extend = (elements, x=0, y=20) => joint('extend',elements,{dx:x,dy:y});
   const open = elements => joint('open',elements,{sy:-.75});
   const DEFINITIONS = {
-    notebook: asset('body',[-23,-18,23,18],[rect(-22,-17,44,34,blue,3),rect(-16,-14,35,28,white,1),line('M -10 -7 H 12 M -10 0 H 8 M -10 7 H 12',ink,1.5),line('M -19 -11 H -14 M -19 0 H -14 M -19 11 H -14',ink,2)],'front',[0,28]),
+    notebook: asset('body',[-23,-18,23,18],[rect(-22,-17,44,34,blue,3),rect(-16,-14,35,28,white,1),line('M -10 -7 H 12 M -10 0 H 8 M -10 7 H 12',ink,1.5),joint('open',[rect(-15,-14,34,28,'#D7ECF3',2),line('M -8 -6 H 11 M -8 1 H 6',blue,1.5)],{sx:-.94,x:-15}),line('M -19 -11 H -14 M -19 0 H -14 M -19 11 H -14',ink,2)],'front',[0,28]),
     pencil: asset('right',[-4,-28,4,8],[rect(-3,-23,6,27,gold,1),path('M -3 -23 L 0 -28 L 3 -23 Z',ink),rect(-3,3,6,5,pink,1),line('M 0 -20 V 0',white,1)]),
     hourglass: asset('right',[-12,-23,12,10],[path('M -10 -20 Q -10 -8 -2 -6 Q -10 -3 -10 7 H 10 Q 10 -3 2 -6 Q 10 -8 10 -20 Z','#DCF5F8',{stroke:ink,'stroke-width':2}),path('M -7 -17 H 7 L 0 -8 Z M -7 5 L 0 -2 L 7 5 Z',gold),line('M -12 -22 H 12 M -12 9 H 12',ink,3)]),
     stamp: asset('right',[-14,-20,14,9],[rect(-6,-19,12,18,pink,4),rect(-13,-2,26,8,ink,2),rect(-12,6,24,3,gold,0)]),
@@ -43,7 +43,7 @@
     detectiveHat: asset("head", [-34, -19, 34, 7], [path("M -24 1 L -19 -18 L -1 -13 L 15 -18 L 23 1 Z", gold), rect(-23, -5, 46, 6, ink, 1), ellipse(0, 2, 33, 4, gold)]),
     lens: asset("right", [-16, -34, 16, 10], [line("M 0 8 V -6", ink, 5), ellipse(0, -19, 13, 13, "#DBF8FF", { "fill-opacity": 0.7, stroke: ink, "stroke-width": 3 }), line("M -6 -22 L -1 -27", white, 2)]),
     umbrella: asset("right", [-29, -47, 29, 7], [line("M 0 -45 V 2 Q 0 9 6 5", ink, 2.5), path("M -28 -23 Q -22 -47 0 -46 Q 22 -47 28 -23 Q 14 -30 0 -23 Q -14 -30 -28 -23 Z", blue), line("M 0 -45 Q -10 -34 -10 -26 M 0 -45 Q 10 -34 10 -26", "#319CC4", 1.5)]),
-    gift: asset("body", [-22, -22, 22, 17], [rect(-20, -9, 40, 26, pink, 3), rect(-22, -13, 44, 8, "#F7859D", 2), rect(-3, -13, 6, 30, gold, 0), line("M 0 -13 C -22 -30 -18 -8 0 -13 C 22 -30 18 -8 0 -13", gold, 3)], "front", [0, 28]),
+    gift: asset("body", [-23, -35, 23, 18], [rect(-20, -9, 40, 26, pink, 3),rect(-3,-9,6,26,gold,0),joint('open',[rect(-22, -13, 44, 8, "#F7859D", 2),rect(-3,-13,6,8,gold,0),line("M 0 -13 C -22 -30 -18 -8 0 -13 C 22 -30 18 -8 0 -13", gold, 3)],{dy:-12})], "front", [0, 28]),
     drawing: asset("body", [-22, -20, 22, 20], [rect(-21, -19, 42, 38, white, 2), path("M 0 -12 L 3 -3 L 12 0 L 3 3 L 0 12 L -3 3 L -12 0 L -3 -3 Z", gold)], "front", [-5, 27])
   };
   const NEW = {

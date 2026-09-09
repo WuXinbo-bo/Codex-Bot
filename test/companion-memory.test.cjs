@@ -30,7 +30,7 @@ test('nine narrative segments use valid assets, clean exits and no synthetic tas
   }
 });
 test('removing collection leaves the complete action, prop and theater registries intact',()=>{
-  assert.equal(Object.keys(Activities.CLIPS).length,255);
-  assert.equal(Object.keys(Activities.THEATERS).length,32);
+  assert.equal(Object.keys(Activities.CLIPS).length,435);
+  assert.equal(Object.keys(Activities.THEATERS).length,44);
   assert.equal(Rig.ACCESSORIES.length,45);
 });

@@ -81,7 +81,7 @@
   <script src="../../src/base-emotions.js"></script>
   <script src="../../src/m1-rig.js"></script>
   <script src="../../src/m1-accessories.js"></script>
-  <script src="../../src/prop-scores.js"></script><script src="../../src/m1-activities.js"></script>
+  <script src="../../src/prop-scores.js"></script><script src="../../src/activity-scores.js"></script><script src="../../src/m1-activities.js"></script>
   <script src="../../src/appearance.js"></script>
   <script src="../../src/mask-system.js"></script>
   <script src="../../src/m1-renderer.js"></script>
@@ -176,14 +176,15 @@
     function play(name) {
       clearDemo(); interactive = false;
       previewDirector.stop();
-      preview.setPerformanceContext({theater:name.startsWith('performance_')||name.startsWith('theater_')||name.startsWith('story_')});
+      preview.setPerformanceContext({theater:Boolean(MetaBotActivities.Scores.meta[name])||name.startsWith('performance_')||name.startsWith('theater_')||name.startsWith('story_')});
       clearTimeout(previewTimer);
       let index = 0;
+      const scoreFrames=MetaBotActivities.Scores.meta[name]?MetaBotActivities.Scores.frames(name,(++demoSequence)%3):MetaBotActivities.CLIPS[name];
       function advance() {
-        const frame = MetaBotActivities.CLIPS[name][index++];
+        const frame = scoreFrames[index++];
         if (!frame) { preview.clearMask(); preview.setPerformanceContext({theater:false}); preview.setExpression('neutral'); return; }
         if(Object.hasOwn(frame,'mask')){if(frame.mask)preview.setMask(frame.mask,'classic');else preview.clearMask();}
-        preview.setExpression(frame.expression, { pose: frame.pose, duration: frame.transition || Math.min(450, frame.duration * .8), performanceId:name,performanceMs:MetaBotActivities.duration(name),auto: false });
+        preview.setExpression(frame.expression, { pose: frame.pose, duration: frame.transition || Math.min(450, frame.duration * .8), performanceId:name,performanceMs:MetaBotActivities.duration(name),beatId:MetaBotActivities.Scores.meta[name]?`${name}:${demoSequence}:${index}`:undefined,beatMs:MetaBotActivities.Scores.meta[name]?frame.duration:undefined,auto: false });
         previewTimer = setTimeout(advance, frame.duration);
       }
       advance();
@@ -289,12 +290,16 @@
     for(const name of M.names)catalogs.maskGallery.push({name,label:M.MASKS[name].label});
     const categoryLabels={core:'基础神态',emotionAccents:'情绪装饰',interactions:'更多神态',activities:'全部活动',artStyles:'整套画风',skins:'皮肤',shapes:'身体形状',eyeStyles:'眼睛风格',symbols:'特殊眼睛',proportions:'眼睛比例',accessoryTiles:'配件',maskGallery:'整脸面具'};
     const categorySelect=document.getElementById('catalogCategory'),search=document.getElementById('catalogSearch'),pageInput=document.getElementById('catalogPage');
+    const activityType=document.createElement('select');activityType.id='activityType';activityType.setAttribute('aria-label','活动类型');
+    for(const [value,label] of Object.entries({all:'全部活动',emotion:'情绪活动',task:'任务表演',panel:'面板交互',social:'鼠标互动',theater:'连续剧场',continuation:'情境接续',legacy:'已有活动'}))activityType.add(new Option(label,value));
+    categorySelect.after(activityType);
     for(const [id,label] of Object.entries(categoryLabels))categorySelect.add(new Option(label,id));
     let category='core',pageNumber=1,searchTimer=null;
     const pageSize=()=>category==='activities'?1:12;
     const filtered=()=>catalogs[category].filter(item=>{
       const e=MetaBotBaseEmotions.entries[item.name],family=familySelect.value;
-      return (category!=='core'||family==='all'||(family==='mixed'?e.mixed:e.family===family))&&(item.name+' '+item.label).toLowerCase().includes(search.value.trim().toLowerCase());
+      const type=MetaBotActivities.Scores.meta[item.name]?.type||'legacy';
+      return (category!=='activities'||activityType.value==='all'||type===activityType.value)&&(category!=='core'||family==='all'||(family==='mixed'?e.mixed:e.family===family))&&(item.name+' '+item.label).toLowerCase().includes(search.value.trim().toLowerCase());
     });
     function disposePage(){for(const bot of instances)bot.destroy();instances.length=0;for(const id of Object.keys(catalogs)){const node=document.getElementById(id);node.replaceChildren();node.hidden=true;}}
     function renderTile(parent,item){
@@ -324,7 +329,7 @@
       }
       if(!items.length)parent.textContent='没有匹配项';
       categorySelect.value=category;pageInput.value=String(pageNumber);pageInput.max=String(pages);
-      familySelect.hidden=category!=='core';lucide.createIcons();
+      familySelect.hidden=category!=='core';activityType.hidden=category!=='activities';lucide.createIcons();
       document.getElementById('catalogPages').textContent='/ '+pages;
       document.getElementById('catalogTotal').textContent=items.length+' 项';
       document.getElementById('catalogPrev').disabled=pageNumber===1;
@@ -335,10 +340,11 @@
     }
     function showCatalog(id,name){
       if(!catalogs[id])return;
-      category=id;search.value='';familySelect.value='all';pageNumber=name?Math.floor(Math.max(0,catalogs[id].findIndex(item=>item.name===name))/pageSize())+1:1;renderCatalog();
+      category=id;search.value='';familySelect.value='all';activityType.value='all';pageNumber=name?Math.floor(Math.max(0,catalogs[id].findIndex(item=>item.name===name))/pageSize())+1:1;renderCatalog();
     }
     categorySelect.onchange=()=>showCatalog(categorySelect.value);
     familySelect.onchange=()=>{pageNumber=1;renderCatalog();};
+    activityType.onchange=()=>{pageNumber=1;renderCatalog();};
     search.oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{pageNumber=1;renderCatalog();},180);};
     pageInput.onchange=()=>{pageNumber=Math.floor(Number(pageInput.value))||1;renderCatalog();};
     document.getElementById('catalogPrev').onclick=()=>{pageNumber--;renderCatalog();};

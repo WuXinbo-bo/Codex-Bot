@@ -1,8 +1,8 @@
 (function (root, factory) {
-  const api = factory(typeof module === "object" && module.exports ? require("./m1-rig.js") : root.MetaBotM1Rig,typeof module === "object" && module.exports ? require('./prop-scores.js') : root.MetaBotPropScores);
+  const api = factory(typeof module === "object" && module.exports ? require("./m1-rig.js") : root.MetaBotM1Rig,typeof module === "object" && module.exports ? require('./prop-scores.js') : root.MetaBotPropScores,typeof module === "object" && module.exports ? require('./activity-scores.js') : root.MetaBotActivityScores);
   if (typeof module === "object" && module.exports) module.exports = api;
   else root.MetaBotActivities = api;
-})(typeof self !== "undefined" ? self : globalThis, function (Rig,PropScores) {
+})(typeof self !== "undefined" ? self : globalThis, function (Rig,PropScores,Scores) {
   const A = Rig.ARMS;
   const eyes = name => ({ left: { symbols: { [name]: 1 } }, right: { symbols: { [name]: 1 } } });
   const wear = (name, values = {}) => ({ [name]: { opacity: 1, ...values } });
@@ -284,6 +284,7 @@
     CLIPS[name]=frames;LABELS[name]=label;THEATERS[name]={label,route,duration:15000};
   }
   function theaterFrames(name, variant = 0) {
+    if(Scores.meta[name])return Scores.frames(name,variant);
     if(PropScores.meta[name])return PropScores.frames(name,variant);
     const frames = structuredClone(CLIPS[name]);
     if (!THEATERS[name] || !variant) return frames;
@@ -334,13 +335,29 @@
     }else POOLS[meta.route].push(name);
   }
   const propsFor=name=>[...new Set((CLIPS[name]||[]).flatMap(f=>Object.entries(f.pose.accessories||{}).filter(([,v])=>v.opacity>0).map(([k])=>k)))];
+  for(const [name,meta] of Object.entries(Scores.meta)){
+    CLIPS[name]=Scores.clips[name];LABELS[name]=meta.label;
+    if(meta.type==='emotion')(POOLS[meta.route]||=[]).push(name);
+    if(meta.type==='theater')THEATERS[name]={label:meta.label,route:meta.route,duration:15000};
+    if(meta.type==='task'){
+      (PERFORMANCES[meta.route]||=[]).push(name.replace('performance_',''));
+      (meta.route==='running'?POOLS.running:(LIFECYCLE[meta.route]||=[])).push(name);
+    }
+    if(meta.type==='social'){
+      REACTIONS[meta.route].push(name);
+      if(meta.route==='release')REACTIONS.leave.push(name);
+      if(meta.route==='hover')REACTIONS.dwell.push(name);
+      if(meta.route==='click')PLAYFUL.add(name);
+    }
+  }
   const propCache=new Map();
-  const primaryProp=name=>{if(!propCache.has(name))propCache.set(name,PropScores.meta[name]?.prop||propsFor(name)[0]||'gesture');return propCache.get(name);};
+  const primaryProp=name=>{if(!propCache.has(name))propCache.set(name,Scores.meta[name]?.prop||PropScores.meta[name]?.prop||propsFor(name)[0]||'gesture');return propCache.get(name);};
   function exposureWeight(name,names,exposure={}){
     const prop=primaryProp(name),copies=names.filter(id=>primaryProp(id)===prop).length;
     return 1/Math.max(1,copies)/(1+(exposure[prop]||0)/15000);
   }
   const family=name=>{
+    if(Scores.meta[name])return Scores.meta[name].family;
     if(PropScores.meta[name])return PropScores.meta[name].family;
     const props=new Set((CLIPS[name]||[]).flatMap(f=>Object.entries(f.pose.accessories||{}).filter(([,v])=>v.opacity>0).map(([k])=>k)));
     for(const [family,items] of [['magic',['topHat','wand']],['art',['brush','drawing','beret']],['play',['cube','plane']],['rest',['cup','pillow','sleepHat','hourglass']],['inspect',['lens','detectiveHat']],['work',['glasses','card','notebook','pencil','stamp']],['signal',['flag']],['costume',['shades','cape']]])if(items.some(p=>props.has(p)))return family;
@@ -358,5 +375,5 @@
     let cursor=random()*pool.reduce((n,id)=>n+exposureWeight(id,pool,previous.exposure),0);
     return pool.find(id=>(cursor-=exposureWeight(id,pool,previous.exposure))<0)||pool.at(-1);
   }
-  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, NARRATIVES, PropScores,propsFor,exposureWeight,theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
+  return { CLIPS, POOLS, LIFECYCLE, PERFORMANCES, THEATERS, NARRATIVES, PropScores,Scores,propsFor,exposureWeight,theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
 });

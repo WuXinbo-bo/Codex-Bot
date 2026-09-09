@@ -2,9 +2,10 @@
 
 ## Inventory
 
-The runtime has 45 accessories and 255 activities. This revision adds 21 props,
+The runtime has 45 accessories and 435 activities. The original prop revision added 21 props,
 21 short scores, 12 independent fifteen-second stories and 11 task performances.
-The total theater count is 32; task performances total 34. Scarf, headband and
+The activity expansion brings ambient theaters to 44 (plus four contextual
+continuations) and task performances to 70; see `activity-system.md`. Scarf, headband and
 headphones were removed before delivery. Pixel art is retired separately and
 saved selections migrate to automatic art without changing supported eyes/skins.
 

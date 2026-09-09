@@ -514,7 +514,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       "more",
       "quit",
     ]),
-    completions: new Set(["ready", "completion", "board-drag", "nudge-played"]),
+    completions: new Set(["ready", "completion", "completion-navigate", "board-drag", "nudge-played"]),
     toast: new Set(["ready",'notice-open','notice-ack','notice-next','notice-hover']),
   };
   let actions = Promise.resolve();
@@ -525,7 +525,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       throw new Error("Unauthorized window action");
     const [a, b] = args || [];
     if(type==='notice-hover'){noticeHovered=a===true;armNoticeTimer();return {ok:true};}
-    if(type==='notice-next'){noticeLane.next();await syncNotices();return {ok:true};}
+    if(type==='notice-next'){noticeLane.next();await syncNotices();interact('panel-switch');return {ok:true};}
+    if(type==='completion-navigate'){if(completionVisible)interact('panel-switch');return {ok:true};}
     if(type==='notice-open'||type==='notice-ack'){
       const notice=noticeLane.peek();if(!notice?.persistent||notice.id!==a)return {ok:false,error:'提醒已变化'};
       if(type==='notice-open')await invoke('open',{url:taskTarget(notice.task,config)});
@@ -600,7 +601,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       else {const x=Number(a.x),y=Number(a.y);if(!Number.isFinite(x)||!Number.isFinite(y))throw Error('Invalid coordinates');
         if(a.phase==='start')boardDrag={x,y,...{ox:boardOffset.x,oy:boardOffset.y}};
         if(boardDrag&&a.phase!=='start'){boardOffset={x:Math.max(-geometry.area.width,Math.min(geometry.area.width,boardDrag.ox+(x-boardDrag.x)*geometry.scale)),y:Math.max(-geometry.area.height,Math.min(geometry.area.height,boardDrag.oy+(y-boardDrag.y)*geometry.scale))};if(a.phase==='end')boardDrag=null;}}
-      await placeChildren();return {ok:true};
+      await placeChildren();if(['start','reset'].includes(a.phase))interact('panel-move');return {ok:true};
     }
     if (type === "ready") {
       if(from==='toast'){toastKey=null;await syncNotices();}

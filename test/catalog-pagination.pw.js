@@ -24,6 +24,11 @@ async(page)=>{
   await page.waitForFunction(()=>review.getCatalogState().total===0&&review.instances.length===0);
   if(!await page.locator('#catalogNext').isDisabled())throw Error('Empty pagination enabled');
   await page.locator('#catalogCategory').selectOption('activities');
+  for(const [type,count] of Object.entries({emotion:96,task:36,panel:16,social:16,theater:12,continuation:4,legacy:255})){
+    await page.locator('#activityType').selectOption(type);
+    if(await page.evaluate(()=>review.getCatalogState().total)!==count)throw Error('Activity filter '+type);
+  }
+  await page.locator('#activityType').selectOption('all');
   const coverage=await page.evaluate(()=>{
     const results=[];
     for(const id of [...document.getElementById('catalogCategory').options].map(option=>option.value)){

@@ -12,7 +12,8 @@
   function button(key,label,icon,handler){const b=document.createElement('button');b.type='button';b.title=label;b.setAttribute('aria-label',label);b.innerHTML=`<i data-lucide="${icon}"></i>`;b.onclick=handler;buttons[key]=b;return b;}
   const navigation=document.createElement('div');navigation.className='relay-navigation';
   const progress=document.createElement('span');progress.setAttribute('aria-live','polite');
-  navigation.append(button('previous','上一项，保留未确认','chevron-left',()=>{relay.move(-1);render();}),progress,button('next','下一项，保留未确认','chevron-right',()=>{relay.move(1);render();}));
+  const navigate=delta=>{relay.move(delta);render();window.metaBot?.completionNavigate?.().catch(showDragError);};
+  navigation.append(button('previous','上一项，保留未确认','chevron-left',()=>navigate(-1)),progress,button('next','下一项，保留未确认','chevron-right',()=>navigate(1)));
   async function act(action){
     const item=relay.view().item;if(!item||busy)return;busy=true;render();
     document.getElementById('error').textContent='';row.classList.remove('failed');

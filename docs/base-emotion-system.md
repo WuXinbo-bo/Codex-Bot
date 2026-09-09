@@ -4,7 +4,7 @@
 
 `src/base-emotions.js` owns 24 families, four authored scores per family,
 and 12 mixed thoughts: 108 new base scores. Existing 149 rig identifiers remain
-valid for the 255 activities, 32 theaters and lifecycle performances. The rig
+valid for the 435 activities, 44 ambient theaters and lifecycle performances. The rig
 now exposes 257 identifiers, with the 108 base scores in the base gallery and
 the legacy 149 in the other-pose gallery. These are not 108 additional activities.
 

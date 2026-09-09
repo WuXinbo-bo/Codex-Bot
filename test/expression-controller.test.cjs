@@ -99,7 +99,9 @@ test('long theater lasts about fifteen seconds and releases every mask',()=>{
 test('lifecycle scores rotate fully and survive their own toast choreography',()=>{
   let diagnostics;
   const h=harness({random:createSeededRandom(21),onPerformanceDiagnostics:read=>diagnostics=read});
-  for(const [kind,size] of [['started',5],['joined',5],['completed',7],['attention',3],['failed',2]]){
+  const A=require('../src/m1-activities');
+  for(const kind of ['started','joined','completed','attention','failed','stopped']){
+    const size=A.PERFORMANCES[kind==='joined'?'started':kind].length;
     const seen=new Set();
     for(let index=0;index<size;index++){
       h.controller.interact('task-lifecycle',{events:[{id:kind+index,kind,taskId:'a',turnId:kind+index}]});h.clock.advance(180);
@@ -108,7 +110,7 @@ test('lifecycle scores rotate fully and survive their own toast choreography',()
       assert.equal(h.controller.getState().activity.name,name);
       h.controller.interact('hover-enter');h.controller.interact('pointer-leave');
       assert.equal(h.controller.getState().activity.name,name);
-      h.clock.advance(5000);
+      h.clock.advance(A.duration(name)*1.3+1000);
     }
     assert.equal(seen.size,size,kind);
   }
@@ -122,9 +124,9 @@ test('native entering-only panel phases rotate gestures without waiting for prep
   const seen=[];
   for(let i=0;i<12;i++){
     h.controller.interact('panel-phase',{label:'panel',phase:'entering',side:'right',duration:220});
-    seen.push(h.controller.getCurrent());h.clock.advance(700);
+    seen.push(h.controller.getState().activity.name);h.clock.advance(1600);
   }
-  assert.equal(new Set(seen).size,3);
+  assert.equal(new Set(seen).size,4);
   assert.ok(seen.every((name,index)=>index===0||name!==seen[index-1]));
   h.controller.stop();assert.equal(h.clock.pending(),0);
 });
