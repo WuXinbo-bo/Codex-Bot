@@ -40,6 +40,19 @@ async(page)=>{
   });
   await page.waitForTimeout(500);
   await page.locator('#theater-contact-sheet').screenshot({path:'output/playwright/theaters-20.png'});
+  await page.evaluate(()=>{
+    review.startInteractive('idle');
+    review.previewDirector.interact('activity-request',{name:'theater_masks'});
+    review.previewDirector.interact('hover-enter',{local:{x:.4,y:.2}});
+  });
+  await page.waitForTimeout(4500);
+  if(await page.locator('#preview svg').getAttribute('data-mask')!=='shy')throw Error('Production mask ownership failed');
+  await page.evaluate(()=>review.previewDirector.interact('pointer-leave'));
+  await page.locator('#preview').screenshot({path:'output/playwright/theater-production-mask.png'});
+  await page.waitForTimeout(11500);
+  const completed=await page.evaluate(()=>review.previewDirector.getState().theater.completed.theater_masks);
+  if(completed!==1)throw Error('Production story did not complete');
+  if(await page.locator('#preview svg').getAttribute('data-mask'))throw Error('Production mask not cleaned');
   if(errors.length)throw Error(errors.join('\n'));
   return {stories:stories.length,first,middle,last,errors};
 }

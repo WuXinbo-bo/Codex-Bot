@@ -65,6 +65,54 @@ test('long theater lasts about fifteen seconds and releases every mask',()=>{
   h.controller.stop();assert.equal(h.clock.pending(),0);
 });
 
+test('observing and opening a panel do not starve the thirty-minute theater rotation',t=>{
+  for(const status of ['running','idle']){
+    const h=harness({random:createSeededRandom(42),intervalMs:8500});
+    h.controller.update(status,status==='running'?1:0,{quiet:true});
+    h.controller.interact('bubble-open');
+    for(let elapsed=0;elapsed<1800000;elapsed+=1000){
+      if (elapsed%20000===0) h.controller.interact('hover-enter',{local:{x:.3,y:.2}});
+      if (elapsed%20000===5000) h.controller.interact('pointer-leave');
+      h.clock.advance(1000);
+    }
+    const state=h.controller.getState().theater;
+    const counts=Object.values(state.completed);
+    assert.equal(counts.length,status==='running'?7:9);
+    assert.ok(Math.max(...counts)-Math.min(...counts)<=1);
+    assert.ok(state.events.filter(e=>e.kind==='completed').length>=10);
+    t.diagnostic(JSON.stringify({status,completed:state.completed}));
+    h.controller.stop();assert.equal(h.clock.pending(),0);
+  }
+});
+
+test('a click resumes a theater with an open panel and restores mask ownership',()=>{
+  const masks=[],ownership=[];
+  const h=harness({onTheaterMask:id=>masks.push(id),onPerformance:active=>ownership.push(active)});
+  h.controller.update('idle',0,{quiet:true});
+  h.controller.interact('activity-request',{name:'theater_masks'});
+  h.clock.advance(5000);
+  h.controller.interact('press');h.controller.interact('ball-click');h.controller.interact('bubble-open');
+  h.clock.advance(4000);
+  assert.equal(h.controller.getState().activity?.name,'theater_masks');
+  assert.ok(['shy','cool'].includes(masks.at(-1)));assert.equal(ownership.at(-1),true);
+  h.clock.advance(15000);
+  assert.equal(h.controller.getState().theater.completed.theater_masks,1);
+  assert.equal(ownership.at(-1),false);
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
+test('aborted stories receive a short retry, no completion credit, and no stale resume',()=>{
+  const h=harness();h.controller.update('running',1,{quiet:true});
+  h.controller.interact('activity-request',{name:'theater_notes'});h.clock.advance(1000);
+  h.controller.interact('press');h.controller.interact('drag-start');
+  assert.equal(h.controller.getState().suspendedActivity,null);
+  assert.deepEqual(h.controller.getState().theater.completed,{});
+  assert.ok(h.controller.getState().theater.nextAt<=h.clock.now()+15000);
+  h.controller.interact('drag-end');
+  assert.notEqual(h.controller.getState().activity?.name,'theater_notes');
+  h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
 test('every non-retained theater runs through the production director to completion',()=>{
   const A=require('../src/m1-activities.js');
   for(const [name,story] of Object.entries(A.THEATERS)){

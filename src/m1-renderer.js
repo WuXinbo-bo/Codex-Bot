@@ -155,7 +155,7 @@
       svg.dataset.skin=appearance.skin || 'green';
       decorations.setAttribute('opacity', /delight|victory|shy|complete|curious|love|think|focus|closeness|caring|achievement/.test(expression) ? 1 : 0);
       decorations.setAttribute('transform',`translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52}) translate(-64 -64)`);
-      const occupied=Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle;
+      const occupied=Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater;
       maskController?.context(occupied);
       const m=maskController?.tick(motionLevel==='reduced');
       faceMask.setAttribute('opacity',m?.visible?'1':'0');
@@ -335,7 +335,7 @@
       const now = nowTime();
       samplePose(now);
       expression = Rig.EXPRESSIONS[name] ? name : "neutral";
-      if(Appearance && (now>=shapeDue || appearance.shape==='circle')) {
+      if(Appearance && !performanceContext.theater && (now>=shapeDue || appearance.shape==='circle')) {
         const pool=appearance.shape==='random'?Appearance.SHAPES:Appearance.pool(expression);
         oldShape=bodyShape;
         const choices=pool.filter(s=>s!==bodyShape);
@@ -394,11 +394,11 @@
     render(current, started);
     wake();
     return { setAppearance, setExpression,
-      setPerformanceContext(value){performanceContext={...performanceContext,...value};},
+      setPerformanceContext(value){performanceContext={...performanceContext,...value};if(value.theater)maskController?.clear(true);wake();},
       setMask(name,chain){const ok=maskController?.preview(name,chain);wake();return ok;},
       setTaskStatus(status){maskController?.status(status);wake();},
       maskLifecycle(kind,ids){maskController?.lifecycle(kind,ids);wake();},
-      maskInteract(type){maskController?.interact(type);wake();},
+      maskInteract(type){if(!performanceContext.theater)maskController?.interact(type);wake();},
       clearMask(immediate=false){maskController?.clear(immediate);wake();},
       getMaskState:()=>maskController?.state(),
       setGaze, clearGaze, setMotion, setMotionLevel, setActive, resetIdle, destroy,

@@ -29,6 +29,7 @@
     setActive: (active) => ball?.setActive(active),
     resetIdle: () => ball?.resetIdle(),
     onTheaterMask: id => id&&theaterMasksEnabled?ball?.setMask(id,'classic'):ball?.clearMask(true),
+    onPerformance: active => ball?.setPerformanceContext({ theater: active }),
     onLifecycle: detail => { window.metaBot?.showLifecycleToast?.(detail.events.map(event => event.id)); },
     motionLevel: effectiveMotionLevel(),
     intervalMs: 8500

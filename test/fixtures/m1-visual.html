@@ -130,7 +130,7 @@
       const option = document.createElement('option'); option.value = name; option.textContent = labels[name]; document.getElementById('activitySelect').append(option);
     }
     const preview = MetaBotM1.create(document.getElementById('preview'));
-    const previewDirector = MetaBotExpressionController.createExpressionController({ setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(), seed: 7 });
+    const previewDirector = MetaBotExpressionController.createExpressionController({ setExpression: preview.setExpression, setGaze: preview.setGaze, clearGaze: preview.clearGaze, setMotion: preview.setMotion, setActive: preview.setActive, onPerformance: active=>preview.setPerformanceContext({theater:active}), onTheaterMask: id=>id?preview.setMask(id,'classic'):preview.clearMask(true), seed: 7 });
     previewDirector.update('running', 1);
     let previewTimer = null;
     let interactive = true;
@@ -233,6 +233,7 @@
     setInterval(() => {
       const state = previewDirector.getState();
       document.getElementById('directorState').textContent = interactive ? `状态：${state.status} · 动作：${labels[state.activity?.name] || state.current}${state.activity ? ' · 第 ' + state.activity.index + ' 步' : ''}${state.suspendedActivity ? ' · 待接续：' + labels[state.suspendedActivity.name] : ''}${state.pendingReminder ? ' · 提醒等待松手' : ''}` : '关键帧播放模式；点击“恢复交互”体验实际响应。';
+      if (interactive) document.getElementById('directorState').textContent += ` · 长动作覆盖 ${Object.keys(state.theater.completed).length}/20 · 完成 ${Object.values(state.theater.completed).reduce((a,b)=>a+b,0)} 次 · ${state.theater.blocker} · 冷却 ${Math.max(0,Math.ceil((state.theater.nextAt-Date.now())/1000))}s`;
     }, 200);
     window.review = { instances, live, director, preview, previewDirector, play, scenario, startInteractive };
     const A=MetaBotAppearance,M=MetaBotMaskSystem;

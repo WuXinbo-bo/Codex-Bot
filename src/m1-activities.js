@@ -164,8 +164,15 @@
   ];
   for(const [key,label,route,parts] of stories){
     const name='theater_'+key;
-    const frames=parts.flatMap(part=>{
-      if(CLIPS[part])return CLIPS[part];
+    const frames=parts.flatMap((part,index)=>{
+      if(CLIPS[part]) {
+        const stages = CLIPS[part].slice();
+        // Short clips reset to base; only the final chapter should put everything away.
+        if (index < parts.length - 1) {
+          while (stages.length > 1 && ['neutral','calm','focus','micro_confirm','steady'].includes(stages.at(-1).expression) && !Object.values(stages.at(-1).pose?.accessories || {}).some(p => p.opacity > 0)) stages.pop();
+        }
+        return stages;
+      }
       if(!Rig.EXPRESSIONS[part])throw new Error('Unknown theater stage: '+part);
       return [step(part,800)];
     }).map(f=>({expression:f.expression,duration:f.duration,pose:Rig.merge(structuredClone(f.pose||{}),{effects:{complete:0,input:0,error:0}})}));
@@ -176,12 +183,41 @@
         delete frame.pose.accessories.cube;
       }
     }
+    const persistent = {
+      notes:['notebook','pencil'], insight:['pencil'], sorting:['card'],
+      investigate:['lens','detectiveHat'], pen:['pencil'], workstation:['card'],
+      sand:['hourglass'], busy:['notebook'], doze:['pillow'], airplane:['plane'],
+      balance:['cube'], portrait:['beret','drawing'], magic:['topHat','wand'],
+      star:['shades'], proud:['notebook'], patient:['notebook']
+    }[key] || [];
+    const held = {};
+    for (const frame of frames) {
+      const visible = Rig.merge(Rig.getExpression(frame.expression),frame.pose).accessories;
+      for (const prop of persistent) {
+        if (visible[prop]?.opacity > 0) held[prop] = structuredClone(visible[prop]);
+        else if (held[prop]) frame.pose = Rig.merge(frame.pose,{accessories:{[prop]:held[prop]}});
+      }
+    }
     frames.push(step('calm',500));
     const total=frames.reduce((n,f)=>n+f.duration,0);
     frames.forEach(f=>f.duration=Math.round(f.duration/total*15000));
     frames.at(-1).duration+=15000-frames.reduce((n,f)=>n+f.duration,0);
     if(key==='masks'){frames[Math.floor(frames.length*.2)].mask='shy';frames[Math.floor(frames.length*.6)].mask='cool';frames.at(-1).mask=null;}
     CLIPS[name]=frames;LABELS[name]=label;THEATERS[name]={label,route,duration:15000};
+  }
+  function theaterFrames(name, variant = 0) {
+    const frames = structuredClone(CLIPS[name]);
+    if (!THEATERS[name] || !variant) return frames;
+    // Vary the acting, not the story's object or its meaningful task signals.
+    frames.slice(1,-1).forEach((frame,index) => {
+      if (index % 3 !== 1 || frame.mask) return;
+      const base = Rig.merge(Rig.getExpression(frame.expression), frame.pose);
+      frame.pose = Rig.merge(frame.pose, {
+        gaze: { x: variant === 1 ? -.45 : .45, y: .15 },
+        body: { rotate: base.body.rotate + (variant === 1 ? -3 : 3) }
+      });
+    });
+    return frames;
   }
   const family=name=>{
     const props=new Set((CLIPS[name]||[]).flatMap(f=>Object.entries(f.pose.accessories||{}).filter(([,v])=>v.opacity>0).map(([k])=>k)));
@@ -197,5 +233,5 @@
     for(let i=0;i<keys.length;i++){r-=weights[i];if(r<0){key=keys[i];break;}}
     const pool=groups[key];return pool?.[Math.min(pool.length-1,Math.floor(random()*pool.length))];
   }
-  return { CLIPS, POOLS, LIFECYCLE, THEATERS, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
+  return { CLIPS, POOLS, LIFECYCLE, THEATERS, theaterFrames, duration, LABELS, REACTIONS, PLAYFUL, RARE, family,chooseActivity, poseFor: name => Rig.getExpression(name) };
 });

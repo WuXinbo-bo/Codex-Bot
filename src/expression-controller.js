@@ -101,6 +101,19 @@
     let panelOpen = false;
     let reminderAt = Infinity;
     const activityHistory = new Map();
+    const theaterCounts = new Map();
+    const theaterEvents = [];
+    let lastTheater = null;
+    const theaterVariants = new Map();
+    function theaterEvent(kind, name, reason) {
+      theaterEvents.push({ kind, name, reason, at: now() });
+      if (theaterEvents.length > 100) theaterEvents.shift();
+    }
+    function chooseTheater(names) {
+      const minimum = Math.min(...names.map(name => theaterCounts.get(name) || 0));
+      const pool = names.filter(name => (theaterCounts.get(name) || 0) === minimum);
+      return Activities.chooseActivity(pool, random, lastTheater ? { name: lastTheater, family: Activities.family(lastTheater) } : null);
+    }
     const lifecycleSeen = new Set();
     const lifecycleQueue = new Map();
     let lifecycleCurrent = null;
@@ -197,33 +210,53 @@
       lifecycleQueue.set(kind, events.concat(lifecycleQueue.get(kind) || []));
     }
 
-    function cancelActivity() {
-      if(Activities.THEATERS[activity?.name])options.onTheaterMask?.(null);
+    function cancelActivity(reason = "interrupted") {
+      if(Activities.THEATERS[activity?.name]) {
+        const name = activity.name;
+        options.onTheaterMask?.(null);
+        options.onPerformance?.(false);
+        theaterEvent(reason === "completed" ? "completed" : "interrupted", name, reason);
+        if (reason === "completed") {
+          theaterCounts.set(name, (theaterCounts.get(name) || 0) + 1);
+          activityHistory.set(name, now());
+          lastTheater = name;
+          nextTheaterAt = now() + (status === "running" ? 90000 + random()*60000 : 45000 + random()*45000);
+        } else nextTheaterAt = now() + 15000;
+      }
       if (activityTimer !== null) unschedule(activityTimer);
       if (activity?.name === "mimic") setMotion({ mode: "idle" });
       activityTimer = null;
       activity = null;
     }
 
-    function suspendActivity() {
+    function suspendActivity(priority = 60) {
       if (!activity || activity.priority > 20) return;
-      if(Activities.THEATERS[activity.name]){suspendedActivity=null;return;}
+      if(Activities.THEATERS[activity.name] && (priority >= 50 && priority !== 60 || dragging)){suspendedActivity=null;return;}
       suspendedActivity = { ...activity, remaining: Math.max(1, activity.dueAt - now()), context: taskKey, expires: now() + 15000 };
     }
 
     function playActivity(name, priority = 5, resume = null) {
-      const frames = Activities.CLIPS[name];
-      if (!frames || motionLevel === "reduced" || (transient && transient.priority > priority)) return false;
-      if (!resume && priority > 20) suspendActivity();
-      cancelActivity();
+      if (!Activities.CLIPS[name] || motionLevel === "reduced" || (transient && transient.priority > priority)) return false;
+      const variants = [0,1,2].filter(value => value !== theaterVariants.get(name));
+      const variant = Activities.THEATERS[name] ? resume?.variant ?? variants[Math.floor(random() * variants.length)] : 0;
+      const frames = Activities.THEATERS[name] ? Activities.theaterFrames(name, variant) : Activities.CLIPS[name];
+      if (priority >= 50 && priority !== 60 && Activities.THEATERS[suspendedActivity?.name]) suspendedActivity = null;
+      if (!resume && priority > 20) suspendActivity(priority);
+      cancelActivity(resume ? "resume" : priority >= 50 ? "priority-event" : "social-response");
       clearTimer("transient");
       transient = { name, priority, token: ++token };
-      activity = { name, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
-      if (!resume) activityHistory.set(name, now());
+      activity = { name, variant, index: resume ? resume.index - 1 : 0, priority, tempo: resume?.tempo || (Activities.LABELS[name] ? 0.9 + random() * 0.2 : 1) };
+      if (!resume && !Activities.THEATERS[name]) activityHistory.set(name, now());
       nextActivityAt = now() + 12000 + random() * 8000;
       if(Activities.THEATERS[name]){
         activity.tempo=resume?.tempo||(.96+random()*.08);
-        nextTheaterAt=now()+15000*activity.tempo+75000+random()*45000;
+        options.onPerformance?.(true);
+        theaterVariants.set(name, variant);
+        if (resume) {
+          const mask = frames.slice(0, resume.index).filter(frame => Object.hasOwn(frame, 'mask')).at(-1)?.mask;
+          if (mask) options.onTheaterMask?.(mask);
+        }
+        theaterEvent(resume ? "resumed" : "started", name);
         nextActivityAt=now()+15000*activity.tempo+15000;
       }
       const reminderKey = priority === 50 ? taskKey : null;
@@ -232,7 +265,7 @@
         const frame = frames[activity.index++];
         if (!frame) {
           if (reminderKey) deliveredReminders.add(reminderKey);
-          cancelActivity();
+          cancelActivity("completed");
           if (name === "lifted" && dragging) { playTransient(dragPose, { priority: 70 }); return; }
           restoreBase(); return;
         }
@@ -323,7 +356,7 @@
       if (pendingReminder && pendingReminder.key === taskKey && remind()) return;
       if (drainLifecycle()) return;
       if (suspendedActivity && (suspendedActivity.context !== taskKey || now() >= suspendedActivity.expires)) suspendedActivity = null;
-      if (suspendedActivity && !pointerNear && !panelOpen && !dragging && motionLevel !== "reduced") {
+      if (suspendedActivity && (Activities.THEATERS[suspendedActivity.name] || (!pointerNear && !panelOpen)) && !dragging && randomEnabled && motionLevel !== "reduced") {
         const saved = suspendedActivity; suspendedActivity = null;
         if (playActivity(saved.name, saved.priority, saved)) return;
       }
@@ -337,11 +370,11 @@
       if (!transient) {
         if (drainLifecycle()) { scheduleBase(); return; }
         if (!panelOpen && now() >= reminderAt && ["needs_attention", "failed"].includes(status) && remind(true)) { scheduleBase(); return; }
-        if (randomEnabled && !panelOpen && !pointerNear && now() >= nextActivityAt && motionLevel !== "reduced") {
+        if (randomEnabled && now() >= nextActivityAt && motionLevel !== "reduced") {
           const route=status==='offline'?'idle':status;
           const theaters=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route===route&&now()-(activityHistory.get(name)??-Infinity)>300000);
-          if(now()>=nextTheaterAt&&theaters.length&&random()<.3){
-            const selected=Activities.chooseActivity(theaters,random);
+          if(now()>=nextTheaterAt&&theaters.length){
+            const selected=chooseTheater(theaters);
             if(playActivity(selected,5)){scheduleBase();return;}
           }
           const idle = ["offline", "idle"].includes(status);
@@ -351,7 +384,7 @@
           const eligible = pool.filter(name => name !== "mimic" && now() - (activityHistory.get(name) ?? -Infinity) > (status === "running" ? 60000 : 180000));
           const last=[...activityHistory].sort((a,b)=>b[1]-a[1])[0];
           const history=[...activityHistory].sort((a,b)=>b[1]-a[1]).slice(0,6);
-          if (eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
+          if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
         }
         const resting = status === "offline" && count === 0 && now() - lastActivity >= standbyAfter;
         if (motionLevel === "reduced" || resting) apply(chooseBase(true), { duration: 360 });
@@ -363,7 +396,8 @@
     function playTransient(name, settings = {}) {
       const priority = Number(settings.priority || 0);
       if (transient && priority < transient.priority) return false;
-      if (priority > 20) suspendActivity();
+      if (priority >= 50 && priority !== 60 && Activities.THEATERS[suspendedActivity?.name]) suspendedActivity = null;
+      if (priority > 20) suspendActivity(priority);
       cancelActivity();
       clearTimer("transient");
       const currentToken = ++token;
@@ -426,7 +460,7 @@
       }
       if (normalized !== "offline" || numericCount > 0) lastActivity = now();
       if (transient?.priority <= 50 && (normalized !== previousStatus || identityChanged)) {
-        cancelActivity();
+        cancelActivity("task-changed");
         clearTimer("transient");
         transient = null;
       }
@@ -463,6 +497,12 @@
     function interact(type, detail = {}) {
       if (!type) return current;
       const local = detail.local || {};
+      // Passive pointer observation shares gaze, never takes ownership of a story.
+      if (Activities.THEATERS[activity?.name] && ["proximity-enter", "hover-enter", "proximity-move", "hover-move", "hover-dwell", "pointer-leave", "bubble-hover"].includes(type)) {
+        pointerNear = !["pointer-leave", "bubble-hover"].includes(type);
+        if (pointerNear) setGaze(local.x || 0, local.y || 0); else clearGaze();
+        return current;
+      }
       if (["proximity-enter", "hover-enter"].includes(type)) {
         const entering = !pointerNear;
         pointerNear = true;
@@ -536,8 +576,8 @@
           if(detail.label==='completions'&&detail.phase==='leaving')retainedTheaterCount=0;
           if(detail.phase==='attending'){
             const retained=Object.keys(Activities.THEATERS).filter(name=>Activities.THEATERS[name].route==='retained'&&now()-(activityHistory.get(name)??-Infinity)>300000);
-            if(detail.label==='completions'&&retainedTheaterCount<2&&retained.length&&randomEnabled&&!panelOpen&&!dragging&&!pointerNear&&!transient&&status==='idle'&&now()>=nextTheaterAt&&random()<.3){
-              if(playActivity(Activities.chooseActivity(retained,random),5))retainedTheaterCount++;
+            if(detail.label==='completions'&&retainedTheaterCount<2&&retained.length&&randomEnabled&&!dragging&&!transient&&status==='idle'&&now()>=nextTheaterAt){
+              if(playActivity(chooseTheater(retained),5))retainedTheaterCount++;
               break;
             }
             if(!dragging&&!pointerNear&&!transient&&['idle','offline'].includes(status))playTransient('curious',{priority:25,duration:650,pose:{gaze:{x:detail.side==='left'?-.8:.8,y:.3}}});
@@ -592,11 +632,12 @@
 
     function setRandomEnabled(value) {
       randomEnabled = value !== false;
+      if (!randomEnabled) suspendedActivity = null;
       if(!randomEnabled&&Activities.THEATERS[activity?.name]&&activity.priority===5)restoreBase();
     }
     options.onRandomControl?.(setRandomEnabled);
     setMotionLevel(motionLevel);
-    return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
+    return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 
   return { POOLS, WEIGHTS, COOLDOWNS, poolFor, weightedPick, createSeededRandom, createExpressionController };

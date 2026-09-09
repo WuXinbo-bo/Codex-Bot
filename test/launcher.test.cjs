@@ -10,7 +10,7 @@ test('native launcher clears test flags and never falls back to Electron', () =>
   vm.runInNewContext(fs.readFileSync('scripts/start.cjs','utf8'), sandbox);
   sandbox.module.exports.startNative();
   assert.equal(calls.length, 1);
-  assert.ok(calls[0][0].endsWith('MetaBot.exe'));
+  assert.ok(calls[0][0].endsWith('meta-bot.exe'));
   assert.equal(calls[0][2].env.METABOT_NATIVE_TEST, undefined);
   assert.equal(calls[0][2].env.EXAMPLE, 'kept');
 });
