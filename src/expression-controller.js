@@ -1,8 +1,8 @@
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'));
-  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory);
-})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory) {
-  const POOLS = Object.freeze({
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'),require('./base-emotions.js'));
+  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory,root.MetaBotBaseEmotions);
+})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory,BaseEmotions) {
+  const LEGACY_POOLS = Object.freeze({
     offline: ["waiting", "calm", "neutral"],
     idle: ["neutral", "calm", "curious", "waiting"],
     running: ["focus", "scan_left", "scan_right", "context_sort", "idea_trace", "double_check", "quiet_progress"],
@@ -13,6 +13,7 @@
     failed: ["confused", "cautious", "waiting"],
     stopped: ["calm", "waiting", "neutral"], unknown: ["waiting", "cautious", "neutral"]
   });
+  const POOLS=Object.freeze(Object.fromEntries(Object.entries(LEGACY_POOLS).map(([status,names])=>[status,Object.freeze(names.concat(Object.values(BaseEmotions.entries).filter(e=>(BaseEmotions.routes[status]||[]).includes(e.family)).map(e=>e.id)))])));
   const WEIGHTS = Object.freeze({
     focus: 22, deep_focus: 16, context_sort: 14, micro_confirm: 14, double_check: 12,
     multi_split: 10, idea_trace: 7, fatigue_reset: 5, refocus: 12, cautious_retry: 7,
@@ -30,8 +31,8 @@
   }
 
   function weightedPick(pool, random, recent = []) {
-    const available = pool.length > recent.length ? pool.filter((name) => !recent.includes(name)) : pool.slice();
-    const candidates = available.length ? available : pool;
+    const available = pool.filter((name) => !recent.includes(name));
+    const candidates = available.length ? available : pool.length>1?pool.filter(name=>name!==recent.at(-1)):pool;
     const total = candidates.reduce((sum, name) => sum + (WEIGHTS[name] || 10), 0);
     let cursor = clamp(random(), 0, 0.999999) * total;
     for (const name of candidates) {
@@ -60,6 +61,9 @@
     const unschedule = typeof options.clearTimeout === "function" ? options.clearTimeout : clearTimeout;
     const now = typeof options.now === "function" ? options.now : Date.now;
     const random = typeof options.random === "function" ? options.random : createSeededRandom(options.seed ?? now());
+    const baseRandom=options.baseRandom||createSeededRandom((options.seed??now())+104729);
+    const baseDirector=BaseEmotions.createDirector({random:baseRandom,now});
+    let baseHoldMs=8500,baseHoldUntil=0;
     const intervalMs = Math.max(2500, Number(options.intervalMs || 8500));
     const standbyAfter = Math.max(intervalMs, Number(options.standbyAfter || 60_000));
     const sleepAfter = Math.max(standbyAfter, Number(options.sleepAfter || 180_000));
@@ -357,6 +361,7 @@
         settings={...settings,pose:{...settings.pose,gaze:{x:side==='right'?.8:-.8,y:.2},arms:{[side]:{x:4,y:70,bendX:2,bendY:83,opacity:1},[other]:{opacity:0}}}};
       }
       current = name;
+      if(BaseEmotions.entries[name]&&settings.auto!==false)settings={...settings,duration:550,performanceMs:baseHoldMs};
       resolvedAppearance=appearanceDirector.sample({expression:name,boundary:!activity||activity.index===1,blocked:dragging||Boolean(suspendedActivity)||(panelContact&&now()<panelContact.until)||transient?.priority>=50||motionLevel==='reduced'||options.isAppearanceBlocked?.()});
       setExpression(name, { appearance:resolvedAppearance, duration: settings.duration, pose: settings.pose, performanceId:settings.performanceId, performanceMs:settings.performanceMs, auto: settings.auto !== false });
       return true;
@@ -378,21 +383,19 @@
     }
 
     function chooseBase(first = false) {
-      if(preferences.stories&&memory.snapshot().afterglow&&['idle','completed'].includes(status))return 'special_smug';
-      const inactive = status === "offline" && count === 0;
+      const inactive = ['offline','idle','paused'].includes(status) && count === 0;
       const elapsed = now() - lastActivity;
-      if (inactive && elapsed >= sleepAfter) return "fatigue";
-      if (inactive && elapsed >= standbyAfter) return "waiting";
-      const sourcePool = poolFor(status, count);
-      const eligible = sourcePool.filter((name) => !COOLDOWNS[name] || now() - (lastPlayed.get(name) ?? -Infinity) >= COOLDOWNS[name]);
-      const pool = eligible.length ? eligible : sourcePool;
-      const chosen = first || !randomEnabled ? pool[0] : weightedPick(pool, random, recent);
+      if(!randomEnabled)return (LEGACY_POOLS[status]||LEGACY_POOLS.idle)[0];
+      const feeling=preferences.stories&&memory.snapshot().afterglow?'satisfied':now()-emotionMemory.at<60000?emotionMemory.name:'settled';
+      const chosen=baseDirector.choose(status==='offline'&&count>0?'idle':status,{social:interactionMood(),fatigue:inactive&&elapsed>=standbyAfter,sleep:inactive&&elapsed>=sleepAfter,feeling});
+      baseHoldMs=(6000+baseRandom()*6000)*personality().interval;
+      baseHoldUntil=now()+baseHoldMs;
       remember(chosen);
       return chosen;
     }
 
     function nextBaseDelay() {
-      return Math.round(intervalMs * personality().interval * (0.72 + clamp(random(), 0, 1) * 0.56));
+      return current?.startsWith('base_')?Math.max(1,Math.round(baseHoldUntil-now())):Math.round(intervalMs * personality().interval * (0.72 + clamp(random(), 0, 1) * 0.56));
     }
 
     function scheduleBase() {
@@ -456,9 +459,9 @@
           }
           if (!panelOpen && !pointerNear && eligible.length && playActivity(Activities.chooseActivity(eligible,random,last?{name:last[0],family:Activities.family(last[0]),recentFamilies:history.map(([name])=>Activities.family(name))}:null), 5)) { scheduleBase(); return; }
         }
-        const resting = status === "offline" && count === 0 && now() - lastActivity >= standbyAfter;
-        if (motionLevel === "reduced" || resting) apply(chooseBase(true), { duration: 360 });
-        else playTransient(chooseBase(), { priority: 5, duration: 2300 + random() * 600, transition: 360 });
+        const sleepBoundary=status==='offline'&&count===0&&now()-lastActivity>=sleepAfter&&BaseEmotions.entries[current]?.family!=='sleepy';
+        // Base scores own a full hold, not the legacy 2.3-second transient/restore loop.
+        if(!BaseEmotions.entries[current]||!randomEnabled||now()>=baseHoldUntil||sleepBoundary)apply(chooseBase(), {auto:true,duration:550});
       }
       scheduleBase();
     }
@@ -589,7 +592,7 @@
         pointer = { x: clamp(local.x, -1, 1), y: clamp(local.y, -1, 1) };
         if (entering) { pointerTravel = 0; pointerSamples = 0; }
         const name = (!transient || transient.priority < 50) && entering
-          ? activity?.name === "nap" || current === "fatigue" ? "wake" : activity && !Activities.LABELS[activity.name] ? "caught" : now() - lastLeave >= 800 && now() - lastLeave < 30000 ? "greet" : null : null;
+          ? activity?.name === "nap" || current === "fatigue" || BaseEmotions.entries[current]?.family==='sleepy' ? "wake" : activity && !Activities.LABELS[activity.name] ? "caught" : now() - lastLeave >= 800 && now() - lastLeave < 30000 ? "greet" : null : null;
         if (entering && now() - lastLeave < 800) { setGaze(local.x, local.y); return current; }
         if (name) { markActivity(); setGaze(local.x, local.y); if (name === "greet") playSocial("return"); else playActivity(name, 28); return current; }
         if (!entering && activity) { setGaze(local.x, local.y); return current; }
@@ -748,7 +751,7 @@
       if(!preferences.stories){memory.reset();if(Activities.NARRATIVES[activity?.name])restoreBase();}
     });
     setMotionLevel(motionLevel);
-    options.onPerformanceDiagnostics?.(()=>({history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
+    options.onPerformanceDiagnostics?.(()=>({base:baseDirector.snapshot(),history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
     return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 

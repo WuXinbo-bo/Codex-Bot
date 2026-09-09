@@ -1,6 +1,7 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const { createExpressionController, poolFor, weightedPick, createSeededRandom } = require("../src/expression-controller.js");
+const Base=require('../src/base-emotions.js');
 
 function fakeClock(start = 0) {
   let time = start;
@@ -416,7 +417,7 @@ test("seeded behavior randomization is reproducible", () => {
 test("interaction poses override status and restore the latest base state", () => {
   const item = harness();
   item.controller.update("running", 1);
-  assert.equal(item.controller.getCurrent(), "focus");
+  assert.ok(Base.routes.running.includes(Base.entries[item.controller.getCurrent()]?.family));
   item.controller.interact("press", { local: { x: 0.2, y: -0.1 } });
   assert.equal(item.controller.getCurrent(), "pressed");
   item.controller.interact("refresh-start");
@@ -457,13 +458,13 @@ test("edge collision direction selects the matching deformation", () => {
 test("idle lifecycle reaches rest and wakes on pointer proximity", () => {
   const item = harness();
   item.controller.update("offline", 0);
-  assert.equal(item.controller.getCurrent(), "waiting");
+  assert.ok(Base.entries[item.controller.getCurrent()]);
   item.clock.advance(5000);
-  assert.equal(item.controller.getCurrent(), "fatigue");
+  assert.equal(Base.entries[item.controller.getCurrent()].family, 'sleepy');
   item.controller.interact("proximity-enter", { local: { x: 0.5, y: 0 } });
   assert.equal(item.controller.getState().activity.name, "wake");
   item.clock.advance(1200);
-  assert.notEqual(item.controller.getCurrent(), "fatigue");
+  assert.notEqual(Base.entries[item.controller.getCurrent()]?.family, 'sleepy');
   item.controller.stop();
 });
 
@@ -504,13 +505,13 @@ test("ten minutes of work balance focus with short performances and never invent
     const activities = require("../src/m1-activities.js");
     assert.ok(poolFor("running", 1).includes(name) || activities.POOLS.running.includes(activity?.name) || activities.THEATERS[activity?.name]?.route === 'running', name);
   }
-  const focused = (occupancy.focus||0)+(occupancy.deep_focus||0)+(occupancy.quiet_progress||0);
+  const focused = Object.entries(occupancy).filter(([name])=>Base.entries[name]&&Base.routes.running.includes(Base.entries[name].family)||['focus','deep_focus','quiet_progress'].includes(name)).reduce((sum,[,time])=>sum+time,0);
   assert.ok(focused / 600000 >= 0.6, JSON.stringify(occupancy));
-  assert.ok(occupancy.focus / 600000 < 0.85, JSON.stringify(occupancy));
+  assert.ok(Math.max(...Object.values(occupancy)) / 600000 < 0.35, JSON.stringify(occupancy));
   assert.ok(Object.keys(occupancy).length >= 4);
   assert.ok(seen.size >= 6, [...seen].join(","));
   assert.ok(firstActivityAt <= 30000, String(firstActivityAt));
-  t.diagnostic(JSON.stringify({ seed: 42, firstActivityAt, workActivities: [...seen], focusPercent: occupancy.focus / 6000 }));
+  t.diagnostic(JSON.stringify({ seed: 42, firstActivityAt, workActivities: [...seen], focusPercent: focused / 6000 }));
   item.controller.stop();
   assert.equal(item.clock.pending(), 0);
 });
@@ -529,7 +530,7 @@ test("hover dwell selects contextual responses and yields immediately to press",
   item.controller.interact("ball-click");
   assert.equal(item.controller.getState().activity.priority, 45);
   item.clock.advance(1400);
-  assert.equal(item.controller.getCurrent(), "focus");
+  assert.ok(Base.routes.running.includes(Base.entries[item.controller.getCurrent()]?.family));
   item.controller.stop();
 });
 
@@ -555,7 +556,7 @@ test("gentle placement restores focus, click releases press, and a new press int
   item.controller.update("running", 1);
   item.controller.interact("drag-start");
   item.controller.interact("drag-end", { releaseSpeed: 30 });
-  assert.equal(item.controller.getCurrent(), "focus");
+  assert.ok(Base.routes.running.includes(Base.entries[item.controller.getCurrent()]?.family));
   assert.ok(item.motions.at(-1).intensity < 0.03);
   item.controller.interact("press");
   item.controller.interact("ball-click");
@@ -577,11 +578,11 @@ test("completion settles once and stale failure reactions cannot outlive recover
   item.controller.update("completed", 0);
   assert.equal(item.controller.getState().activity.name, "hero");
   item.clock.advance(2600);
-  assert.equal(item.controller.getCurrent(), "calm");
+  assert.ok(Base.routes.completed.includes(Base.entries[item.controller.getCurrent()]?.family));
   item.controller.update("failed", 0);
   item.controller.update("running", 1);
   item.clock.advance(1800);
-  assert.equal(item.controller.getCurrent(), "focus");
+  assert.ok(Base.routes.running.includes(Base.entries[item.controller.getCurrent()]?.family));
   item.controller.stop();
 });
 
@@ -615,7 +616,7 @@ test("cached states never celebrate and reduced motion cancels activity timers",
   item.controller.setMotionLevel("reduced");
   assert.equal(item.controller.getState().activity, null);
   item.clock.advance(2000);
-  assert.equal(item.controller.getCurrent(), "input");
+  assert.ok(Base.routes.needs_attention.includes(Base.entries[item.controller.getCurrent()]?.family));
   item.controller.stop();
   assert.equal(item.clock.pending(), 0);
 });
@@ -650,7 +651,7 @@ test("lift survives 33 ms telemetry, follows latest speed, and releases before c
   item.clock.advance(100);
   item.controller.interact("drag-end", { releaseSpeed: 0 });
   item.clock.advance(1300);
-  assert.equal(item.controller.getCurrent(), "focus");
+  assert.ok(Base.routes.running.includes(Base.entries[item.controller.getCurrent()]?.family));
   item.controller.stop();
 });
 

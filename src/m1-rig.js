@@ -1,8 +1,8 @@
 (function (root, factory) {
-  const rig = factory();
+  const rig = factory(typeof module === 'object' && module.exports ? require('./base-emotions.js') : root.MetaBotBaseEmotions);
   if (typeof module === "object" && module.exports) module.exports = rig;
   else root.MetaBotM1Rig = rig;
-})(typeof self !== "undefined" ? self : globalThis, function () {
+})(typeof self !== "undefined" ? self : globalThis, function (BaseEmotions) {
   const COLORS = Object.freeze({ body: "#02AD45", eyes: "#F3F6F2", ink: "#181B20", attention: "#F4BE4F", error: "#F0645D" });
   const SYMBOLS = Object.freeze(["star", "heart", "spiral", "squeeze", "flat", "cross", "dot", "tear"]);
   const ACCESSORIES = Object.freeze(["glasses", "shades", "topHat", "wand", "cape", "sleepHat", "pillow", "beret", "brush", "card", "cube", "spark", "plane", "cup", "detectiveHat", "lens", "umbrella", "gift", "drawing", "notebook", "pencil", "hourglass", "stamp", "flag"]);
@@ -26,7 +26,8 @@
     performance: { bob: 0, sway: 0, tilt: 0, wave: 0, squash: 0, cycles: 2 },
     eyeStyle: 'classic',
     eyeDesign: { anime:0,iris:0,shine:0,secondary:0,tone:0,retro:0,rim:0,tear:0,pixel:0 },
-    accents: { blush: 0, sweat: 0, glint: 0, stress: 0 },
+    accents: { ...Object.fromEntries(BaseEmotions.accentNames.map(id=>[id,0])), stress: 0 },
+    micro: { gazeX:0,gazeY:0,nod:0,lean:0,left:0,right:0,rightLag:0,leftHand:0,rightHand:0,at:.26,span:.18,second:0 },
     breathe: 0.003
   };
 
@@ -96,7 +97,8 @@
     cautious_retry: CORE.retry,
     quiet_progress: { gaze: { x: 0.3, y: 0.1 }, breathe: 0.002 }
   };
-  const CORE_EXPRESSION_NAMES = Object.freeze(Object.keys(CORE));
+  const LEGACY_CORE_NAMES = Object.freeze(Object.keys(CORE));
+  const CORE_EXPRESSION_NAMES = Object.freeze(Object.keys(BaseEmotions.entries));
   const SOCIAL = {
     wink_left: { eyes: { left: { closed: 1, arc: -12 }, right: { lower: 0.2 } }, body: { rotate: -3 } },
     wink_right: { eyes: { right: { closed: 1, arc: -12 }, left: { lower: 0.2 } }, body: { rotate: 3 } },
@@ -178,7 +180,7 @@
     gingerly:{tilt:2,wave:2,cycles:1},bashful:{tilt:3,sway:1,cycles:1},jubilant:{bob:4,wave:6,cycles:2},apologetic:{bob:-2,tilt:2,cycles:1}
   };
   const SPECIALS = Object.fromEntries(Object.entries(SPECIAL).map(([key,[label,eyeStyle,pose]])=>['special_'+key,{label,eyeStyle,pose:merge(pose,{eyeStyle,performance:SIGNATURE_MOTION[key]})}]));
-  const EXPRESSIONS = Object.freeze(Object.fromEntries(Object.entries({ ...originals,...emotionPoses,...Object.fromEntries(Object.entries(SPECIALS).map(([id,s])=>[id,s.pose])) }).map(([name, value]) => [name, merge(BASE, value)])));
+  const EXPRESSIONS = Object.freeze(Object.fromEntries(Object.entries({ ...originals,...emotionPoses,...Object.fromEntries(Object.entries(SPECIALS).map(([id,s])=>[id,s.pose])),...Object.fromEntries(Object.entries(BaseEmotions.entries).map(([id,s])=>[id,s.pose])) }).map(([name, value]) => [name, merge(BASE, value)])));
   function getExpression(name) { return merge({}, EXPRESSIONS[name] || EXPRESSIONS.neutral); }
 
   function bodyPath(body) {
@@ -235,5 +237,5 @@
     }
     return amount < 0.5 ? from : to;
   }
-  return { COLORS, SYMBOLS, ACCESSORIES, ARMS, merge, CORE_EXPRESSION_NAMES, EXPRESSIONS, EMOTIONS, SPECIALS, getExpression, bodyPath, eyePath, styleEyes, constrainPupil, interpolate };
+  return { BaseEmotions, COLORS, SYMBOLS, ACCESSORIES, ARMS, merge, LEGACY_CORE_NAMES, CORE_EXPRESSION_NAMES, EXPRESSIONS, EMOTIONS, SPECIALS, getExpression, bodyPath, eyePath, styleEyes, constrainPupil, interpolate };
 });

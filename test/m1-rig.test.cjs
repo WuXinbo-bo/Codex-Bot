@@ -2,12 +2,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const Rig = require("../src/m1-rig.js");
 
-test("M1 catalog exposes 24 semantic mouthless core expressions", () => {
-  assert.equal(Rig.CORE_EXPRESSION_NAMES.length, 24);
-  assert.equal(new Set(Rig.CORE_EXPRESSION_NAMES).size, 24);
-  assert.ok(Rig.CORE_EXPRESSION_NAMES.includes("neutral"));
-  assert.ok(Rig.CORE_EXPRESSION_NAMES.includes("deep_focus"));
-  assert.ok(Rig.CORE_EXPRESSION_NAMES.includes("complete"));
+test("M1 catalog exposes 108 mouthless base scores and preserves legacy activity poses", () => {
+  assert.equal(Rig.CORE_EXPRESSION_NAMES.length, 108);
+  assert.equal(new Set(Rig.CORE_EXPRESSION_NAMES).size, 108);
+  assert.ok(Rig.LEGACY_CORE_NAMES.includes("neutral"));
+  assert.ok(Rig.LEGACY_CORE_NAMES.includes("deep_focus"));
+  assert.ok(Rig.LEGACY_CORE_NAMES.includes("complete"));
   for (const name of Rig.CORE_EXPRESSION_NAMES) {
     const serialized = JSON.stringify(Rig.getExpression(name));
     assert.equal(serialized.includes("mouth"), false, name);

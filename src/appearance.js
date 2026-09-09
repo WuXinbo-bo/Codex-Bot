@@ -43,6 +43,8 @@
     const emotion=EYE_PRESETS[id]?.group==='emotion'?id:context;
     const baseId=EYE_PRESETS[id]?.base||id;
     const base=EYE_PRESETS[baseId]||EYE_PRESETS.classic,detail=EYE_PRESETS[emotion]||{};
+    // A base score owns its emotion and gaze; a drawing preset must not overwrite them.
+    if(expression.startsWith('base_'))return {id,baseId,emotion:null,eye:base.eye||{},pupil:base.pupil||{},design:{...base.design},mood:{},gaze:null,tempo:1};
     return {id,baseId,emotion,eye:base.eye||{},pupil:base.pupil||{},design:{...base.design,...detail.design},mood:detail.mood||{},gaze:explicit?detail.gaze:null,tempo:detail.tempo||1};
   }
   const ART_STYLES = {

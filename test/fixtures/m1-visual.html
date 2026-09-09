@@ -14,6 +14,8 @@
     figure { margin: 0; display: grid; justify-items: center; gap: 6px; padding: 12px 4px; border-bottom: 1px solid #d9dfdc; content-visibility:auto; contain-intrinsic-size:152px 164px; }
     .avatar { width: 128px; height: 128px; }
     figcaption { font-size: 12px; text-align: center; }
+    .score-play { width:28px;height:28px;padding:5px;display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;border:1px solid #cbd3ce;background:#fff;border-radius:4px; }
+    .score-play svg { width:16px;height:16px; }
     #live { width: 128px; height: 128px; }
     .sequence { display: flex; flex-wrap: wrap; gap: 12px; border-bottom: 1px solid #ccd7d0; padding: 12px 0; }
     .sequence figure { width: 152px; border: 0; }
@@ -54,12 +56,12 @@
   <div class="toolbar"><button id="interactive">恢复交互</button><select id="scenario" aria-label="交互检查"><option value="lift">举起 → 快拖 → 放下</option><option value="resume">魔术 → 被发现 → 接着演</option><option value="visit">靠近 → 悬停 → 离开再来</option><option value="reminder">开始 A → 完成 A → 完成 B</option></select><button id="runScenario">演示交互链</button></div>
   <output id="directorState" aria-live="off"></output>
   <section id="catalog" aria-label="动作图册">
-    <div class="catalog-controls"><select id="catalogCategory" aria-label="图册分类"></select><input id="catalogSearch" type="search" placeholder="搜索名称或编号" aria-label="搜索图册"><output id="catalogTotal" aria-live="polite"></output></div>
+    <div class="catalog-controls"><select id="catalogCategory" aria-label="图册分类"></select><select id="baseFamily" aria-label="情绪家族"><option value="all">全部情绪</option><option value="mixed">复合小心思</option></select><input id="catalogSearch" type="search" placeholder="搜索名称或编号" aria-label="搜索图册"><output id="catalogTotal" aria-live="polite"></output></div>
     <div class="catalog-controls"><button id="catalogPrev" aria-label="上一页" title="上一页">←</button><label>第 <input id="catalogPage" type="number" min="1" value="1" aria-label="页码"> 页</label><span id="catalogPages"></span><button id="catalogNext" aria-label="下一页" title="下一页">→</button></div>
     <div id="catalogContent">
       <div id="artStyles" class="grid" hidden></div><div id="skins" class="grid" hidden></div><div id="shapes" class="grid" hidden></div><div id="eyeStyles" class="grid" hidden></div>
       <div id="symbols" class="grid" hidden></div><div id="activities" hidden></div><div id="proportions" class="grid" hidden></div>
-      <div id="core" class="grid" hidden></div><div id="interactions" class="grid" hidden></div><div id="accessoryTiles" class="grid" hidden></div><div id="maskGallery" class="grid" hidden></div>
+      <div id="core" class="grid" hidden></div><div id="emotionAccents" class="grid" hidden></div><div id="interactions" class="grid" hidden></div><div id="accessoryTiles" class="grid" hidden></div><div id="maskGallery" class="grid" hidden></div>
     </div>
     <div class="catalog-controls"><button id="catalogPrevBottom" aria-label="上一页（底部）" title="上一页">←</button><output id="catalogPageBottom"></output><button id="catalogNextBottom" aria-label="下一页（底部）" title="下一页">→</button></div>
   </section>
@@ -75,6 +77,8 @@
   <p>24 张整脸面具 · 6 套佩戴动作 · 3 种材质 · 任务状态联动</p>
   <div class="mask-toolbar"><select id="maskSelect"></select><select id="maskChain"></select><select id="maskStyle"><option value="sticker">立体贴纸</option><option value="paper">纸质</option><option value="holo">全息</option></select><button id="maskPlay">掏出并佩戴</button><button id="maskRemove">摘下</button><select id="maskStatus"><option value="idle">空闲</option><option value="running">执行中</option><option value="needs_attention">需要处理</option><option value="completed">已完成</option><option value="failed">失败</option></select><button id="maskEvent">模拟任务状态</button></div>
   <p><a href="../../src/mask-review.html">打开独立面具与动作验收页</a></p>
+  <script src="../../node_modules/lucide/dist/umd/lucide.min.js"></script>
+  <script src="../../src/base-emotions.js"></script>
   <script src="../../src/m1-rig.js"></script>
   <script src="../../src/m1-accessories.js"></script>
   <script src="../../src/m1-activities.js"></script>
@@ -84,7 +88,7 @@
   <script src="../../src/companion-memory.js"></script><script src="../../src/expression-controller.js"></script>
   <script>
     const instances = [];
-    const catalogs = Object.fromEntries(['core','interactions','activities','artStyles','skins','shapes','eyeStyles','symbols','proportions','accessoryTiles','maskGallery'].map(id=>[id,[]]));
+    const catalogs = Object.fromEntries(['core','emotionAccents','interactions','activities','artStyles','skins','shapes','eyeStyles','symbols','proportions','accessoryTiles','maskGallery'].map(id=>[id,[]]));
     // Store lightweight pose descriptions; only the selected page owns renderers.
     function tile(parent, name, label = name) {
       const item={name,label,pose:MetaBotM1Rig.getExpression(name),appearance:{maskAuto:false}};
@@ -101,7 +105,14 @@
       tile('proportions', 'neutral', label);
     }
     for (const e of Object.values(neutral.eyes)) { e.rx = 18; e.ry = 21; }
-    for (const name of MetaBotM1Rig.CORE_EXPRESSION_NAMES) tile('core', name);
+    for (const name of MetaBotM1Rig.CORE_EXPRESSION_NAMES) {
+      const entry=MetaBotM1Rig.BaseEmotions.entries[name];
+      tile('core', name,`${MetaBotM1Rig.BaseEmotions.families[entry.family].label} / ${entry.label}`);
+    }
+    const familySelect=document.getElementById('baseFamily');
+    for(const [id,group] of Object.entries(MetaBotBaseEmotions.families))familySelect.add(new Option(group.label,id));
+    const accentLabels=['淡红晕','斜线红晕','渐热红晕','眼底水光','含住泪珠','柔亮高光','紧张汗滴','滑落汗滴','细小紧张汗','迟疑线','压力线','圆钝不满','淡蓝额色','眼下疲态','面颊暖色','灵光','问号','停顿点'];
+    MetaBotBaseEmotions.accentNames.forEach((id,i)=>tile('emotionAccents','neutral',accentLabels[i]).setExpression('neutral',{pose:{accents:{[id]:1}}}));
     for (const name of Object.keys(MetaBotM1Rig.EXPRESSIONS).filter(n=>!MetaBotM1Rig.CORE_EXPRESSION_NAMES.includes(n))) tile('interactions', name,MetaBotM1Rig.SPECIALS[name]?.label||MetaBotM1Rig.EMOTIONS[name]?.label||name);
     for(const eyeStyle of MetaBotAppearance.EYE_STYLES){
       tile('eyeStyles','neutral',MetaBotAppearance.EYE_PRESETS[eyeStyle].label).setAppearance({skin:'lemon',shape:'circle',eyeStyle,maskAuto:false});
@@ -272,18 +283,26 @@
     document.getElementById('maskEvent').onclick=()=>{preview.setAppearance({...settings(),maskAuto:true});preview.setTaskStatus(document.getElementById('maskStatus').value);document.getElementById('preview').scrollIntoView({block:'center'});};
     const make=(tag,attrs)=>{const el=document.createElementNS('http://www.w3.org/2000/svg',tag);for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);return el;};
     for(const name of M.names)catalogs.maskGallery.push({name,label:M.MASKS[name].label});
-    const categoryLabels={core:'基础神态',interactions:'更多神态',activities:'全部活动',artStyles:'整套画风',skins:'皮肤',shapes:'身体形状',eyeStyles:'眼睛风格',symbols:'特殊眼睛',proportions:'眼睛比例',accessoryTiles:'配件',maskGallery:'整脸面具'};
+    const categoryLabels={core:'基础神态',emotionAccents:'情绪装饰',interactions:'更多神态',activities:'全部活动',artStyles:'整套画风',skins:'皮肤',shapes:'身体形状',eyeStyles:'眼睛风格',symbols:'特殊眼睛',proportions:'眼睛比例',accessoryTiles:'配件',maskGallery:'整脸面具'};
     const categorySelect=document.getElementById('catalogCategory'),search=document.getElementById('catalogSearch'),pageInput=document.getElementById('catalogPage');
     for(const [id,label] of Object.entries(categoryLabels))categorySelect.add(new Option(label,id));
     let category='core',pageNumber=1,searchTimer=null;
     const pageSize=()=>category==='activities'?1:12;
-    const filtered=()=>catalogs[category].filter(item=>(item.name+' '+item.label).toLowerCase().includes(search.value.trim().toLowerCase()));
+    const filtered=()=>catalogs[category].filter(item=>{
+      const e=MetaBotBaseEmotions.entries[item.name],family=familySelect.value;
+      return (category!=='core'||family==='all'||(family==='mixed'?e.mixed:e.family===family))&&(item.name+' '+item.label).toLowerCase().includes(search.value.trim().toLowerCase());
+    });
     function disposePage(){for(const bot of instances)bot.destroy();instances.length=0;for(const id of Object.keys(catalogs)){const node=document.getElementById(id);node.replaceChildren();node.hidden=true;}}
     function renderTile(parent,item){
       const figure=document.createElement('figure'),avatar=document.createElement('div'),caption=document.createElement('figcaption');
       avatar.className='avatar';caption.textContent=item.label;figure.append(avatar,caption);parent.append(figure);
       const bot=MetaBotM1.create(avatar,{appearance:{shape:'circle',maskAuto:false,...item.appearance},motionLevel:'reduced'});
       bot.setExpression(item.name,{duration:0,pose:item.pose});bot.setActive(false);instances.push(bot);
+      if(category==='core'||category==='emotionAccents'){
+        const button=document.createElement('button');button.className='score-play';const icon=document.createElement('i');icon.dataset.lucide='play';button.append(icon);button.title='播放 '+item.label;button.setAttribute('aria-label',button.title);
+        button.onclick=()=>{clearDemo();interactive=false;previewDirector.stop();preview.clearMask();preview.setPerformanceContext({theater:false});preview.clearGaze();preview.setActive(true);preview.setExpression(item.name,{pose:item.pose,duration:550,performanceId:item.name+'-'+(++demoSequence),performanceMs:9000});previewElement.scrollIntoView({block:'center'});};
+        caption.append(' ',button);
+      }
     }
     function renderCatalog(){
       clearTimeout(searchTimer);disposePage();
@@ -301,6 +320,7 @@
       }
       if(!items.length)parent.textContent='没有匹配项';
       categorySelect.value=category;pageInput.value=String(pageNumber);pageInput.max=String(pages);
+      familySelect.hidden=category!=='core';lucide.createIcons();
       document.getElementById('catalogPages').textContent='/ '+pages;
       document.getElementById('catalogTotal').textContent=items.length+' 项';
       document.getElementById('catalogPrev').disabled=pageNumber===1;
@@ -311,9 +331,10 @@
     }
     function showCatalog(id,name){
       if(!catalogs[id])return;
-      category=id;search.value='';pageNumber=name?Math.floor(Math.max(0,catalogs[id].findIndex(item=>item.name===name))/pageSize())+1:1;renderCatalog();
+      category=id;search.value='';familySelect.value='all';pageNumber=name?Math.floor(Math.max(0,catalogs[id].findIndex(item=>item.name===name))/pageSize())+1:1;renderCatalog();
     }
     categorySelect.onchange=()=>showCatalog(categorySelect.value);
+    familySelect.onchange=()=>{pageNumber=1;renderCatalog();};
     search.oninput=()=>{clearTimeout(searchTimer);searchTimer=setTimeout(()=>{pageNumber=1;renderCatalog();},180);};
     pageInput.onchange=()=>{pageNumber=Math.floor(Number(pageInput.value))||1;renderCatalog();};
     document.getElementById('catalogPrev').onclick=()=>{pageNumber--;renderCatalog();};

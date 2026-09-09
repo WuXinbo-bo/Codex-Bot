@@ -40,13 +40,29 @@
     finish.append(finishHighlight);
     const face = svgElement("g", { "data-layer": "face" });
     const decorations = svgElement('g', {'data-layer':'emotion'});
-    for (const x of [31,97]) decorations.append(svgElement('ellipse',{cx:x,cy:77,rx:8,ry:4,fill:'#F58499',opacity:.6}));
     const accents = svgElement('g',{'data-layer':'accents'});
-    const accentPaths = {
-      sweat: svgElement('path',{d:'M 108 27 Q 97 43 108 45 Q 119 43 108 27',fill:'#65BCE3'}),
-      stress: svgElement('path',{d:'M 26 26 L 25 38 M 31 24 L 30 36 M 36 23 L 35 34',stroke:'#667788','stroke-width':2}),
-      glint: svgElement('path',{d:'M 64 4 L 67 11 L 74 14 L 67 17 L 64 24 L 61 17 L 54 14 L 61 11 Z',fill:'#FFAC35'})
+    const accentArt = {
+      blush:['M 21 78 a 7 3 0 1 0 14 0 a 7 3 0 1 0 -14 0 M 93 78 a 7 3 0 1 0 14 0 a 7 3 0 1 0 -14 0','M 22 76 h 12 v 5 h -12 Z M 94 76 h 12 v 5 h -12 Z','#E67592'],
+      blushLines:['M 22 76 l -2 5 m 7 -5 l -2 5 m 7 -5 l -2 5 M 96 76 l -2 5 m 7 -5 l -2 5 m 7 -5 l -2 5','M 22 76 v 6 M 28 76 v 6 M 96 76 v 6 M 102 76 v 6','#D86286','line'],
+      heat:['M 18 76 Q 28 68 37 76 Q 37 84 27 85 Q 18 84 18 76 M 91 76 Q 101 68 110 76 Q 110 84 100 85 Q 91 84 91 76','M 20 74 h 14 v 10 h -14 Z M 94 74 h 14 v 10 h -14 Z','#DC6B86'],
+      waterline:['M 29 73 Q 42 77 55 73 M 73 73 Q 86 77 99 73','M 30 74 h 24 M 74 74 h 24','#5CA8C4','line'],
+      tearBead:['M 101 72 Q 94 82 101 84 Q 108 82 101 72','M 100 74 h 4 v 4 h 2 v 6 h -8 v -6 h 2 Z','#69B8D4'],
+      softShine:['M 35 42 a 2 3 0 1 0 4 0 a 2 3 0 1 0 -4 0 M 77 42 a 2 3 0 1 0 4 0 a 2 3 0 1 0 -4 0','M 36 40 h 4 v 6 h -4 Z M 78 40 h 4 v 6 h -4 Z','#FFFFFF'],
+      sweat:['M 107 26 Q 99 39 107 41 Q 115 39 107 26','M 106 26 h 4 v 6 h 2 v 8 h -8 v -8 h 2 Z','#55AFCF'],
+      sweatSlide:['M 110 34 Q 102 46 110 48 Q 118 46 110 34','M 108 34 h 4 v 6 h 2 v 8 h -8 v -8 h 2 Z','#55AFCF'],
+      fineSweat:['M 103 24 l 1 6 M 110 26 l 2 5','M 104 24 v 6 M 110 26 v 6','#4696B6','line'],
+      hesitation:['M 15 31 l -2 5 M 20 29 l -1 5','M 14 30 v 6 M 20 28 v 6','#74848C','line'],
+      pressure:['M 24 23 v 9 M 29 21 v 10 M 34 23 v 8','M 24 24 v 8 M 30 22 v 10 M 36 24 v 8','#667788','line'],
+      annoyed:['M 103 23 Q 103 28 108 28 M 103 33 Q 103 28 98 28','M 102 22 v 6 h 6 M 102 34 v -6 h -6','#C57874','line'],
+      coolShade:['M 35 26 Q 64 14 93 26 L 88 32 Q 64 25 40 32 Z','M 36 24 h 56 v 8 h -56 Z','#7EACC5'],
+      tired:['M 32 77 Q 41 80 50 77 M 78 77 Q 87 80 96 77','M 32 78 h 18 M 78 78 h 18','#A2A2AA','line'],
+      warmth:['M 21 79 a 7 3 0 1 0 14 0 a 7 3 0 1 0 -14 0 M 93 79 a 7 3 0 1 0 14 0 a 7 3 0 1 0 -14 0','M 22 78 h 12 v 4 h -12 Z M 94 78 h 12 v 4 h -12 Z','#E99885'],
+      glint:['M 64 6 Q 65 12 71 13 Q 65 14 64 20 Q 63 14 57 13 Q 63 12 64 6','M 62 6 h 4 v 6 h 6 v 4 h -6 v 6 h -4 v -6 h -6 v -4 h 6 Z','#D39524'],
+      question:['M 102 20 Q 102 14 108 15 Q 117 17 109 23 Q 106 25 107 28 M 107 33 v 1','M 102 20 v -4 h 10 v 6 h -4 v 6 M 108 32 v 2','#65777D','line'],
+      pause:['M 97 26 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0 M 104 26 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0 M 111 26 a 1.5 1.5 0 1 0 3 0 a 1.5 1.5 0 1 0 -3 0','M 96 24 h 4 v 4 h -4 Z M 104 24 h 4 v 4 h -4 Z M 112 24 h 4 v 4 h -4 Z','#68777D']
     };
+    accentArt.stress=accentArt.pressure;
+    const accentPaths=Object.fromEntries(Object.entries(accentArt).map(([id,[d,,color,line]])=>[id,svgElement('path',{'data-accent':id,d,fill:line?'none':color,stroke:line?color:'none','stroke-width':2,'stroke-linecap':'round',opacity:0})]));
     accents.append(...Object.values(accentPaths));
     const faceMask = svgElement('g',{'data-part':'face-mask',opacity:0});
     const maskArm = svgElement('path',{fill:'none',stroke:Rig.COLORS.ink,'stroke-width':3.5,'stroke-linecap':'round'});
@@ -169,7 +185,7 @@
       const d = Math.cosh(magnitude) - sx * factor;
       const off = cross * factor;
       const deform = (x, y) => ({ x: 64 + a * (x - 64) + off * (y - 64), y: 64 + off * (x - 64) + d * (y - 64) });
-      const rotate = (b.rotate + motion.rotate + acting.tilt) * strength;
+      const rotate = Rig.BaseEmotions.entries[expression]?b.rotate+(motion.rotate+acting.tilt)*strength:(b.rotate+motion.rotate+acting.tilt)*strength;
       const tx = (motion.x + acting.sway) * strength;
       const ty = (motion.y + acting.bob) * strength;
       const radians = rotate * Math.PI / 180;
@@ -196,10 +212,20 @@
       for(const layer of [frontProps,backProps])layer.setAttribute('stroke-linejoin',artStyle==='pixel'?'miter':'round');
       svg.dataset.shape=bodyShape;
       svg.dataset.skin=appearance.skin || 'green';
-      decorations.setAttribute('opacity', Math.max(pose.accents.blush,/delight|victory|shy|complete|curious|love|think|focus|closeness|caring|achievement/.test(expression) ? 1 : 0));
-      for(const [id,path] of Object.entries(accentPaths))path.setAttribute('opacity',appearance.particles===false?'0':String(pose.accents[id]));
-      decorations.setAttribute('transform',`translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52}) translate(-64 -64)`);
-      const occupied=Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater;
+      const accentAge=clamp((now-performanceStarted)/performanceMs,0,1);
+      for(const [id,path] of Object.entries(accentPaths)){
+        path.setAttribute('d',accentArt[id][artStyle==='pixel'?1:0]);
+        path.setAttribute('stroke-linecap',artStyle==='pixel'?'square':'round');
+        let opacity=clamp(pose.accents[id],0,1);
+        if(id==='softShine')opacity*=1-(pose.eyes.left.closed+pose.eyes.right.closed)/2;
+        if(['coolShade','heat','warmth'].includes(id))opacity*=.38;
+        if(id==='heat'&&active&&motionLevel!=='reduced')opacity*=ease(accentAge*3);
+        if(active&&motionLevel!=='reduced'&&['glint','question','pause','sweatSlide'].includes(id))opacity*=Math.sin(Math.PI*clamp(accentAge*1.4,0,1))**2;
+        path.setAttribute('opacity',appearance.particles===false?'0':String(opacity));
+        path.setAttribute('transform',id==='sweatSlide'&&active&&motionLevel!=='reduced'?`translate(0 ${artStyle==='pixel'?Math.round(accentAge*4)*2:accentAge*8})`:'');
+      }
+      accents.setAttribute('transform',`translate(64 64) matrix(${a} ${off} ${off} ${d} 0 0) translate(-64 -64) translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52}) translate(-64 -64)`);
+      const occupied=Boolean(Rig.BaseEmotions.entries[expression])||Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater;
       maskController?.context(occupied);
       const m=maskController?.tick(motionLevel==='reduced');
       faceMask.setAttribute('opacity',m?.visible?'1':'0');
@@ -237,8 +263,13 @@
       const switchAge=(now-eyeSwitchStarted)/Math.max(1,eyeTransitionDuration);
       const blink=Math.max(naturalBlink,switchAge>=0&&switchAge<=1?Math.sin(Math.PI*switchAge)**4:0);
       const eyeCenters=Object.fromEntries(['left','right'].map(side=>{const e=pose.eyes[side];return [side,deform(b.cx+(e.cx-64)*b.rx/52,b.cy+(e.cy-64)*b.ry/52)];}));
-      const eyeSpan=Object.values(pose.eyes).reduce((sum,e)=>sum+Math.hypot(e.rx*Math.cos(e.rotate*Math.PI/180),e.ry*Math.sin(e.rotate*Math.PI/180)),0);
-      const eyeFit=Math.min(1,Math.max(.1,(eyeCenters.right.x-eyeCenters.left.x-4)/eyeSpan));
+      const baseScore=Boolean(Rig.BaseEmotions.entries[expression]);
+      const eyeSpan=Object.values(pose.eyes).reduce((sum,e)=>{
+        const angle=(e.rotate+(baseScore?rotate:0))*Math.PI/180;
+        return sum+(baseScore?Math.abs(e.rx*Math.cos(angle))+Math.abs(e.ry*Math.sin(angle)):Math.hypot(e.rx*Math.cos(angle),e.ry*Math.sin(angle)));
+      },0);
+      const separation=baseScore?Math.cos(radians)*(eyeCenters.right.x-eyeCenters.left.x)-Math.sin(radians)*(eyeCenters.right.y-eyeCenters.left.y):eyeCenters.right.x-eyeCenters.left.x;
+      const eyeFit=Math.min(1,Math.max(.1,(separation-4)/eyeSpan));
       for (const side of ["left", "right"]) {
         const e = pose.eyes[side];
         const parts = eyes[side];
@@ -380,10 +411,15 @@
         acting[key] += ((reduced ? 0 : wanted) - acting[key]) * (reduced ? 1 : 1 - Math.exp(-dt * 24));
       }
       const gazeEase = reduced ? 1 : 1 - Math.exp(-dt * 17);
-      const wanted = tracking ? gazeTarget : current.gaze;
+      const micro=current.micro;
+      const pulse=(at)=>{const p=(age-at)/micro.span;return p>0&&p<1?Math.sin(Math.PI*p)**2:0;};
+      const thought=active&&!reduced?pulse(micro.at)+micro.second*pulse(Math.min(.75,micro.at+.35)):0;
+      const rightThought=active&&!reduced?pulse(micro.at+micro.rightLag)+micro.second*pulse(Math.min(.75,micro.at+.35)+micro.rightLag):0;
+      const wanted = tracking ? gazeTarget : {x:clamp(current.gaze.x+micro.gazeX*thought,-1,1),y:clamp(current.gaze.y+micro.gazeY*thought,-1,1)};
       gaze.x += (wanted.x - gaze.x) * gazeEase;
       gaze.y += (wanted.y - gaze.y) * gazeEase;
-      armPose = Rig.interpolate(armPose, current.arms, reduced ? 1 : 1 - Math.exp(-dt * (motionMode==='dragging'?22:appearance.artStyle==='clay'?7:appearance.artStyle==='rubber'?9:12)));
+      const armTarget={left:{...current.arms.left,y:current.arms.left.y+micro.leftHand*thought},right:{...current.arms.right,y:current.arms.right.y+micro.rightHand*thought}};
+      armPose = Rig.interpolate(armPose, armTarget, reduced ? 1 : 1 - Math.exp(-dt * (motionMode==='dragging'?22:appearance.artStyle==='clay'?7:appearance.artStyle==='rubber'?9:12)));
       for (let step = 0; step < 4; step += 1) {
         for (const key of Object.keys(REST)) {
           const acceleration = (motionTarget[key] - motion[key]) * 320 - velocity[key] * (motionMode === "settling" ? 24 : 36);
@@ -395,7 +431,8 @@
         blinkStarted = now;
         nextBlink = now + 3000 + random() * 3500;
       }
-      render(current, now);
+      const expressive={...current,body:{...current.body,cy:current.body.cy+micro.nod*thought,rotate:current.body.rotate+micro.lean*thought},eyes:{left:{...current.eyes.left,closed:clamp(current.eyes.left.closed+micro.left*thought,0,1)},right:{...current.eyes.right,closed:clamp(current.eyes.right.closed+micro.right*rightThought,0,1)}}};
+      render(expressive, now);
       const unsettled = Object.keys(REST).some((key) => Math.abs(motion[key] - motionTarget[key]) > 0.0001 || Math.abs(velocity[key]) > 0.001);
       if (active || maskController?.state().current || transitionDuration || unsettled || Math.hypot(gaze.x - wanted.x, gaze.y - wanted.y) > 0.001) wake();
     }
@@ -425,7 +462,7 @@
       destination = Rig.styleEyes(authoredPose,eyeConfig);
       svg.dataset.eyeStyle=eyeConfig.id;
       svg.dataset.eyeEmotion=eyeConfig.emotion||'';
-      performanceMs=Math.max(2200,Number(settings.performanceMs)||2600);
+      performanceMs=Math.max(2200,Number(settings.performanceMs)||(Rig.BaseEmotions.entries[expression]?9000:2600));
       const nextPerformanceId=settings.performanceId || expression;
       if(performanceId!==nextPerformanceId){performanceStarted=now;performanceId=nextPerformanceId;}
       transitionStarted = now;

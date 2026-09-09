@@ -10,7 +10,7 @@ async(page)=>{
   await page.goto('http://127.0.0.1:4187/test/fixtures/m1-visual.html');
   await page.waitForFunction(()=>Boolean(window.review));
   await page.setViewportSize({width:1100,height:900});
-  const initial=await page.evaluate(()=>({state:review.getCatalogState(),nodes:document.querySelectorAll('*').length,svg:document.querySelectorAll('svg').length,iframe:document.querySelector('iframe').hasAttribute('src')}));
+  const initial=await page.evaluate(()=>({state:review.getCatalogState(),nodes:document.querySelectorAll('*').length,svg:document.querySelectorAll('svg[aria-label="Meta Bot"]').length,iframe:document.querySelector('iframe').hasAttribute('src')}));
   if(initial.state.instances!==12||initial.svg!==15||initial.iframe)throw Error('Eager loading '+JSON.stringify(initial));
   const loadMs=Date.now()-started;
   await page.locator('#catalogNext').click();
