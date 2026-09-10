@@ -28,7 +28,7 @@ button { font: inherit; }
 .status-dot.queued, .status-dot.paused, .mini-dot.queued, .mini-dot.paused { background: #f5cf65; animation: pulse 1.8s ease-in-out infinite; }
 .status-dot.offline, .mini-dot.offline { background: #7e8882; }
 .status-dot, .count { pointer-events: none; }
-.count { position: absolute; z-index: 2; right: 1px; bottom: 3px; min-width: 18px; height: 18px; padding: 2px 5px; border: 1px solid rgba(20, 30, 24, .4); border-radius: 9px; color: #152019; background: #effff3; font-size: 10px; font-weight: 700; line-height: 12px; text-align: center; }
+.count { position: absolute; z-index: 2; right: 2px; bottom: 3px; min-width: 24px; height: 24px; display: inline-flex; align-items: center; justify-content: center; padding: 0 5px; border: 2px solid #fff; border-radius: 12px; color: #fff; background: #20352b; font-family: "Segoe UI", sans-serif; font-size: 14px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; white-space: nowrap; text-align: center; }
 .count[hidden] { display: none; }
 .status-dot.idle, .status-dot.offline { background: #92999c; animation: none; }
 
