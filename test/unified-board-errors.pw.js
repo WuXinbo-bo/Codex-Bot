@@ -27,7 +27,7 @@ async(page)=>{
   await panel.getByRole('button',{name:'查看任务',exact:true}).click();
   await panel.locator('.board-action-error').filter({hasText:'模拟打开失败'}).waitFor({state:'visible'});
   await page.evaluate(()=>{panelDemo.faults.store='completion-inbox.json';});
-  await panel.getByRole('button',{name:'确认提醒',exact:true}).click();
+  await panel.getByRole('button',{name:'查看任务',exact:true}).click();
   await panel.locator('.board-action-error').filter({hasText:'模拟保存失败'}).waitFor({state:'visible'});
   if(!await page.evaluate(()=>panelDemo.bot().inbox.items.size===1&&panelDemo.stored['completion-inbox.json'].length===1))throw Error('Failure discarded completion');
   if(!await panel.getByRole('button',{name:'确认提醒',exact:true}).isEnabled())throw Error('Failed action left controls disabled');
@@ -41,7 +41,7 @@ async(page)=>{
   if(!controls)throw Error('Confirmation clipped');
   const cardFits=await panel.locator('.board-card').evaluate(el=>{const r=el.getBoundingClientRect(),s=el.parentElement.parentElement.getBoundingClientRect();return r.top>=s.top&&r.bottom<=s.bottom;});
   if(!cardFits)throw Error('Error feedback clipped the task card');
-  await panel.getByRole('button',{name:'确认提醒',exact:true}).click();
+  await panel.getByRole('button',{name:'查看任务',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===0&&!panelDemo.windows.panel.visible);
   if(errors.length)throw Error(errors.join('\n'));
   return {pauseResume:true,failureRetained:true,stoppedAcknowledged:true,openFailureRetained:true,persistenceFailureRetained:true,retry:true,smallWorkArea:true,errors};

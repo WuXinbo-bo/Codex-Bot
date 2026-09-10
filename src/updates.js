@@ -10,6 +10,8 @@
     if(state.version&&['available','ready'].includes(state.phase))$('updateStatus').textContent+=' · v'+state.version;
     const busy=['checking','downloading','installing'].includes(state.phase);
     $('updateCheck').disabled=busy||!api?.checkUpdate;
+    $('updateCheck').classList.toggle('spinning',state.phase==='checking');
+    $('updateCheck').setAttribute('aria-busy',String(state.phase==='checking'));
     $('updateDownload').hidden=!state.version||!['available','error'].includes(state.phase);
     $('updateInstall').hidden=state.phase!=='ready';
     for(const id of ['updateLater','updateIgnore'])$(id).hidden=!state.version||busy;

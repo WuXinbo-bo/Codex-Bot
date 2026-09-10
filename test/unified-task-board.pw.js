@@ -18,8 +18,13 @@ async(page)=>{
   await panel.locator('[data-status="completed"]').waitFor({state:'visible'});
   await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===1);
   await page.getByRole('button',{name:'收起面板',exact:true}).click();
+  if(!await page.evaluate(()=>panelDemo.bot().inbox.items.size===1&&panelDemo.windows.panel.visible))throw Error('Collapse acknowledged completion');
   await panel.getByRole('button',{name:'查看任务',exact:true}).click();
-  if(!await page.evaluate(()=>panelDemo.bot().inbox.items.size===1&&panelDemo.windows.panel.visible))throw Error('Viewing/collapse acknowledged completion');
+  await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===0&&panelDemo.stored['completion-inbox.json'].length===0);
+  report.openAcknowledged=true;
+  await page.getByRole('button',{name:'开始任务',exact:true}).click();
+  await page.getByRole('button',{name:'完成任务',exact:true}).click();
+  await panel.locator('[data-status="completed"]').waitFor({state:'visible'});
   await panel.getByRole('button',{name:'设置与连接诊断',exact:true}).click();
   await panel.locator('#diagnostics').waitFor({state:'visible'});
   if(!await panel.locator('[data-status="completed"]').isVisible())throw Error('Settings hid pending card');

@@ -55,7 +55,7 @@ button { font: inherit; }
 .icon-button.danger:hover, .icon-button.danger:focus-visible { color: #ff8a85; background: rgba(255, 82, 76, .11); border-color: rgba(255, 107, 101, .18); }
 .icon-button::after { content: attr(data-tooltip); position: absolute; z-index: 5; top: calc(100% + 6px); right: 0; width: max-content; max-width: 120px; padding: 4px 6px; border: 1px solid rgba(255, 255, 255, .1); border-radius: 5px; color: #eef2f4; background: rgba(10, 12, 14, .94); font-size: 9px; line-height: 1.2; opacity: 0; pointer-events: none; transform: translateY(-2px); transition: opacity .14s ease, transform .14s ease; }
 .icon-button:hover::after, .icon-button:focus-visible::after { opacity: 1; transform: translateY(0); }
-.icon-button.spinning svg { animation: spin .7s linear infinite; }
+.icon-button.spinning svg, #updateCheck.spinning svg { animation: spin 1.2s linear infinite; }
 .notice { min-height: 0; display: grid; align-items: stretch; padding-top: 12px; }
 .notice-content { min-width: 0; display: grid; grid-template-rows: auto auto auto 1fr; padding: 12px; border: 1px solid rgba(255, 255, 255, .12); border-radius: 10px; background: rgba(22, 27, 32, .30); }
 .notice-title { display: flex; align-items: center; gap: 8px; min-width: 0; color: #f3f6f7; font-size: 11px; }

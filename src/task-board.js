@@ -9,7 +9,7 @@
   const reduced=matchMedia('(prefers-reduced-motion: reduce)');
   let state={rows:[],animation:true},hovered=false,focused=false,drag=null,scheduled=false,nudging=false;
   const labels={started:'开始任务',joined:'发现进行中任务',resumed:'继续执行',running:'正在执行',queued:'排队中',paused:'已暂停',needs_attention:'需要你处理',completed:'已完成，等待确认',failed:'执行失败',stopped:'已停止',unknown:'状态待核实'};
-  const symbols={started:'play',joined:'scan-search',resumed:'play',running:'loader',queued:'clock-3',paused:'pause',needs_attention:'circle-help',completed:'circle-check',failed:'circle-alert',stopped:'square',unknown:'circle-help'};
+  const symbols={started:'play',joined:'scan-search',resumed:'play',running:'loader',queued:'clock-3',paused:'circle-pause',needs_attention:'circle-help',completed:'circle-check',failed:'circle-alert',stopped:'circle-stop',unknown:'circle-help'};
   const actionLabels={copy:'复制任务链接',open:'查看任务',ack:'确认提醒',snooze:'5 分钟后提醒'};
   const actionIcons={copy:'copy',open:'external-link',ack:'check',snooze:'alarm-clock'};
   function presentation(){
@@ -22,14 +22,14 @@
   function icon(node,name){if(node.dataset.icon===name)return;node.dataset.icon=name;node.innerHTML=`<i data-lucide="${name}"></i>`;window.lucide?.createIcons({root:node,attrs:{'stroke-width':1.8}});}
   async function act(row,action){
     const item=row.item;if(!item||busy.has(item.id))return;
-    busy.add(item.id);row.actionError='';feedback.textContent='';schedule();render(state);
+    busy.add(item.id);row.pendingAction=action;row.actionError='';feedback.textContent='';schedule();render(state);
     try{
       if(action==='ack'&&state.animation&&!reduced.matches)await row.animate([{opacity:1,transform:'none'},{opacity:.6,transform:'translateX(-6px) scale(.97)'}],{duration:140,easing:'ease-in'}).finished;
       const result=await api.boardTaskAction({id:item.id,eventId:item.eventId,action});
       if(!result?.ok)throw Error(result?.error||'操作失败，请重试');
       if(action==='copy'&&row.isConnected){const b=row.querySelector('[data-action="copy"]');if(b){icon(b,'check');setTimeout(()=>{if(b.dataset.action==='copy')icon(b,'copy');},1200);}}
     }catch(error){const message=error.message.replace(/^Error:\s*/,'');if(row.item?.eventId===item.eventId)row.actionError=message;feedback.textContent=message;feedback.classList.add('error');}
-    finally{busy.delete(item.id);render(state);schedule();}
+    finally{busy.delete(item.id);row.pendingAction=null;render(state);schedule();}
   }
   function create(item){
     const row=document.createElement('article');row.className='task-row board-card';row.dataset.id=item.id;
@@ -51,7 +51,7 @@
       if(!row){row=create(item);rows.set(item.id,row);list.append(row);}
       const changed=row.item?.status!==item.status;
       if(changed)row.actionError='';
-      row.item=item;row.dataset.status=item.status;row.dataset.persistent=String(item.persistent);
+      row.item=item;row.dataset.status=item.status;row.dataset.persistent=String(item.persistent);row.dataset.stale=String(Boolean(item.stale));
       row.classList.toggle('board-action-error',Boolean(row.actionError));
       const title=row.querySelector('strong');title.textContent=row.actionError||item.title;title.title=row.actionError?`${item.title}\n${row.actionError}`:item.title;
       const status=row.querySelector('.board-status');
@@ -59,7 +59,7 @@
       status.title=label;status.setAttribute('aria-label',label);
       if(row.badgeEvent!==item.eventId||!next.animation||reduced.matches)icon(status,symbols[item.status]||symbols.unknown);
       row.querySelectorAll('button').forEach((button,i)=>{
-        const action=item.actions[i];button.dataset.action=action;button.title=actionLabels[action];button.setAttribute('aria-label',actionLabels[action]);button.disabled=busy.has(item.id);icon(button,actionIcons[action]);
+        const action=item.actions[i],pending=busy.has(item.id)&&row.pendingAction===action;button.dataset.action=action;button.title=actionLabels[action];button.setAttribute('aria-label',actionLabels[action]);button.setAttribute('aria-busy',String(pending));button.classList.toggle('spinning',pending);button.disabled=busy.has(item.id);icon(button,pending?'loader':actionIcons[action]);
       });
       if(!seen.has(item.eventId)){
         seen.add(item.eventId);

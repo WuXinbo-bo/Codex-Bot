@@ -12,7 +12,10 @@ The optional legacy Electron debug shell is not the production native path.
 Card identity is source + task + turn. Completion changes the same card to pale
 green and changes its actions from copy/open to acknowledge/open. An older
 unacknowledged turn remains separate when the same conversation starts again.
-Opening a link never acknowledges anything. The completion toggle hides records
+Successfully opening a completed task acknowledges only that completion, just
+like its checkmark. Opening an active, failed or attention task does not acknowledge
+it. Failed opens or acknowledgement saves retain the completion for retry.
+The completion toggle hides records
 without deleting them; re-enabling it restores them. Restart restores the same
 durable inbox without changing its file format.
 

@@ -100,7 +100,6 @@ ipcMain.handle("meta-bot:completion-action", async (event, id, action) => {
       const config = readConfig();
       if (!config.workbench?.baseUrl && bridge?.workbench.config?.baseUrl) config.workbench = { ...config.workbench, baseUrl: bridge.workbench.config.baseUrl };
       await shell.openExternal(taskTarget(item.task, config));
-      return {ok:true};
     }
     completionInbox.acknowledge(id);
     const current = taskCenter?.entries.get(item.taskId);

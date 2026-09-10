@@ -674,7 +674,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       if (!item || !["open", "ack"].includes(b)) return { ok: false };
       try {
         if (b === "open") {
-          await invoke("open", { url: taskTarget(item.task, config) });return {ok:true};
+          await invoke("open", { url: taskTarget(item.task, config) });
         }
         await persist(
           "completion-inbox.json",

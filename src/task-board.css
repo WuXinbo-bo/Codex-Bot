@@ -8,6 +8,9 @@
 .unified-board .board-card[data-status="paused"],.unified-board .board-card[data-status="stopped"] { background:#f5f6f7; }
 .board-status { display:grid; place-items:center; flex:0 0 20px; width:20px; height:24px; color:#62726b; }
 .board-status svg { width:18px; height:18px; }
+/* Rotate the inner SVG so the badge's entry animation remains independent. */
+.board-card[data-status="running"][data-stale="false"] .board-status[data-icon="loader"] svg { animation:spin 1.2s linear infinite; }
+.board-card[data-status="queued"][data-stale="false"] .board-status svg { animation:pulse 2s ease-in-out infinite; }
 .board-card[data-status="completed"] .board-status,.board-card[data-status="completed"] [data-action="ack"] { color:#27814b; }
 .board-card[data-status="needs_attention"] .board-status { color:#92701d; }
 .board-card[data-status="failed"] .board-status { color:#b24f47; }
