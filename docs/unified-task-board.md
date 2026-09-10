@@ -39,6 +39,10 @@ up to two pending rows above their own scrollable area. Existing visible row
 order stays stable during pointer/keyboard interaction; idle reconciliation
 places pending work first. Long titles truncate with the full title on hover.
 Task controls use icons and accessible names. No panel shadows are added.
+The task list scrolls vertically without visible scrollbar tracks; wheel,
+touchpad and keyboard focus still reach offscreen rows. Horizontal overflow is
+clipped. Card transforms are contained by the list, and row buttons use native
+title tooltips so empty toolbar tooltip boxes cannot change scroll geometry.
 
 ## Motion And Safety
 
@@ -75,6 +79,9 @@ Against the local static server, run these scripts using Playwright CLI
 - `test/unified-board-errors.pw.js`: pause/resume, retained failure and stopped
   reminders, injected open/save failures, retry, and 360 x 420 work-area bounds.
   Action errors stay inline so they cannot squeeze confirmation controls.
+- `test/task-list-scroll.pw.js`: one, three and ten long-title rows, repeated
+  clicks, stable scroll geometry during card motion, wheel scrolling, keyboard
+  access and preserving the scroll position when clicking the final row.
 
 Native verification: `node scripts/tauri.cjs build --no-bundle`, then
 `node scripts/test-native.cjs --dpi` and

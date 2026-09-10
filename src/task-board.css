@@ -1,5 +1,10 @@
 .panel-page .unified-board { grid-template-rows:auto minmax(0,1fr) auto; border-radius:8px; padding:8px; gap:6px; box-shadow:none; }
-.unified-board .task-scroll { grid-row:2; overflow:auto; scrollbar-width:thin; }
+.unified-board .task-scroll { grid-row:2; min-width:0; overflow-x:hidden; overflow-y:auto; scrollbar-width:none; overscroll-behavior:contain; }
+.unified-board .task-scroll::-webkit-scrollbar { display:none; width:0; height:0; }
+/* Keep card motion inside the list; transforms must not create scrollbars. */
+.unified-board #taskList { display:flow-root; min-width:0; overflow:clip; }
+/* Row buttons use native title tooltips, not the toolbar's floating pseudo-box. */
+.unified-board .board-card .icon-button::after { content:none; display:none; }
 .panel-page .unified-board .board-card { height:48px; margin:0 0 4px; border-radius:6px; padding:5px; gap:6px; background:#fff; transition:background-color 220ms; }
 .panel-page .unified-board .board-card:last-child { margin-bottom:0; }
 .unified-board .board-card[data-status="completed"] { background:#edf8ef; border-color:#c6e4cf; }
