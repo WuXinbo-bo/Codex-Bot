@@ -1,0 +1,400 @@
+{
+  "images": [
+    {
+      "file": "docs/assets/readme/emotions-1.webp",
+      "bytes": 41514,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/emotions-2.webp",
+      "bytes": 41846,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/thoughts.webp",
+      "bytes": 45040,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/work-1.webp",
+      "bytes": 36784,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/work-2.webp",
+      "bytes": 37756,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/work-3.webp",
+      "bytes": 38512,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/mouse.webp",
+      "bytes": 32774,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/panels.webp",
+      "bytes": 30798,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/props-1.webp",
+      "bytes": 54268,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/props-2.webp",
+      "bytes": 49986,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/masks-1.webp",
+      "bytes": 36674,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/masks-2.webp",
+      "bytes": 39090,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/skins.webp",
+      "bytes": 31976,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/shapes-1.webp",
+      "bytes": 38508,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/shapes-2.webp",
+      "bytes": 19924,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/styles.webp",
+      "bytes": 17480,
+      "width": 1120,
+      "height": 425
+    },
+    {
+      "file": "docs/assets/readme/eyes-1.webp",
+      "bytes": 32818,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/eyes-2.webp",
+      "bytes": 28766,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/symbols.webp",
+      "bytes": 27256,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/accents-1.webp",
+      "bytes": 44012,
+      "width": 1120,
+      "height": 921
+    },
+    {
+      "file": "docs/assets/readme/accents-2.webp",
+      "bytes": 24604,
+      "width": 1120,
+      "height": 673
+    },
+    {
+      "file": "docs/assets/readme/story-1.webp",
+      "bytes": 28620,
+      "width": 1120,
+      "height": 694
+    },
+    {
+      "file": "docs/assets/readme/story-2.webp",
+      "bytes": 27954,
+      "width": 1120,
+      "height": 694
+    },
+    {
+      "file": "docs/assets/atlas/emotion-01.webp",
+      "bytes": 54376,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-02.webp",
+      "bytes": 58018,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-03.webp",
+      "bytes": 52778,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-04.webp",
+      "bytes": 52206,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-05.webp",
+      "bytes": 53798,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-06.webp",
+      "bytes": 55978,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-07.webp",
+      "bytes": 53204,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/emotion-08.webp",
+      "bytes": 56964,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/task-01.webp",
+      "bytes": 45578,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/task-02.webp",
+      "bytes": 46552,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/task-03.webp",
+      "bytes": 53596,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/task-04.webp",
+      "bytes": 53746,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/task-05.webp",
+      "bytes": 54748,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/task-06.webp",
+      "bytes": 47966,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/panel-01.webp",
+      "bytes": 43710,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/panel-02.webp",
+      "bytes": 21130,
+      "width": 1120,
+      "height": 446
+    },
+    {
+      "file": "docs/assets/atlas/social-01.webp",
+      "bytes": 44434,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-02.webp",
+      "bytes": 43634,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-03.webp",
+      "bytes": 41982,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-04.webp",
+      "bytes": 37934,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-05.webp",
+      "bytes": 39642,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-06.webp",
+      "bytes": 40690,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-07.webp",
+      "bytes": 44470,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/social-08.webp",
+      "bytes": 37762,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/story-01.webp",
+      "bytes": 52802,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/story-02.webp",
+      "bytes": 53722,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/story-03.webp",
+      "bytes": 56440,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/story-04.webp",
+      "bytes": 59544,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-01.webp",
+      "bytes": 47044,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-02.webp",
+      "bytes": 49506,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-03.webp",
+      "bytes": 46188,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-04.webp",
+      "bytes": 51196,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-05.webp",
+      "bytes": 45370,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-06.webp",
+      "bytes": 45710,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-07.webp",
+      "bytes": 49112,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-08.webp",
+      "bytes": 49222,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-09.webp",
+      "bytes": 50456,
+      "width": 1120,
+      "height": 942
+    },
+    {
+      "file": "docs/assets/atlas/everyday-10.webp",
+      "bytes": 22126,
+      "width": 1120,
+      "height": 446
+    }
+  ],
+  "animations": [
+    {
+      "file": "docs/assets/readme/start.gif",
+      "bytes": 286431,
+      "capturedFrames": 80,
+      "frames": 80,
+      "durationMs": 8000,
+      "width": 636,
+      "height": 336
+    },
+    {
+      "file": "docs/assets/readme/complete.gif",
+      "bytes": 428677,
+      "capturedFrames": 120,
+      "frames": 118,
+      "durationMs": 12000,
+      "width": 636,
+      "height": 336
+    },
+    {
+      "file": "docs/assets/readme/story.gif",
+      "bytes": 1073415,
+      "capturedFrames": 150,
+      "frames": 150,
+      "durationMs": 15000,
+      "width": 400,
+      "height": 367
+    }
+  ],
+  "catalogHash": "c25891c5bef66674aefe59c5ebc5e8383c3db78af5e499e3d93beb648c9300f0"
+}

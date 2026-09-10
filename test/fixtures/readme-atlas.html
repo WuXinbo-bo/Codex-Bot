@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><link rel="icon" href="data:,"><title>Codex Bot · 图鉴制作</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#fff;color:#25282c;font-family:"Segoe UI","Microsoft YaHei",sans-serif;letter-spacing:0}main{width:1120px;padding:36px 40px 24px}header{border-bottom:1px solid #e3e6e9;padding-bottom:20px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;gap:24px}h1{font-size:26px;font-weight:600;margin:0}header p{font-size:16px;color:#657077;margin:8px 0 0}.brand{font-size:16px;color:#71767e;white-space:nowrap}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px 12px}figure{margin:0;padding:12px 0 18px;text-align:center;min-width:0}.avatar{width:180px;height:180px;margin:auto}figcaption{font-size:19px;line-height:1.5;min-height:30px;overflow-wrap:anywhere}footer{font-size:13px;color:#92989f;padding-top:12px;border-top:1px solid #eef0f2;margin-top:12px}
+.avatar>svg{width:100%;height:100%}
+</style></head><body><main><header><div><h1></h1><p></p></div><span class="brand">Codex Bot</span></header><section class="grid"></section><footer>Codex Bot · 当前版本真实渲染</footer></main>
+<script src="../../src/base-emotions.js"></script><script src="../../src/m1-rig.js"></script><script src="../../src/m1-accessories.js"></script><script src="../../src/prop-scores.js"></script><script src="../../src/activity-scores.js"></script><script src="../../src/m1-activities.js"></script><script src="../../src/appearance.js"></script><script src="../../src/mask-system.js"></script><script src="../../src/m1-renderer.js"></script>
+<script>
+let bots=[];
+window.atlas={async show(sheet){
+  bots.forEach(b=>b.destroy());bots=[];document.querySelector('.grid').replaceChildren();
+  document.querySelector('h1').textContent=sheet.title;document.querySelector('header p').textContent=sheet.subtitle||'';
+  for(const e of sheet.entries){
+    const figure=document.createElement('figure'),avatar=document.createElement('div'),caption=document.createElement('figcaption');avatar.className='avatar';caption.textContent=e.label;figure.append(avatar,caption);document.querySelector('.grid').append(figure);
+    const bot=MetaBotM1.create(avatar,{motionLevel:e.kind==='mask'?'full':'reduced',appearance:{skin:'lemon',artStyle:'classic',eyeStyle:'classic',shape:'circle',maskAuto:false,...e.appearance}});bots.push(bot);
+    if(e.kind==='mask'){bot.setMask(e.id,'classic');continue;}
+    let expression=e.kind==='expression'?e.id:'neutral',pose={};
+    if(e.kind==='activity'){const f=MetaBotActivities.CLIPS[e.id][e.index];expression=f.expression;pose=f.pose;bot.setPerformanceContext({theater:true});}
+    if(e.kind==='accent')pose={accents:{[e.id]:1}};
+    if(e.kind==='symbol')pose={eyes:{left:{symbols:{[e.id]:1}},right:{symbols:{[e.id]:1}}}};
+    bot.setExpression(expression,{pose,duration:0});bot.setActive(false);
+  }
+  if(sheet.entries.some(e=>e.kind==='mask'))await new Promise(r=>setTimeout(r,1600));
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
+  if(/NaN|undefined/.test(document.querySelector('main').innerHTML))throw Error('Invalid rendered sheet '+sheet.id);
+  return {instances:bots.length,masks:[...document.querySelectorAll('[data-mask-phase]')].map(n=>n.dataset.maskPhase)};
+}};
+</script></body></html>

@@ -1,0 +1,4855 @@
+{
+  "schema": 1,
+  "counts": {
+    "activities": 435,
+    "poses": 257,
+    "theaters": 44,
+    "continuations": 4,
+    "props": 45,
+    "featured": 207
+  },
+  "sheets": [
+    {
+      "id": "emotions-1",
+      "title": "每一种情绪，都有自己的眼神",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "base_calm_3",
+          "label": "平静自在"
+        },
+        {
+          "kind": "expression",
+          "id": "base_trust_3",
+          "label": "安心信任"
+        },
+        {
+          "kind": "expression",
+          "id": "base_focus_3",
+          "label": "专注认真"
+        },
+        {
+          "kind": "expression",
+          "id": "base_thought_3",
+          "label": "思考推敲"
+        },
+        {
+          "kind": "expression",
+          "id": "base_curious_3",
+          "label": "好奇探索"
+        },
+        {
+          "kind": "expression",
+          "id": "base_doubt_3",
+          "label": "疑惑求证"
+        },
+        {
+          "kind": "expression",
+          "id": "base_expectant_3",
+          "label": "期待盼望"
+        },
+        {
+          "kind": "expression",
+          "id": "base_happy_3",
+          "label": "开心愉悦"
+        },
+        {
+          "kind": "expression",
+          "id": "base_satisfied_3",
+          "label": "满足欣慰"
+        },
+        {
+          "kind": "expression",
+          "id": "base_confident_3",
+          "label": "自信笃定"
+        },
+        {
+          "kind": "expression",
+          "id": "base_proud_3",
+          "label": "得意邀功"
+        },
+        {
+          "kind": "expression",
+          "id": "base_surprised_3",
+          "label": "惊讶意外"
+        }
+      ]
+    },
+    {
+      "id": "emotions-2",
+      "title": "不止开心，也会有小情绪",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "base_wary_3",
+          "label": "警觉戒备"
+        },
+        {
+          "kind": "expression",
+          "id": "base_anxious_3",
+          "label": "紧张担心"
+        },
+        {
+          "kind": "expression",
+          "id": "base_hesitant_3",
+          "label": "犹豫为难"
+        },
+        {
+          "kind": "expression",
+          "id": "base_shy_3",
+          "label": "害羞腼腆"
+        },
+        {
+          "kind": "expression",
+          "id": "base_embarrassed_3",
+          "label": "尴尬心虚"
+        },
+        {
+          "kind": "expression",
+          "id": "base_sad_3",
+          "label": "委屈失落"
+        },
+        {
+          "kind": "expression",
+          "id": "base_frustrated_3",
+          "label": "懊恼挫败"
+        },
+        {
+          "kind": "expression",
+          "id": "base_sulky_3",
+          "label": "不满赌气"
+        },
+        {
+          "kind": "expression",
+          "id": "base_bored_3",
+          "label": "无聊走神"
+        },
+        {
+          "kind": "expression",
+          "id": "base_sleepy_3",
+          "label": "困倦疲惫"
+        },
+        {
+          "kind": "expression",
+          "id": "base_caring_3",
+          "label": "关切体贴"
+        },
+        {
+          "kind": "expression",
+          "id": "base_playful_3",
+          "label": "顽皮试探"
+        }
+      ]
+    },
+    {
+      "id": "thoughts",
+      "title": "没有说出口的小心思",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "base_happy_restrained",
+          "label": "开心但克制"
+        },
+        {
+          "kind": "expression",
+          "id": "base_shy_proud",
+          "label": "害羞又得意"
+        },
+        {
+          "kind": "expression",
+          "id": "base_curious_afraid",
+          "label": "好奇又害怕"
+        },
+        {
+          "kind": "expression",
+          "id": "base_sleepy_determined",
+          "label": "困倦但坚持"
+        },
+        {
+          "kind": "expression",
+          "id": "base_urgent_polite",
+          "label": "着急但礼貌"
+        },
+        {
+          "kind": "expression",
+          "id": "base_hurt_helpful",
+          "label": "委屈但配合"
+        },
+        {
+          "kind": "expression",
+          "id": "base_worry_relief",
+          "label": "担心后放心"
+        },
+        {
+          "kind": "expression",
+          "id": "base_surprise_understood",
+          "label": "惊讶后理解"
+        },
+        {
+          "kind": "expression",
+          "id": "base_guilty_composed",
+          "label": "心虚却装镇定"
+        },
+        {
+          "kind": "expression",
+          "id": "base_praise_bashful",
+          "label": "想被夸又害羞"
+        },
+        {
+          "kind": "expression",
+          "id": "base_close_considerate",
+          "label": "想靠近又怕打扰"
+        },
+        {
+          "kind": "expression",
+          "id": "base_sulky_caring",
+          "label": "赌气却偷偷关注"
+        }
+      ]
+    },
+    {
+      "id": "work-1",
+      "title": "接到任务，就进入状态",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_activity_catch_card",
+          "index": 3,
+          "label": "接住新任务卡",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_spread_folder",
+          "index": 3,
+          "label": "展开资料夹接单",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_start_sticky",
+          "index": 3,
+          "label": "抽出开工便签",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_bookmark_begin",
+          "index": 3,
+          "label": "书签移到起点",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_compare_pages",
+          "index": 3,
+          "label": "对照资料两面",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_trace_evidence",
+          "index": 3,
+          "label": "沿线查找依据",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_mark_question",
+          "index": 3,
+          "label": "圈出待查位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_clip_read",
+          "index": 3,
+          "label": "夹住已经看过的部分",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "work-2",
+      "title": "把成果交给你，等你回应",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_activity_tray_deliver",
+          "index": 3,
+          "label": "把成果稳稳托给你",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_folder_deliver",
+          "index": 3,
+          "label": "合上资料夹递交",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_stamp_deliver",
+          "index": 3,
+          "label": "盖好章再展示",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_bookmark_done",
+          "index": 3,
+          "label": "夹好完成位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_blocked_place",
+          "index": 3,
+          "label": "指出卡住的位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_choice_card",
+          "index": 3,
+          "label": "举起待选卡片",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_pending_page",
+          "index": 3,
+          "label": "翻开待确认页",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_question_mark",
+          "index": 3,
+          "label": "留好问题书签",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "work-3",
+      "title": "遇到问题，也认真对待",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_activity_check_stop",
+          "index": 3,
+          "label": "检查后停手",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_error_page",
+          "index": 3,
+          "label": "把问题页单独夹好",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_tools_wait",
+          "index": 3,
+          "label": "收起工具等待介入",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_tidy_failure",
+          "index": 3,
+          "label": "扶正散乱资料",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_keep_page",
+          "index": 3,
+          "label": "夹住当前页再停下",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_put_pencil",
+          "index": 3,
+          "label": "收笔但不盖完成章",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_keep_thread",
+          "index": 3,
+          "label": "卷好线头留待以后",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_keep_folder",
+          "index": 3,
+          "label": "合夹保留当前位置",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "mouse",
+      "title": "你靠近的时候，它也会注意到",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "social_activity_eyes_first",
+          "index": 3,
+          "label": "先眼后头",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_recognize",
+          "index": 3,
+          "label": "探头辨认",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_tap_reply",
+          "index": 3,
+          "label": "轻点回应",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_show_you",
+          "index": 3,
+          "label": "把物件给你看",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_support_body",
+          "index": 3,
+          "label": "撑住身体",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_wait_release",
+          "index": 3,
+          "label": "侧看等松手",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_straighten",
+          "index": 3,
+          "label": "扶正后再看你",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_take_hand",
+          "index": 3,
+          "label": "收回伸出的手",
+          "duration": 3950
+        }
+      ]
+    },
+    {
+      "id": "panels",
+      "title": "面板也是它手里的工作",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "panel_activity_side_draw",
+          "index": 3,
+          "label": "侧身抽出",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_push_side",
+          "index": 3,
+          "label": "推到身旁",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_replace",
+          "index": 3,
+          "label": "抽换卡片",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_support_flip",
+          "index": 3,
+          "label": "扶住再翻",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_receive",
+          "index": 3,
+          "label": "接回收好",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_unmark",
+          "index": 3,
+          "label": "取下书签",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_steady",
+          "index": 3,
+          "label": "移动时扶稳",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_edge_grip",
+          "index": 3,
+          "label": "靠边调整握位",
+          "duration": 1300
+        }
+      ]
+    },
+    {
+      "id": "props-1",
+      "title": "道具不是摆设，是小活动的主角",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_write_review",
+          "index": 3,
+          "label": "写完停笔复看",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_notes_lines",
+          "index": 3,
+          "label": "逐行核对笔记",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_mark_close",
+          "index": 3,
+          "label": "标好重点再合页",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_clip_edges",
+          "index": 3,
+          "label": "把纸边夹齐",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_measure_origin",
+          "index": 3,
+          "label": "换起点重新量",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_eraser_spare",
+          "index": 3,
+          "label": "拿起却不舍得擦",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_light_return",
+          "index": 3,
+          "label": "扫过后再回照",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_compass_recall",
+          "index": 3,
+          "label": "对照方向回想",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_puzzle_rotate",
+          "index": 3,
+          "label": "拼图片换方向",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_spool_stop",
+          "index": 3,
+          "label": "理线到一半停住",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_tray_relief",
+          "index": 3,
+          "label": "端稳后松口气",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_bookmark_hint",
+          "index": 3,
+          "label": "书签露出一点",
+          "duration": 9500
+        }
+      ]
+    },
+    {
+      "id": "props-2",
+      "title": "工作之外，也有自己的小活动",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_bell_wait",
+          "index": 3,
+          "label": "举铃又轻轻放下",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_wind_again",
+          "index": 3,
+          "label": "风车停下再轻摆",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_yoyo_early",
+          "index": 3,
+          "label": "悠悠球提前回弹",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_balloon_tug",
+          "index": 3,
+          "label": "气球牵高手臂",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_spring_surprise",
+          "index": 3,
+          "label": "回弹吓自己一跳",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_blanket_corner",
+          "index": 3,
+          "label": "压好毯角",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_fan_pause",
+          "index": 3,
+          "label": "扇两下便停",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_warmer_relax",
+          "index": 3,
+          "label": "暖手后放松肩膀",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_plant_straight",
+          "index": 3,
+          "label": "扶正盆栽再看看",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_drawing_admire",
+          "index": 3,
+          "label": "摆正画作慢慢欣赏",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_umbrella_peek",
+          "index": 3,
+          "label": "从伞沿试探外面",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_hat_notice",
+          "index": 3,
+          "label": "扶正帽子等你看",
+          "duration": 10200
+        }
+      ]
+    },
+    {
+      "id": "masks-1",
+      "title": "掏出来，戴上去",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "mask",
+          "id": "happy",
+          "label": "开心"
+        },
+        {
+          "kind": "mask",
+          "id": "love",
+          "label": "心动"
+        },
+        {
+          "kind": "mask",
+          "id": "shock",
+          "label": "震惊"
+        },
+        {
+          "kind": "mask",
+          "id": "sleepy",
+          "label": "困困"
+        },
+        {
+          "kind": "mask",
+          "id": "focus",
+          "label": "专注"
+        },
+        {
+          "kind": "mask",
+          "id": "error",
+          "label": "出错"
+        },
+        {
+          "kind": "mask",
+          "id": "celebrate",
+          "label": "庆祝"
+        },
+        {
+          "kind": "mask",
+          "id": "confused",
+          "label": "疑惑"
+        },
+        {
+          "kind": "mask",
+          "id": "cry",
+          "label": "大哭"
+        },
+        {
+          "kind": "mask",
+          "id": "angry",
+          "label": "气鼓鼓"
+        },
+        {
+          "kind": "mask",
+          "id": "shy",
+          "label": "害羞"
+        },
+        {
+          "kind": "mask",
+          "id": "cool",
+          "label": "墨镜"
+        }
+      ]
+    },
+    {
+      "id": "masks-2",
+      "title": "另一种心情，另一张面具",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "mask",
+          "id": "cat",
+          "label": "猫咪"
+        },
+        {
+          "kind": "mask",
+          "id": "dog",
+          "label": "小狗"
+        },
+        {
+          "kind": "mask",
+          "id": "panda",
+          "label": "熊猫"
+        },
+        {
+          "kind": "mask",
+          "id": "fox",
+          "label": "狐狸"
+        },
+        {
+          "kind": "mask",
+          "id": "dizzy",
+          "label": "晕晕"
+        },
+        {
+          "kind": "mask",
+          "id": "wink",
+          "label": "眨眼"
+        },
+        {
+          "kind": "mask",
+          "id": "proud",
+          "label": "得意"
+        },
+        {
+          "kind": "mask",
+          "id": "blank",
+          "label": "无语"
+        },
+        {
+          "kind": "mask",
+          "id": "idea",
+          "label": "灵感"
+        },
+        {
+          "kind": "mask",
+          "id": "loading",
+          "label": "等待"
+        },
+        {
+          "kind": "mask",
+          "id": "peek",
+          "label": "偷看"
+        },
+        {
+          "kind": "mask",
+          "id": "party",
+          "label": "派对"
+        }
+      ]
+    },
+    {
+      "id": "skins",
+      "title": "从柠檬黄开始，选一种喜欢的颜色",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "柠檬黄",
+          "appearance": {
+            "skin": "lemon"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "清新绿",
+          "appearance": {
+            "skin": "green"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "海洋蓝",
+          "appearance": {
+            "skin": "ocean"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "日落橙",
+          "appearance": {
+            "skin": "sunset"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "柔粉",
+          "appearance": {
+            "skin": "pink"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "浅紫",
+          "appearance": {
+            "skin": "violet"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "夜色",
+          "appearance": {
+            "skin": "night"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "薄荷青",
+          "appearance": {
+            "skin": "neon"
+          }
+        }
+      ]
+    },
+    {
+      "id": "shapes-1",
+      "title": "圆润的身体，也能换个样子",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "圆团",
+          "appearance": {
+            "shape": "circle"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "软方块",
+          "appearance": {
+            "shape": "square"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "圆角三角",
+          "appearance": {
+            "shape": "triangle"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "圆角五边",
+          "appearance": {
+            "shape": "pentagon"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "圆角六边",
+          "appearance": {
+            "shape": "hexagon"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "圆润星星",
+          "appearance": {
+            "shape": "star"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "水滴",
+          "appearance": {
+            "shape": "drop"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "胶囊",
+          "appearance": {
+            "shape": "capsule"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "云朵",
+          "appearance": {
+            "shape": "cloud"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "软菱形",
+          "appearance": {
+            "shape": "diamond"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "花朵",
+          "appearance": {
+            "shape": "flower"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "软团",
+          "appearance": {
+            "shape": "blob"
+          }
+        }
+      ]
+    },
+    {
+      "id": "shapes-2",
+      "title": "圆润的身体，也能换个样子",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "扁饼",
+          "appearance": {
+            "shape": "pancake"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "豆形",
+          "appearance": {
+            "shape": "bean"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "铃铛",
+          "appearance": {
+            "shape": "bell"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "风筝",
+          "appearance": {
+            "shape": "kite"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "软垫",
+          "appearance": {
+            "shape": "cushion"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "弹力团",
+          "appearance": {
+            "shape": "spring"
+          }
+        }
+      ]
+    },
+    {
+      "id": "styles",
+      "title": "四种保留画风",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "confident",
+          "label": "经典",
+          "appearance": {
+            "artStyle": "classic",
+            "shape": "circle",
+            "eyeStyle": "auto"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "confident",
+          "label": "无声默剧",
+          "appearance": {
+            "artStyle": "mime",
+            "shape": "circle",
+            "eyeStyle": "auto"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "confident",
+          "label": "黏土软团",
+          "appearance": {
+            "artStyle": "clay",
+            "shape": "blob",
+            "eyeStyle": "auto"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "confident",
+          "label": "橡皮管",
+          "appearance": {
+            "artStyle": "rubber",
+            "shape": "circle",
+            "eyeStyle": "auto"
+          }
+        }
+      ]
+    },
+    {
+      "id": "eyes-1",
+      "title": "同一张脸，也有不同的眼神",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "经典圆眼",
+          "appearance": {
+            "eyeStyle": "classic"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "动漫亮眼",
+          "appearance": {
+            "eyeStyle": "anime"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "柔和杏眼",
+          "appearance": {
+            "eyeStyle": "almond"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "豆豆圆瞳",
+          "appearance": {
+            "eyeStyle": "bean"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "复古动画眼",
+          "appearance": {
+            "eyeStyle": "retro"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "清透玻璃眼",
+          "appearance": {
+            "eyeStyle": "glass"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "软方机械眼",
+          "appearance": {
+            "eyeStyle": "soft_square"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "水滴幼态眼",
+          "appearance": {
+            "eyeStyle": "droplet"
+          }
+        }
+      ]
+    },
+    {
+      "id": "eyes-2",
+      "title": "同一张脸，也有不同的眼神",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "专注锐眼",
+          "appearance": {
+            "eyeStyle": "focus"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "温柔月牙眼",
+          "appearance": {
+            "eyeStyle": "crescent"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "好奇探头眼",
+          "appearance": {
+            "eyeStyle": "curious"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "困倦半眠眼",
+          "appearance": {
+            "eyeStyle": "sleepy"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "害羞躲闪眼",
+          "appearance": {
+            "eyeStyle": "shy"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "惊讶定睛眼",
+          "appearance": {
+            "eyeStyle": "astonished"
+          }
+        },
+        {
+          "kind": "expression",
+          "id": "neutral",
+          "label": "委屈含光眼",
+          "appearance": {
+            "eyeStyle": "tender"
+          }
+        }
+      ]
+    },
+    {
+      "id": "symbols",
+      "title": "偶尔出现的特殊眼睛",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "symbol",
+          "id": "star",
+          "label": "星星眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "heart",
+          "label": "爱心眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "spiral",
+          "label": "螺旋眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "squeeze",
+          "label": "挤挤眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "flat",
+          "label": "横线眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "cross",
+          "label": "叉叉眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "dot",
+          "label": "点点眼"
+        },
+        {
+          "kind": "symbol",
+          "id": "tear",
+          "label": "泪滴眼"
+        }
+      ]
+    },
+    {
+      "id": "accents-1",
+      "title": "不需要嘴巴，也能看出情绪",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "accent",
+          "id": "blush",
+          "label": "淡红晕"
+        },
+        {
+          "kind": "accent",
+          "id": "blushLines",
+          "label": "斜线红晕"
+        },
+        {
+          "kind": "accent",
+          "id": "heat",
+          "label": "渐热红晕"
+        },
+        {
+          "kind": "accent",
+          "id": "waterline",
+          "label": "眼底水光"
+        },
+        {
+          "kind": "accent",
+          "id": "tearBead",
+          "label": "含住泪珠"
+        },
+        {
+          "kind": "accent",
+          "id": "softShine",
+          "label": "柔亮高光"
+        },
+        {
+          "kind": "accent",
+          "id": "sweat",
+          "label": "紧张汗滴"
+        },
+        {
+          "kind": "accent",
+          "id": "sweatSlide",
+          "label": "滑落汗滴"
+        },
+        {
+          "kind": "accent",
+          "id": "fineSweat",
+          "label": "细小紧张汗"
+        },
+        {
+          "kind": "accent",
+          "id": "hesitation",
+          "label": "迟疑线"
+        },
+        {
+          "kind": "accent",
+          "id": "pressure",
+          "label": "压力线"
+        },
+        {
+          "kind": "accent",
+          "id": "annoyed",
+          "label": "圆钝不满"
+        }
+      ]
+    },
+    {
+      "id": "accents-2",
+      "title": "不需要嘴巴，也能看出情绪",
+      "subtitle": "",
+      "entries": [
+        {
+          "kind": "accent",
+          "id": "coolShade",
+          "label": "淡蓝额色"
+        },
+        {
+          "kind": "accent",
+          "id": "tired",
+          "label": "眼下疲态"
+        },
+        {
+          "kind": "accent",
+          "id": "warmth",
+          "label": "面颊暖色"
+        },
+        {
+          "kind": "accent",
+          "id": "glint",
+          "label": "灵光"
+        },
+        {
+          "kind": "accent",
+          "id": "question",
+          "label": "问号"
+        },
+        {
+          "kind": "accent",
+          "id": "pause",
+          "label": "停顿点"
+        }
+      ]
+    },
+    {
+      "id": "story-1",
+      "title": "担心滑落终于端稳",
+      "subtitle": "约 15 秒连续编排 · 六个片段",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 1,
+          "label": "起意",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 2,
+          "label": "尝试",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 3,
+          "label": "转折",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 4,
+          "label": "停一停",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 5,
+          "label": "回应",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 6,
+          "label": "收住",
+          "duration": 15000
+        }
+      ]
+    },
+    {
+      "id": "story-2",
+      "title": "展示后害羞藏起来",
+      "subtitle": "约 15 秒连续编排 · 六个片段",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 1,
+          "label": "起意",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 2,
+          "label": "尝试",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 3,
+          "label": "转折",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 4,
+          "label": "停一停",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 5,
+          "label": "回应",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 6,
+          "label": "收住",
+          "duration": 15000
+        }
+      ]
+    }
+  ],
+  "pages": [
+    {
+      "id": "emotion-01",
+      "group": "emotion",
+      "title": "情绪活动 / 1",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_cup_place",
+          "index": 3,
+          "label": "转杯找舒服位置",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_plant_straight",
+          "index": 3,
+          "label": "扶正盆栽再看看",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_fan_pause",
+          "index": 3,
+          "label": "扇两下便停",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_stretch_seat",
+          "index": 3,
+          "label": "舒展后重新坐稳",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_pillow_lean",
+          "index": 3,
+          "label": "接住枕头靠一靠",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_blanket_corner",
+          "index": 3,
+          "label": "压好毯角",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_warmer_relax",
+          "index": 3,
+          "label": "暖手后放松肩膀",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_rest_watch",
+          "index": 3,
+          "label": "看你一眼继续休息",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_write_review",
+          "index": 3,
+          "label": "写完停笔复看",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_clip_edges",
+          "index": 3,
+          "label": "把纸边夹齐",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_notes_lines",
+          "index": 3,
+          "label": "逐行核对笔记",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_mark_close",
+          "index": 3,
+          "label": "标好重点再合页",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-02",
+      "group": "emotion",
+      "title": "情绪活动 / 2",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_spool_stop",
+          "index": 3,
+          "label": "理线到一半停住",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_puzzle_rotate",
+          "index": 3,
+          "label": "拼图片换方向",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_compass_recall",
+          "index": 3,
+          "label": "对照方向回想",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_pencil_reconsider",
+          "index": 3,
+          "label": "准备写却改主意",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_lens_trace",
+          "index": 3,
+          "label": "镜头追着细节",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_light_return",
+          "index": 3,
+          "label": "扫过后再回照",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_hat_probe",
+          "index": 3,
+          "label": "戴帽探看再缩回",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_reverse",
+          "index": 3,
+          "label": "发现纸背还有内容",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_measure_origin",
+          "index": 3,
+          "label": "换起点重新量",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_folder_evidence",
+          "index": 3,
+          "label": "翻前页找依据",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_glasses_recheck",
+          "index": 3,
+          "label": "放低眼镜重新看",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_compare",
+          "index": 3,
+          "label": "把资料换边比对",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-03",
+      "group": "emotion",
+      "title": "情绪活动 / 3",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_sand_glance",
+          "index": 3,
+          "label": "看流沙又看你",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_bookmark_hint",
+          "index": 3,
+          "label": "书签露出一点",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_bell_wait",
+          "index": 3,
+          "label": "举铃又轻轻放下",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_ready",
+          "index": 3,
+          "label": "准备好却先不递",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_wind_again",
+          "index": 3,
+          "label": "风车停下再轻摆",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_spring_surprise",
+          "index": 3,
+          "label": "回弹吓自己一跳",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_spark_catch",
+          "index": 3,
+          "label": "接住小闪光",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_half_step",
+          "index": 3,
+          "label": "迈半步又克制站好",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_tray_relief",
+          "index": 3,
+          "label": "端稳后松口气",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_stamp_inspect",
+          "index": 3,
+          "label": "检查刚用过的印章",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_drawing_admire",
+          "index": 3,
+          "label": "摆正画作慢慢欣赏",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_pencil_last",
+          "index": 3,
+          "label": "收好最后一件文具",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-04",
+      "group": "emotion",
+      "title": "情绪活动 / 4",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_cape_ready",
+          "index": 3,
+          "label": "整理披风再出发",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_point",
+          "index": 3,
+          "label": "指向卡片重点",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_flag_steady",
+          "index": 3,
+          "label": "稳稳举旗",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_folder_once",
+          "index": 3,
+          "label": "一遍归整好资料",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_shades_peek",
+          "index": 3,
+          "label": "墨镜滑下露出眼神",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_brooch_casual",
+          "index": 3,
+          "label": "亮出胸针装随意",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_hat_notice",
+          "index": 3,
+          "label": "扶正帽子等你看",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_drawing_peek",
+          "index": 3,
+          "label": "展示画作偷偷回望",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_balloon_tug",
+          "index": 3,
+          "label": "气球牵高手臂",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_yoyo_early",
+          "index": 3,
+          "label": "悠悠球提前回弹",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_gift_pause",
+          "index": 3,
+          "label": "打开礼物愣一下",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_plane_return",
+          "index": 3,
+          "label": "纸飞机回来赶紧接",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-05",
+      "group": "emotion",
+      "title": "情绪活动 / 5",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_umbrella_peek",
+          "index": 3,
+          "label": "从伞沿试探外面",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_light_stop",
+          "index": 3,
+          "label": "灯光停在可疑处",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_folder_guard",
+          "index": 3,
+          "label": "护住资料再侧看",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_lens_retreat",
+          "index": 3,
+          "label": "伸出镜头又缩手",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_clip_retry",
+          "index": 3,
+          "label": "夹纸前反复对齐",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_tray_balance",
+          "index": 3,
+          "label": "端盘小幅找平",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_bookmark_grip",
+          "index": 3,
+          "label": "捏住书签等待",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_measure_care",
+          "index": 3,
+          "label": "小心收回卷尺",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_half",
+          "index": 3,
+          "label": "递到一半收回来",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_bookmark_choice",
+          "index": 3,
+          "label": "换两个标记位置",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_compass_check",
+          "index": 3,
+          "label": "转正方向再确认",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_eraser_spare",
+          "index": 3,
+          "label": "拿起却不舍得擦",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-06",
+      "group": "emotion",
+      "title": "情绪活动 / 6",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_drawing_hide",
+          "index": 3,
+          "label": "画作遮住一点脸",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_brooch_flash",
+          "index": 4,
+          "label": "胸针展示一瞬就收",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_beret_avoid",
+          "index": 3,
+          "label": "扶帽避开目光",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_wave_to_nod",
+          "index": 3,
+          "label": "招手变成点头",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_erase_crooked",
+          "index": 3,
+          "label": "发现写歪赶紧擦",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_pencil_wrong",
+          "index": 3,
+          "label": "拿反笔偷偷调头",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_hat_excuse",
+          "index": 3,
+          "label": "帽子歪了假装整理",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_slip",
+          "index": 3,
+          "label": "纸张滑落装作有准备",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_pillow_hug",
+          "index": 3,
+          "label": "把枕头抱近一点",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_blanket_fold",
+          "index": 3,
+          "label": "低头叠好毯子",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_blank_page",
+          "index": 3,
+          "label": "翻到空白页停住",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_drawing_corner",
+          "index": 3,
+          "label": "收画又留一角",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-07",
+      "group": "emotion",
+      "title": "情绪活动 / 7",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_puzzle_flat",
+          "index": 3,
+          "label": "拼不进去先放平",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_spool_tangle",
+          "index": 3,
+          "label": "线越理越乱先停下",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_erase_again",
+          "index": 3,
+          "label": "擦过后重新落笔",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_stamp_straight",
+          "index": 3,
+          "label": "印章没摆正再扶正",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_fan_turnaway",
+          "index": 3,
+          "label": "合扇后轻轻扭头",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_umbrella_self",
+          "index": 3,
+          "label": "把伞稍稍偏向自己",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_card_pushback",
+          "index": 3,
+          "label": "推远卡片又拉回",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_turn_peek",
+          "index": 3,
+          "label": "转开一点却偷偷看",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_cube_edge",
+          "index": 3,
+          "label": "方块沿手边慢慢转",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_sand_forgot",
+          "index": 3,
+          "label": "盯流沙忘记翻面",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_bookmark_conduct",
+          "index": 3,
+          "label": "书签当指挥棒",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_measure_body",
+          "index": 3,
+          "label": "量圆肚子发现自己作弊",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "emotion-08",
+      "group": "emotion",
+      "title": "情绪活动 / 8",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "activity_hat_twice",
+          "index": 3,
+          "label": "睡帽滑下扶两次",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_pillow_nod",
+          "index": 3,
+          "label": "枕头刚放好就点头",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_cup_wake",
+          "index": 3,
+          "label": "捧杯回神再放下",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_notes_pen",
+          "index": 3,
+          "label": "合页前回看夹笔的位置",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_plant_light",
+          "index": 3,
+          "label": "把盆栽转向亮处",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_warmer_offer",
+          "index": 3,
+          "label": "把暖手包递近",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_cup_near",
+          "index": 3,
+          "label": "把杯子挪到好拿的位置",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_umbrella_space",
+          "index": 3,
+          "label": "撑伞给旁边留位置",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_wand_wrong",
+          "index": 3,
+          "label": "魔杖藏错边又调整",
+          "duration": 8800
+        },
+        {
+          "kind": "activity",
+          "id": "activity_plane_fake",
+          "index": 3,
+          "label": "纸飞机假投后真投",
+          "duration": 9500
+        },
+        {
+          "kind": "activity",
+          "id": "activity_brush_conduct",
+          "index": 3,
+          "label": "画笔假装指挥",
+          "duration": 10200
+        },
+        {
+          "kind": "activity",
+          "id": "activity_hat_spark",
+          "index": 3,
+          "label": "展示礼帽里的小秘密",
+          "duration": 8800
+        }
+      ]
+    },
+    {
+      "id": "task-01",
+      "group": "task",
+      "title": "任务表演 / 1",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_start_card",
+          "index": 2,
+          "label": "认真接单",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_start_scan",
+          "index": 2,
+          "label": "扫描任务",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_start_idea",
+          "index": 2,
+          "label": "点亮思路",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_start_inspect",
+          "index": 2,
+          "label": "谨慎验单",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_start_wave",
+          "index": 2,
+          "label": "招手开工",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_flag",
+          "index": 2,
+          "label": "举旗交付",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_shades",
+          "index": 2,
+          "label": "墨镜收工",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_stamp",
+          "index": 2,
+          "label": "盖章确认",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_report",
+          "index": 2,
+          "label": "递出成果",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_bow",
+          "index": 2,
+          "label": "礼貌谢幕",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_surprise",
+          "index": 2,
+          "label": "藏不住开心",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_present",
+          "index": 2,
+          "label": "等待你查看",
+          "duration": 4320
+        }
+      ]
+    },
+    {
+      "id": "task-02",
+      "group": "task",
+      "title": "任务表演 / 2",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_help_offer",
+          "index": 2,
+          "label": "递出疑问",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_help_pause",
+          "index": 2,
+          "label": "收手等指示",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_help_shy",
+          "index": 2,
+          "label": "不好意思打扰",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_help_review",
+          "index": 2,
+          "label": "仔细复盘",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_help_retry",
+          "index": 2,
+          "label": "整理好再来",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_write",
+          "index": 2,
+          "label": "写下再推敲",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_sort",
+          "index": 2,
+          "label": "卡片归位",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_think",
+          "index": 2,
+          "label": "悬笔思考",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_wait",
+          "index": 2,
+          "label": "观察流沙",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_breathe",
+          "index": 2,
+          "label": "从容陪伴",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_reset",
+          "index": 2,
+          "label": "忙中缓口气",
+          "duration": 4320
+        },
+        {
+          "kind": "activity",
+          "id": "performance_start_folder",
+          "index": 3,
+          "label": "展开任务文件夹",
+          "duration": 5050
+        }
+      ]
+    },
+    {
+      "id": "task-03",
+      "group": "task",
+      "title": "任务表演 / 3",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_start_note",
+          "index": 3,
+          "label": "贴好开工便签",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_clip",
+          "index": 3,
+          "label": "把资料夹整齐",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_light",
+          "index": 3,
+          "label": "顺着线索查看",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_work_spool",
+          "index": 3,
+          "label": "整理当前思路",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_tray",
+          "index": 3,
+          "label": "用托盘递出结果",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_folder",
+          "index": 3,
+          "label": "合上文件夹交付",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_bookmark",
+          "index": 3,
+          "label": "把完成的位置标好",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_done_bell",
+          "index": 3,
+          "label": "轻摇铃铛等你查看",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_help_bookmark",
+          "index": 3,
+          "label": "留在这里等指示",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_help_eraser",
+          "index": 3,
+          "label": "整理后等你处理",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_catch_card",
+          "index": 3,
+          "label": "接住新任务卡",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_spread_folder",
+          "index": 3,
+          "label": "展开资料夹接单",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "task-04",
+      "group": "task",
+      "title": "任务表演 / 4",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_activity_start_sticky",
+          "index": 3,
+          "label": "抽出开工便签",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_bookmark_begin",
+          "index": 3,
+          "label": "书签移到起点",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_pencil_ready",
+          "index": 3,
+          "label": "摆好铅笔准备",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_toy_to_work",
+          "index": 3,
+          "label": "收起玩具转身接单",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_compare_pages",
+          "index": 3,
+          "label": "对照资料两面",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_trace_evidence",
+          "index": 3,
+          "label": "沿线查找依据",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_mark_question",
+          "index": 3,
+          "label": "圈出待查位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_clip_read",
+          "index": 3,
+          "label": "夹住已经看过的部分",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_unwind_clue",
+          "index": 3,
+          "label": "理顺一段线索",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_recall_continue",
+          "index": 3,
+          "label": "停笔回想后继续",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_tray_deliver",
+          "index": 3,
+          "label": "把成果稳稳托给你",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_folder_deliver",
+          "index": 3,
+          "label": "合上资料夹递交",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "task-05",
+      "group": "task",
+      "title": "任务表演 / 5",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_activity_stamp_deliver",
+          "index": 3,
+          "label": "盖好章再展示",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_bookmark_done",
+          "index": 3,
+          "label": "夹好完成位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_flag_view",
+          "index": 3,
+          "label": "小旗引导查看结果",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_sticky_done",
+          "index": 3,
+          "label": "便签移到完成条旁",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_blocked_place",
+          "index": 3,
+          "label": "指出卡住的位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_choice_card",
+          "index": 3,
+          "label": "举起待选卡片",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_pending_page",
+          "index": 3,
+          "label": "翻开待确认页",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_question_mark",
+          "index": 3,
+          "label": "留好问题书签",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_put_pen",
+          "index": 3,
+          "label": "放下笔看向你",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_make_room",
+          "index": 3,
+          "label": "挪开道具给提示让位",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_check_stop",
+          "index": 3,
+          "label": "检查后停手",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_error_page",
+          "index": 3,
+          "label": "把问题页单独夹好",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "task-06",
+      "group": "task",
+      "title": "任务表演 / 6",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "performance_activity_tools_wait",
+          "index": 3,
+          "label": "收起工具等待介入",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_tidy_failure",
+          "index": 3,
+          "label": "扶正散乱资料",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_help_place",
+          "index": 3,
+          "label": "指出需要介入处",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_protect_work",
+          "index": 3,
+          "label": "护住已有成果再示意",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_keep_page",
+          "index": 3,
+          "label": "夹住当前页再停下",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_put_pencil",
+          "index": 3,
+          "label": "收笔但不盖完成章",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_keep_thread",
+          "index": 3,
+          "label": "卷好线头留待以后",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_keep_folder",
+          "index": 3,
+          "label": "合夹保留当前位置",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_stop_sort",
+          "index": 3,
+          "label": "整理到一半停住",
+          "duration": 5950
+        },
+        {
+          "kind": "activity",
+          "id": "performance_activity_tools_rest",
+          "index": 3,
+          "label": "把工具放稳后休息",
+          "duration": 5950
+        }
+      ]
+    },
+    {
+      "id": "panel-01",
+      "group": "panel",
+      "title": "面板交互 / 1",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "panel_activity_side_draw",
+          "index": 3,
+          "label": "侧身抽出",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_two_hands",
+          "index": 3,
+          "label": "双手托开",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_push_side",
+          "index": 3,
+          "label": "推到身旁",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_flip_show",
+          "index": 3,
+          "label": "翻转展示",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_replace",
+          "index": 3,
+          "label": "抽换卡片",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_handoff",
+          "index": 3,
+          "label": "前后交接",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_support_flip",
+          "index": 3,
+          "label": "扶住再翻",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_make_way",
+          "index": 3,
+          "label": "移开让位",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_receive",
+          "index": 3,
+          "label": "接回收好",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_archive",
+          "index": 3,
+          "label": "合页归档",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_unmark",
+          "index": 3,
+          "label": "取下书签",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_thanks",
+          "index": 3,
+          "label": "接住后致意",
+          "duration": 1300
+        }
+      ]
+    },
+    {
+      "id": "panel-02",
+      "group": "panel",
+      "title": "面板交互 / 2",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "panel_activity_steady",
+          "index": 3,
+          "label": "移动时扶稳",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_change_side",
+          "index": 3,
+          "label": "换侧重新接手",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_edge_grip",
+          "index": 3,
+          "label": "靠边调整握位",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "panel_activity_main_only",
+          "index": 3,
+          "label": "多面板照看主面板",
+          "duration": 1300
+        }
+      ]
+    },
+    {
+      "id": "social-01",
+      "group": "social",
+      "title": "鼠标互动 / 1",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "shades",
+          "index": 2,
+          "label": "戴上墨镜",
+          "duration": 3050
+        },
+        {
+          "kind": "activity",
+          "id": "magic",
+          "index": 2,
+          "label": "小魔术",
+          "duration": 3400
+        },
+        {
+          "kind": "activity",
+          "id": "affection",
+          "index": 1,
+          "label": "亲近回应",
+          "duration": 1850
+        },
+        {
+          "kind": "activity",
+          "id": "wink_ack",
+          "index": 1,
+          "label": "单眼回应",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "double_blink",
+          "index": 1,
+          "label": "左右眨眼",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "nod_hello",
+          "index": 1,
+          "label": "点头招呼",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "head_tilt",
+          "index": 1,
+          "label": "歪头听你说",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "glasses_tap",
+          "index": 1,
+          "label": "扶眼镜回应",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "shy_reply",
+          "index": 1,
+          "label": "有点害羞",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "side_inspect",
+          "index": 1,
+          "label": "侧目观察",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "listen_close",
+          "index": 1,
+          "label": "认真听着",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "eye_follow",
+          "index": 1,
+          "label": "眼神追踪",
+          "duration": 1100
+        }
+      ]
+    },
+    {
+      "id": "social-02",
+      "group": "social",
+      "title": "鼠标互动 / 2",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "peek_back",
+          "index": 1,
+          "label": "偷偷看回来",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "slow_smile",
+          "index": 1,
+          "label": "慢慢笑起来",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "finger_wave",
+          "index": 1,
+          "label": "小小招手",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "puff_hold",
+          "index": 1,
+          "label": "鼓起来撑住",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "brace_hold",
+          "index": 1,
+          "label": "伸手挡一下",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "squish_hold",
+          "index": 1,
+          "label": "挤眼装镇定",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "patient_hold",
+          "index": 1,
+          "label": "耐心等松手",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "spring_back",
+          "index": 1,
+          "label": "松手回弹",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "smooth_landing",
+          "index": 1,
+          "label": "轻轻落稳",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "shake_off",
+          "index": 1,
+          "label": "扶正再看你",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "glance_back",
+          "index": 1,
+          "label": "目送后回头",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "present_note",
+          "index": 1,
+          "label": "递出任务资料",
+          "duration": 1100
+        }
+      ]
+    },
+    {
+      "id": "social-03",
+      "group": "social",
+      "title": "鼠标互动 / 3",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "point_note",
+          "index": 1,
+          "label": "示意看任务",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "glasses_peek",
+          "index": 1,
+          "label": "从镜框上看你",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "back_to_work",
+          "index": 1,
+          "label": "收到继续工作",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_achievement_0",
+          "index": 2,
+          "label": "胸有成竹",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_achievement_1",
+          "index": 2,
+          "label": "得意",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_achievement_2",
+          "index": 2,
+          "label": "骄傲",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_achievement_3",
+          "index": 2,
+          "label": "满足",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_achievement_4",
+          "index": 2,
+          "label": "邀功",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anxious_0",
+          "index": 2,
+          "label": "忐忑",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anxious_1",
+          "index": 2,
+          "label": "警觉",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anxious_2",
+          "index": 2,
+          "label": "犹豫",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anxious_3",
+          "index": 2,
+          "label": "担忧",
+          "duration": 1680
+        }
+      ]
+    },
+    {
+      "id": "social-04",
+      "group": "social",
+      "title": "鼠标互动 / 4",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "emotion_anxious_4",
+          "index": 2,
+          "label": "松一口气",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_closeness_0",
+          "index": 2,
+          "label": "害羞",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_closeness_1",
+          "index": 2,
+          "label": "信任",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_closeness_2",
+          "index": 2,
+          "label": "亲近",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_closeness_3",
+          "index": 2,
+          "label": "欢迎",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_closeness_4",
+          "index": 2,
+          "label": "默契",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_playful_0",
+          "index": 2,
+          "label": "偷笑",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_playful_1",
+          "index": 2,
+          "label": "装无辜",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_playful_2",
+          "index": 2,
+          "label": "恶作剧",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_playful_3",
+          "index": 2,
+          "label": "故作严肃",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_playful_4",
+          "index": 2,
+          "label": "被抓包",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anticipation_0",
+          "index": 2,
+          "label": "期待",
+          "duration": 1680
+        }
+      ]
+    },
+    {
+      "id": "social-05",
+      "group": "social",
+      "title": "鼠标互动 / 5",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "emotion_anticipation_1",
+          "index": 2,
+          "label": "无聊",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anticipation_2",
+          "index": 2,
+          "label": "不耐烦",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anticipation_3",
+          "index": 2,
+          "label": "赌气",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_anticipation_4",
+          "index": 2,
+          "label": "克制催促",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_recovery_0",
+          "index": 2,
+          "label": "困倦",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_recovery_1",
+          "index": 2,
+          "label": "走神",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_recovery_2",
+          "index": 2,
+          "label": "疲惫",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_recovery_3",
+          "index": 2,
+          "label": "打起精神",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_recovery_4",
+          "index": 2,
+          "label": "伸懒腰",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_setback_0",
+          "index": 2,
+          "label": "懊恼",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_setback_1",
+          "index": 2,
+          "label": "委屈",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_setback_2",
+          "index": 2,
+          "label": "尴尬",
+          "duration": 1680
+        }
+      ]
+    },
+    {
+      "id": "social-06",
+      "group": "social",
+      "title": "鼠标互动 / 6",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "emotion_setback_3",
+          "index": 2,
+          "label": "不服气",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_setback_4",
+          "index": 2,
+          "label": "重新振作",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_astonished_0",
+          "index": 2,
+          "label": "吓一跳",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_astonished_1",
+          "index": 2,
+          "label": "不可置信",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_astonished_2",
+          "index": 2,
+          "label": "茫然",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_astonished_3",
+          "index": 2,
+          "label": "震惊",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_astonished_4",
+          "index": 2,
+          "label": "看傻了",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_caring_0",
+          "index": 2,
+          "label": "关切",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_caring_1",
+          "index": 2,
+          "label": "安慰",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_caring_2",
+          "index": 2,
+          "label": "鼓励",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_caring_3",
+          "index": 2,
+          "label": "体贴",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_caring_4",
+          "index": 2,
+          "label": "安心守候",
+          "duration": 1680
+        }
+      ]
+    },
+    {
+      "id": "social-07",
+      "group": "social",
+      "title": "鼠标互动 / 7",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "emotion_mixed_0",
+          "index": 2,
+          "label": "累但开心",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_mixed_1",
+          "index": 2,
+          "label": "害羞又得意",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_mixed_2",
+          "index": 2,
+          "label": "好奇又害怕",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_mixed_3",
+          "index": 2,
+          "label": "着急但克制",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_mixed_4",
+          "index": 2,
+          "label": "无奈又配合",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_eyes_first",
+          "index": 3,
+          "label": "先眼后头",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_hands_aside",
+          "index": 3,
+          "label": "收手让位",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_recognize",
+          "index": 3,
+          "label": "探头辨认",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_listen_pause",
+          "index": 3,
+          "label": "停笔听你",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_tap_reply",
+          "index": 3,
+          "label": "轻点回应",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_caught_hiding",
+          "index": 3,
+          "label": "藏物被发现",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_show_you",
+          "index": 3,
+          "label": "把物件给你看",
+          "duration": 3950
+        }
+      ]
+    },
+    {
+      "id": "social-08",
+      "group": "social",
+      "title": "鼠标互动 / 8",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "social_activity_smile_spill",
+          "index": 3,
+          "label": "笑意收不住",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_support_body",
+          "index": 3,
+          "label": "撑住身体",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_guard_object",
+          "index": 3,
+          "label": "护住手中物",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_wait_release",
+          "index": 3,
+          "label": "侧看等松手",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_gradual_relax",
+          "index": 3,
+          "label": "按住时慢慢放松",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_straighten",
+          "index": 3,
+          "label": "扶正后再看你",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_back_to_it",
+          "index": 3,
+          "label": "回望再继续",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_take_hand",
+          "index": 3,
+          "label": "收回伸出的手",
+          "duration": 3950
+        },
+        {
+          "kind": "activity",
+          "id": "social_activity_return_place",
+          "index": 3,
+          "label": "回到刚才的位置",
+          "duration": 3950
+        }
+      ]
+    },
+    {
+      "id": "story-01",
+      "group": "story",
+      "title": "连续剧场与接续 / 1",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "theater_notes",
+          "index": 11,
+          "label": "认真做笔记",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_insight",
+          "index": 9,
+          "label": "灵感推演",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_sorting",
+          "index": 10,
+          "label": "资料整理员",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_investigate",
+          "index": 6,
+          "label": "放大镜调查",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_pen",
+          "index": 9,
+          "label": "转笔想问题",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_workstation",
+          "index": 9,
+          "label": "小小工作站",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_sand",
+          "index": 10,
+          "label": "耐心等流沙",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_busy",
+          "index": 11,
+          "label": "假装很忙",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_pancake",
+          "index": 6,
+          "label": "无聊变扁饼",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_doze",
+          "index": 2,
+          "label": "午后打盹",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_exercise",
+          "index": 7,
+          "label": "一套伸展操",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_airplane",
+          "index": 8,
+          "label": "纸飞机练习",
+          "duration": 15000
+        }
+      ]
+    },
+    {
+      "id": "story-02",
+      "group": "story",
+      "title": "连续剧场与接续 / 2",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "theater_balance",
+          "index": 6,
+          "label": "方块平衡挑战",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_portrait",
+          "index": 7,
+          "label": "小画家自画像",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_magic",
+          "index": 10,
+          "label": "魔术练习失误",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_masks",
+          "index": 6,
+          "label": "面具试衣间",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_star",
+          "index": 8,
+          "label": "墨镜小明星",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_proud",
+          "index": 5,
+          "label": "完成后的邀功",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_patient",
+          "index": 6,
+          "label": "克制的小赌气",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_companion",
+          "index": 4,
+          "label": "安静陪你工作",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_note_roll",
+          "index": 4,
+          "label": "反复推敲便签",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_measure_twice",
+          "index": 4,
+          "label": "量完再核对",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_puzzle_retry",
+          "index": 4,
+          "label": "那块拼图再试一次",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_unwind",
+          "index": 4,
+          "label": "一点点理顺线团",
+          "duration": 15000
+        }
+      ]
+    },
+    {
+      "id": "story-03",
+      "group": "story",
+      "title": "连续剧场与接续 / 3",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "theater_prop_filing",
+          "index": 4,
+          "label": "慢慢归好文件",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_bearings",
+          "index": 4,
+          "label": "耐心找准方向",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_wind_play",
+          "index": 4,
+          "label": "风车慢慢停下",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_yoyo_practice",
+          "index": 4,
+          "label": "悠悠球的第二次尝试",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_balloon_return",
+          "index": 4,
+          "label": "别让气球飘走",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_garden",
+          "index": 4,
+          "label": "给小盆栽一点陪伴",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_warm_rest",
+          "index": 4,
+          "label": "暖手包的小憩",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_prop_blanket_fold",
+          "index": 4,
+          "label": "休息后把毯子叠好",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_restrained",
+          "index": 3,
+          "label": "收住快要露出的开心",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_bashful_pride",
+          "index": 3,
+          "label": "展示后害羞藏起来",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_brave_peek",
+          "index": 3,
+          "label": "害怕却想看清楚",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_determined",
+          "index": 3,
+          "label": "困倦时把最后一页夹好",
+          "duration": 15000
+        }
+      ]
+    },
+    {
+      "id": "story-04",
+      "group": "story",
+      "title": "连续剧场与接续 / 4",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "theater_activity_polite_wait",
+          "index": 3,
+          "label": "想提醒又耐心收住",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_help_anyway",
+          "index": 3,
+          "label": "低落时仍把资料理好",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_safe_now",
+          "index": 3,
+          "label": "担心滑落终于端稳",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_understand",
+          "index": 3,
+          "label": "愣了一下终于理顺",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_caught",
+          "index": 3,
+          "label": "被看见后装作在整理",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_praise",
+          "index": 3,
+          "label": "想被夸又不敢直视",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_considerate",
+          "index": 3,
+          "label": "想靠近又怕打扰",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_sulky_watch",
+          "index": 3,
+          "label": "转过身却偷偷关注",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_resume_sort",
+          "index": 3,
+          "label": "接着整理刚才的资料",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_practice_again",
+          "index": 3,
+          "label": "刚才没接好再练一次",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_take_delivery",
+          "index": 3,
+          "label": "接回交付时的那件道具",
+          "duration": 15000
+        },
+        {
+          "kind": "activity",
+          "id": "theater_activity_finish_private",
+          "index": 3,
+          "label": "你走开后完成小事情",
+          "duration": 15000
+        }
+      ]
+    },
+    {
+      "id": "everyday-01",
+      "group": "everyday",
+      "title": "日常与其他活动 / 1",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "receive",
+          "index": 2,
+          "label": "接住任务",
+          "duration": 1900
+        },
+        {
+          "kind": "activity",
+          "id": "prepare",
+          "index": 1,
+          "label": "开工准备",
+          "duration": 1200
+        },
+        {
+          "kind": "activity",
+          "id": "keyboard",
+          "index": 2,
+          "label": "交替敲键",
+          "duration": 1900
+        },
+        {
+          "kind": "activity",
+          "id": "deliver",
+          "index": 1,
+          "label": "递交成果",
+          "duration": 1800
+        },
+        {
+          "kind": "activity",
+          "id": "finish_check",
+          "index": 2,
+          "label": "检查完成",
+          "duration": 2100
+        },
+        {
+          "kind": "activity",
+          "id": "pack_up",
+          "index": 1,
+          "label": "收工整理",
+          "duration": 1700
+        },
+        {
+          "kind": "activity",
+          "id": "research",
+          "index": 2,
+          "label": "戴镜研究",
+          "duration": 2820
+        },
+        {
+          "kind": "activity",
+          "id": "caught",
+          "index": 1,
+          "label": "走神被发现",
+          "duration": 1620
+        },
+        {
+          "kind": "activity",
+          "id": "ponder",
+          "index": 2,
+          "label": "认真思考",
+          "duration": 2270
+        },
+        {
+          "kind": "activity",
+          "id": "dizzy",
+          "index": 2,
+          "label": "转晕扶正",
+          "duration": 1900
+        },
+        {
+          "kind": "activity",
+          "id": "lifted",
+          "index": 1,
+          "label": "举起后回应",
+          "duration": 1300
+        },
+        {
+          "kind": "activity",
+          "id": "stretch",
+          "index": 2,
+          "label": "舒展身体",
+          "duration": 2200
+        }
+      ]
+    },
+    {
+      "id": "everyday-02",
+      "group": "everyday",
+      "title": "日常与其他活动 / 2",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "dance",
+          "index": 2,
+          "label": "轻快舞步",
+          "duration": 2360
+        },
+        {
+          "kind": "activity",
+          "id": "nap",
+          "index": 2,
+          "label": "困到点头",
+          "duration": 3000
+        },
+        {
+          "kind": "activity",
+          "id": "hero",
+          "index": 2,
+          "label": "交付时刻",
+          "duration": 2500
+        },
+        {
+          "kind": "activity",
+          "id": "attention",
+          "index": 2,
+          "label": "等待指示",
+          "duration": 2220
+        },
+        {
+          "kind": "activity",
+          "id": "toss",
+          "index": 2,
+          "label": "抛接方块",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "fold",
+          "index": 2,
+          "label": "折纸飞机",
+          "duration": 2450
+        },
+        {
+          "kind": "activity",
+          "id": "balance",
+          "index": 2,
+          "label": "平衡练习",
+          "duration": 2200
+        },
+        {
+          "kind": "activity",
+          "id": "cup",
+          "index": 1,
+          "label": "捧杯休息",
+          "duration": 2300
+        },
+        {
+          "kind": "activity",
+          "id": "tidy",
+          "index": 2,
+          "label": "整理自己",
+          "duration": 1800
+        },
+        {
+          "kind": "activity",
+          "id": "mimic",
+          "index": 2,
+          "label": "模仿指针",
+          "duration": 2100
+        },
+        {
+          "kind": "activity",
+          "id": "compare",
+          "index": 2,
+          "label": "左右对照",
+          "duration": 2400
+        },
+        {
+          "kind": "activity",
+          "id": "trace",
+          "index": 2,
+          "label": "沿线推演",
+          "duration": 2500
+        }
+      ]
+    },
+    {
+      "id": "everyday-03",
+      "group": "everyday",
+      "title": "日常与其他活动 / 3",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "organize",
+          "index": 2,
+          "label": "归整资料",
+          "duration": 2300
+        },
+        {
+          "kind": "activity",
+          "id": "inspect",
+          "index": 2,
+          "label": "放大检查",
+          "duration": 2500
+        },
+        {
+          "kind": "activity",
+          "id": "detective",
+          "index": 2,
+          "label": "小侦探",
+          "duration": 2600
+        },
+        {
+          "kind": "activity",
+          "id": "drums",
+          "index": 2,
+          "label": "无声鼓点",
+          "duration": 1650
+        },
+        {
+          "kind": "activity",
+          "id": "cards",
+          "index": 2,
+          "label": "整理卡片",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "paint",
+          "index": 2,
+          "label": "小画家",
+          "duration": 2750
+        },
+        {
+          "kind": "activity",
+          "id": "rain",
+          "index": 2,
+          "label": "撑伞时刻",
+          "duration": 2700
+        },
+        {
+          "kind": "activity",
+          "id": "gift",
+          "index": 2,
+          "label": "拆开礼物",
+          "duration": 2650
+        },
+        {
+          "kind": "activity",
+          "id": "failed",
+          "index": 1,
+          "label": "停下检查",
+          "duration": 1650
+        },
+        {
+          "kind": "activity",
+          "id": "wake",
+          "index": 1,
+          "label": "醒来看看",
+          "duration": 1150
+        },
+        {
+          "kind": "activity",
+          "id": "greet",
+          "index": 1,
+          "label": "再次见面",
+          "duration": 1100
+        },
+        {
+          "kind": "activity",
+          "id": "panel_takeout",
+          "index": 1,
+          "label": "取出并展示面板",
+          "duration": 1100
+        }
+      ]
+    },
+    {
+      "id": "everyday-04",
+      "group": "everyday",
+      "title": "日常与其他活动 / 4",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "panel_putaway",
+          "index": 1,
+          "label": "接回并收好面板",
+          "duration": 1040
+        },
+        {
+          "kind": "activity",
+          "id": "read_notes",
+          "index": 3,
+          "label": "翻阅笔记",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "compare_notes",
+          "index": 3,
+          "label": "核对笔记",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "remember_notes",
+          "index": 3,
+          "label": "回想记录",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "close_notes",
+          "index": 3,
+          "label": "合上笔记",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "write_notes",
+          "index": 3,
+          "label": "认真写几笔",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "pencil_think",
+          "index": 3,
+          "label": "转笔推敲",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "pencil_point",
+          "index": 3,
+          "label": "圈出重点",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "pencil_stow",
+          "index": 3,
+          "label": "整理文具",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "sand_watch",
+          "index": 3,
+          "label": "观察流沙",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "sand_turn",
+          "index": 3,
+          "label": "翻转沙漏",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "sand_wait",
+          "index": 3,
+          "label": "耐心等待",
+          "duration": 2250
+        }
+      ]
+    },
+    {
+      "id": "everyday-05",
+      "group": "everyday",
+      "title": "日常与其他活动 / 5",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "sand_check",
+          "index": 3,
+          "label": "看一眼时间",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "stamp_ready",
+          "index": 3,
+          "label": "准备印章",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "stamp_check",
+          "index": 3,
+          "label": "检查印章",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "stamp_done",
+          "index": 3,
+          "label": "盖章收工",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "stamp_clean",
+          "index": 3,
+          "label": "擦拭印章",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "flag_ready",
+          "index": 3,
+          "label": "举起小旗",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "flag_wave",
+          "index": 3,
+          "label": "挥旗示意",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "flag_cheer",
+          "index": 3,
+          "label": "摇旗庆祝",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "flag_stow",
+          "index": 3,
+          "label": "卷起小旗",
+          "duration": 2250
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_explore_0",
+          "index": 2,
+          "label": "探头",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_explore_1",
+          "index": 2,
+          "label": "发现线索",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_explore_2",
+          "index": 2,
+          "label": "恍然大悟",
+          "duration": 1680
+        }
+      ]
+    },
+    {
+      "id": "everyday-06",
+      "group": "everyday",
+      "title": "日常与其他活动 / 6",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "emotion_explore_3",
+          "index": 2,
+          "label": "跃跃欲试",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_explore_4",
+          "index": 2,
+          "label": "追根究底",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_deliberate_0",
+          "index": 2,
+          "label": "凝视",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_deliberate_1",
+          "index": 2,
+          "label": "推敲",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_deliberate_2",
+          "index": 2,
+          "label": "权衡",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_deliberate_3",
+          "index": 2,
+          "label": "回想",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "emotion_deliberate_4",
+          "index": 2,
+          "label": "灵感闪现",
+          "duration": 1680
+        },
+        {
+          "kind": "activity",
+          "id": "special_overload",
+          "index": 2,
+          "label": "认真过载",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_eureka",
+          "index": 2,
+          "label": "灵光一现",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_covert",
+          "index": 2,
+          "label": "偷偷观察",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_caught_red",
+          "index": 2,
+          "label": "被抓包",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_unravel",
+          "index": 2,
+          "label": "有点晕乎",
+          "duration": 4340
+        }
+      ]
+    },
+    {
+      "id": "everyday-07",
+      "group": "everyday",
+      "title": "日常与其他活动 / 7",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "special_composed",
+          "index": 2,
+          "label": "强装镇定",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_smug",
+          "index": 2,
+          "label": "得意邀功",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_companion",
+          "index": 2,
+          "label": "安心陪伴",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_juggling",
+          "index": 2,
+          "label": "忙而不乱",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_expectant",
+          "index": 2,
+          "label": "翘首等候",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_understood",
+          "index": 2,
+          "label": "突然理解",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_gingerly",
+          "index": 2,
+          "label": "小心翼翼",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_bashful",
+          "index": 2,
+          "label": "害羞躲闪",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_jubilant",
+          "index": 2,
+          "label": "闪耀庆典",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "special_apologetic",
+          "index": 2,
+          "label": "认真致歉",
+          "duration": 4340
+        },
+        {
+          "kind": "activity",
+          "id": "story_practice",
+          "index": 2,
+          "label": "偷偷练习递卡",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "story_delivery",
+          "index": 2,
+          "label": "练习后的熟练交付",
+          "duration": 3400
+        }
+      ]
+    },
+    {
+      "id": "everyday-08",
+      "group": "everyday",
+      "title": "日常与其他活动 / 8",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "story_acknowledge",
+          "index": 1,
+          "label": "收到确认后松口气",
+          "duration": 1500
+        },
+        {
+          "kind": "activity",
+          "id": "story_fidget",
+          "index": 2,
+          "label": "悄悄玩方块",
+          "duration": 4250
+        },
+        {
+          "kind": "activity",
+          "id": "story_hide_cube",
+          "index": 1,
+          "label": "被发现后藏好方块",
+          "duration": 1850
+        },
+        {
+          "kind": "activity",
+          "id": "story_resume_cube",
+          "index": 2,
+          "label": "等你走开再继续",
+          "duration": 4200
+        },
+        {
+          "kind": "activity",
+          "id": "story_letter",
+          "index": 2,
+          "label": "把纸张慢慢折好",
+          "duration": 4950
+        },
+        {
+          "kind": "activity",
+          "id": "story_return_letter",
+          "index": 2,
+          "label": "忙完取回那张纸",
+          "duration": 4450
+        },
+        {
+          "kind": "activity",
+          "id": "story_cleanup",
+          "index": 2,
+          "label": "忙完整理桌面",
+          "duration": 5050
+        },
+        {
+          "kind": "activity",
+          "id": "prop_stickyRoll",
+          "index": 3,
+          "label": "抽出一张便签",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_paperclip",
+          "index": 3,
+          "label": "夹好零散纸张",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_tapeMeasure",
+          "index": 3,
+          "label": "仔细量一量",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_eraser",
+          "index": 3,
+          "label": "轻轻擦掉重来",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_flashlight",
+          "index": 3,
+          "label": "照一照线索",
+          "duration": 5250
+        }
+      ]
+    },
+    {
+      "id": "everyday-09",
+      "group": "everyday",
+      "title": "日常与其他活动 / 9",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "prop_compass",
+          "index": 3,
+          "label": "看看哪个方向",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_puzzle",
+          "index": 3,
+          "label": "试拼一小块",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_spool",
+          "index": 3,
+          "label": "把思路理顺",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_folder",
+          "index": 3,
+          "label": "翻开文件夹",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_tray",
+          "index": 3,
+          "label": "练习端稳托盘",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_bookmark",
+          "index": 3,
+          "label": "标记想到的地方",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_bell",
+          "index": 3,
+          "label": "试试无声铃铛",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_brooch",
+          "index": 3,
+          "label": "擦亮小胸针",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_pinwheel",
+          "index": 3,
+          "label": "看风车转起来",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_yoyo",
+          "index": 3,
+          "label": "接住悠悠球",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_balloon",
+          "index": 3,
+          "label": "拉回飘走的气球",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_springToy",
+          "index": 3,
+          "label": "压一压弹簧",
+          "duration": 5250
+        }
+      ]
+    },
+    {
+      "id": "everyday-10",
+      "group": "everyday",
+      "title": "日常与其他活动 / 10",
+      "subtitle": "代表性关键帧 · 活动编号见下方索引",
+      "entries": [
+        {
+          "kind": "activity",
+          "id": "prop_blanket",
+          "index": 3,
+          "label": "把毯子盖好",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_fan",
+          "index": 3,
+          "label": "慢慢扇扇风",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_handwarmer",
+          "index": 3,
+          "label": "捧住暖手包",
+          "duration": 5250
+        },
+        {
+          "kind": "activity",
+          "id": "prop_plant",
+          "index": 3,
+          "label": "照看小盆栽",
+          "duration": 5250
+        }
+      ]
+    }
+  ]
+}
