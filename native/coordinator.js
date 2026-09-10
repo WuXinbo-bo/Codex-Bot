@@ -12,8 +12,9 @@ import { NativeCodex } from "./codex.js";
 import { createSourcePoller } from "./source-poller.js";
 import Appearance from "../src/appearance.js";
 import CompletionPolicy from "../shared/completion-policy.cjs";
-import { panelLayout, overlap } from "../shared/panel-layout.cjs";
+import { panelLayout } from "../shared/panel-layout.cjs";
 import { NoticeLane } from '../shared/notice-lane.cjs';
+import { TaskBoard } from '../shared/task-board.cjs';
 import { createUpdateManager } from "../shared/update-manager.cjs";
 
 export async function startCoordinator({ invoke, listen, receive, workbenchAdapter = null }) {
@@ -31,7 +32,11 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   }
   let setupVisible = !config.onboarding?.status && !boot.testMode;
   let settingsVisible = false;
-  const panelSize = () => rect(setupVisible ? 360 : 280, setupVisible ? 430 : settingsVisible ? 380 : 154);
+  const board = new TaskBoard();
+  let boardHovered = false, boardFocused = false, boardBusy = false;
+  const boardView = () => board.view(center.view(), visibleCompletions(), {manual:panelVisible,retain:retainCompletions(config),settings:settingsVisible});
+  const panelWanted = () => panelVisible || setupVisible || boardView().rows.length > 0;
+  const panelSize = () => rect(setupVisible ? 360 : 280, setupVisible ? 430 : settingsVisible ? 380 + Math.min(2, boardView().rows.length) * 52 : 64 + Math.max(1, Math.min(3, boardView().rows.length)) * 52);
   const center = new TaskCenter();
   center.saved = boot.stored["task-notices.json"] || {};
   const inbox = new CompletionInbox();
@@ -139,7 +144,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   let nextBoardLook=Date.now()+45000;
   let layoutQueue=Promise.resolve();
   let layoutRevision=0;const phaseVersions=new Map();
-  const requested=label=>label==='completions'?retainCompletions(config)&&inbox.items.size>0:label==='panel'?panelVisible:toastVisible;
+  const requested=label=>label==='completions'?false:label==='panel'?panelWanted():toastVisible;
   const phase=async(label,data)=>{const version=(phaseVersions.get(label)||0)+1;phaseVersions.set(label,version);await publish(label,'panel:phase',{...data,version});await publish('ball','panel:phase',{...data,version});};
   async function transitionWindow(label,show,focus=false){
     const revision=layoutRevision;
@@ -150,8 +155,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(show&&duration){
       await phase(label,{phase:'preparing',duration:0,label,side});
       await publish('ball','panel:phase',{phase:'preparing',duration:100,label,side});
-      await new Promise(r=>setTimeout(r,100));
-      if(revision!==layoutRevision)return;
     }
     const motion={phase:show?'entering':'leaving',duration,label,side};
     if(show){await win(label,'show',{focus});visibleWindows.set(label,true);}
@@ -169,17 +172,18 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     layoutQueue=result.catch(diagnostic);return result;
   }
   async function layoutChildren() {
-    completionVisible=requested('completions');
+    completionVisible=retainCompletions(config)&&inbox.items.size>0;
+    const wanted=panelWanted();
+    await publish('panel','board:update',{...boardView(),animation:config.notifications?.boardAnimation!==false&&config.appearance?.motion!=='reduced'});
     const specs=[];
-    if(panelVisible) specs.push({type:'panel',width:panelSize().width,height:panelSize().height,minHeight:rect(0,100).height});
-    if(completionVisible) specs.push({type:'completions',width:rect(280, visibleCompletions().length > 1 ? 76 : 50).width,height:rect(280, visibleCompletions().length > 1 ? 76 : 50).height});
+    if(wanted) specs.push({type:'panel',width:panelSize().width,height:panelSize().height,minHeight:rect(0,110).height});
     if(toastVisible) specs.push({type:'toast',width:rect(280,82).width,height:rect(280,82).height,persistent:!!noticeLane.peek()?.persistent});
     const laid=panelLayout(geometry,geometry.area,specs,8*geometry.scale);
     const byType=type=>laid.find(p=>p.type===type);
     for(const p of laid)panelTargets.set(p.type,p);
     layoutSuppressed.clear();
     for(const p of laid)if(p.deferred)layoutSuppressed.add(p.type);
-    if (panelVisible&&!layoutSuppressed.has('panel')) {
+    if (wanted&&!layoutSuppressed.has('panel')) {
       const next=byType('panel');
       panelBounds = bubblePosition(
         geometry,
@@ -190,6 +194,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       const side=next.x>=geometry.x+geometry.width?'right':next.x+next.width<=geometry.x?'left':next.y>=geometry.y+geometry.height?'bottom':'top';
       const offset=side==='left'||side==='right'?geometry.y+geometry.height/2-next.y:geometry.x+geometry.width/2-next.x;
       panelBounds={...next,side,tailOffset:clamp(offset,20*geometry.scale,(side==='left'||side==='right'?next.height:next.width)-20*geometry.scale)};
+      const shifted=constrain({x:next.x+boardOffset.x,y:next.y+boardOffset.y},{width:next.width,height:next.height});
+      if(!next.docked){panelBounds={...panelBounds,...shifted};panelTargets.set('panel',panelBounds);}
       await bounds("panel", panelBounds, {width:next.width,height:next.height});
       interaction.setBubbleBounds(panelBounds);
       await publish("panel", "bubble:placement", {
@@ -197,55 +203,42 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         tailOffset: panelBounds.tailOffset / geometry.scale,
       });
     }
-    if (completionVisible) {
-      const next=byType('completions');
-      const size = {width:next.width,height:next.height};
-      let pos=constrain({ x:next.x+boardOffset.x, y:next.y+boardOffset.y },size);
-      if(next.docked||!boardDrag&&(overlap({...pos,...size},geometry)||laid.some(p=>p.type!=='completions'&&!p.deferred&&overlap({...pos,...size},p)))){boardOffset={x:0,y:0};pos=next;}
-      panelTargets.set('completions',{...pos,...size});await bounds("completions",pos,size);
-    }
     if (toastVisible&&!layoutSuppressed.has('toast')) {
       const next=byType('toast');
       const size = {width:next.width,height:next.height};
       await bounds('toast',constrain({x:next.x,y:next.y},size),size);
     }
-    for(const [label,wanted] of [['completions',completionVisible],['panel',panelVisible],['toast',toastVisible]])await transitionWindow(label,wanted&&!layoutSuppressed.has(label));
-    await publish('completions','completion:visible',completionVisible);
+    for(const [label,show] of [['completions',false],['panel',wanted],['toast',toastVisible]])await transitionWindow(label,show&&!layoutSuppressed.has(label));
+    interaction.setBubbleVisible(wanted);
+    await publish('ball','bubble:visibility',wanted);
     armNoticeTimer();
     await publish('panel','panel:overflow',{count:layoutSuppressed.has('completions')?visibleCompletions().length:0});
   }
   async function showPanel(show, focus = false) {
     panelVisible = show;
+    if(!show){board.dismissTransient();settingsVisible=false;await publish('panel','board:settings-close',true);}
     interaction.setBubbleVisible(show);
     await placeChildren();
     if(show&&focus&&!layoutSuppressed.has('panel'))await win('panel','show',{focus:true});
-    await publish("ball", "bubble:visibility", show);
+    await publish("ball", "bubble:visibility", panelWanted());
     interact(show ? "bubble-open" : "bubble-close");
   }
   async function renderCompletions() {
     completionVisible = retainCompletions(config) && visibleCompletions().length > 0;
-    await publish('completions','completion:preferences',CompletionPolicy.normalize(config.notifications));
-    if(!completionVisible && visibleWindows.get('completions'))await placeChildren();
-    await publish(
-      "completions",
-      "completions:update",
-      visibleCompletions().map(({ id, title }) => ({ id, title })),
-    );
+    await publish('panel','completion:preferences',CompletionPolicy.normalize(config.notifications));
     await placeChildren();
-    await publish('completions','completion:visible',completionVisible&&!layoutSuppressed.has('completions'));
   }
   function visibleCompletions(){return [...inbox.items.values()];}
   async function checkCompletionPolicy(){
     if(stopping||policyFlight)return;policyFlight=true;
     try{
       const items=visibleCompletions();
-      if(visibleWindows.get('completions')&&!boardDrag&&Date.now()>nextBoardLook){
+      if(completionVisible&&visibleWindows.get('panel')&&!boardDrag&&Date.now()>nextBoardLook){
         nextBoardLook=Date.now()+45000;
-        const p=panelTargets.get('completions');
+        const p=panelTargets.get('panel');
         await publish('ball','panel:phase',{phase:'attending',duration:650,label:'completions',side:p&&p.x+ p.width/2<geometry.x+geometry.width/2?'left':'right'});
       }
-      if(completionVisible!==requested('completions'))await renderCompletions();
-      if(!completionVisible||boardDrag)return;
+      if(!completionVisible||boardDrag||boardHovered||boardBusy||boardFocused||drag.isActive()||config.notifications?.boardAnimation===false||config.appearance?.motion==='reduced')return;
       const candidate=items.map(item=>({item,...CompletionPolicy.evaluate(item,config.notifications)})).sort((a,b)=>b.stage-a.stage)[0];
       if(!candidate?.stage)return;
       const last=nudged.get(candidate.item.id)||{stage:0,at:0};
@@ -254,7 +247,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       if(pending&&Date.now()-pending.at<10000)return;
       const notice={id:candidate.item.id,stage:candidate.stage,at:Date.now()};
       pendingNudges.set(notice.id,notice);
-      await publish('completions','completion:nudge',notice);
+      await publish('panel','completion:nudge',notice);
     }finally{policyFlight=false;}
   }
   async function sync() {
@@ -266,12 +259,14 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await renderCompletions();
   }
   center.on("update", (view) => {
-    noticeLane.reconcile(view);syncNotices().catch(diagnostic);
+    // Lifecycle persistence must finish before a terminal snapshot replaces its card.
+    queueMicrotask(()=>{actions=actions.then(()=>placeChildren()).catch(diagnostic);});
     publish("panel", "status:update", view).catch(diagnostic);
     publish("ball", "indicator:update", view.indicator);
     persist("task-notices.json", center.saved).catch(() => {});
   });
   center.on("lifecycle", (events) => {
+    board.push(events);
     for (const e of events)
       lifecycle.set(e.id, {
         ...e,
@@ -501,6 +496,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       "ready",
       "settings",
       "panel-view",
+      "board-presentation", "board-task", "completion", "board-drag", "nudge-played",
       "setup", "environment", "pick-path", "connection-paths", "setup-finish", "diagnostic-copy",
       "retention",
       "completion-preferences",
@@ -524,6 +520,25 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (!allowed[from]?.has(type))
       throw new Error("Unauthorized window action");
     const [a, b] = args || [];
+    if(type==='board-presentation'){
+      const expired=board.tick(visibleWindows.get('panel'),boardHovered||boardFocused||boardBusy||!!boardDrag||drag.isActive());
+      boardHovered=a?.hovered===true;boardFocused=a?.focused===true;boardBusy=a?.busy===true;
+      board.presented=new Set(Array.isArray(a?.ids)?a.ids.filter(id=>typeof id==='string').slice(0,100):[]);
+      if(expired)await placeChildren();
+      return {ok:true};
+    }
+    if(type==='board-task'){
+      const row=boardView().rows.find(row=>row.id===a?.id);
+      if(!row||row.eventId!==a.eventId||!row.actions.includes(a.action))return {ok:false,error:'任务状态已变化，请重试'};
+      if(row.completionId)return action('panel','completion',[row.completionId,a.action]);
+      if(a.action==='open')return action('panel','open',[row.key]);
+      if(a.action==='copy'){await action('panel','task',[row.key,'copy']);return {ok:true};}
+      const entry=center.entries.get(row.key),snooze=a.action==='snooze';
+      await persist('task-notices.json',{...center.saved,[row.key]:{eventId:entry.eventId,acknowledged:!snooze,unread:snooze,snoozedUntil:snooze?Date.now()+300000:0}});
+      const current=center.entries.get(row.key);
+      if(current?.eventId===entry.eventId&&current.task.turnId===entry.task.turnId)center.action(row.key,a.action);
+      await placeChildren();return {ok:true};
+    }
     if(type==='notice-hover'){noticeHovered=a===true;armNoticeTimer();return {ok:true};}
     if(type==='notice-next'){noticeLane.next();await syncNotices();interact('panel-switch');return {ok:true};}
     if(type==='completion-navigate'){if(completionVisible)interact('panel-switch');return {ok:true};}
@@ -621,6 +636,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (type === "panel-view") {
       if(typeof a!=='boolean')throw Error('Invalid panel view');
       settingsVisible=a;
+      panelVisible=true;
       await placeChildren();
       return {ok:true};
     }
@@ -671,8 +687,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
           current.task.status === "completed"
         )
           center.action(item.taskId, "ack");
-        await renderCompletions();
         await interact('completion-confirmed',{taskId:item.taskId,turnId:item.turnId});
+        await renderCompletions();
         return { ok: true };
       } catch (e) {
         return { ok: false, error: String(e) };
@@ -694,23 +710,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         await persist("completion-inbox.json", [...inbox.items.values()]);
         await renderCompletions();
         await syncNotices();
-      } else if(['failed','attention'].includes(events[0].kind)) {
-        noticeLane.reconcile(center.view());await syncNotices();
       } else {
-        const labels = {
-          started: "开始任务",
-          joined: "已接入进行中的任务",
-          completed: "任务已完成",
-          failed: "任务失败",
-          attention: "需要你处理",
-          stopped: "任务已停止",
-        };
-        noticeLane.push({
-          id:events.map(e=>e.id).join('|'),taskIds:events.map(e=>e.taskId),
-          label: labels[events[0].kind],
-          title: events[0].title,
-          count: events.length,
-        });
         await syncNotices();
       }
       return true;
@@ -782,7 +782,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       }
     };
     if (
-      ["completion", "retention", "source", "task", "lifecycle",'notice-ack','completion-preferences'].includes(
+      ["completion", "retention", "source", "task", "lifecycle",'notice-ack','completion-preferences','board-task'].includes(
         request.action,
       )
     )
@@ -827,6 +827,9 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   await sync();
   if(setupVisible){await publish('panel','setup:visible',true);await showPanel(true,true);}
   setInterval(() => center.tick(), 1000);
+  setInterval(()=>{
+    if(board.tick(visibleWindows.get('panel')&&!setupVisible,boardHovered||boardFocused||boardBusy||!!boardDrag||drag.isActive()))placeChildren().catch(diagnostic);
+  },100);
   setInterval(()=>checkCompletionPolicy().catch(diagnostic),1000);
   if(!boot.testMode){await updates.start().catch(diagnostic);setInterval(()=>maybeUpdateNotice().catch(diagnostic),2000);}
   await refresh();
@@ -913,15 +916,15 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       const after = await invoke("inspect");
       if (
         !after.ball.visible ||
-        !after.completions.visible ||
+        !after.panel.visible || after.completions.visible ||
         Math.abs(
-          after.completions.x -
-            before.completions.x -
+          after.panel.x -
+            before.panel.x -
             (after.ball.x - before.ball.x),
         ) > 2 ||
         Math.abs(
-          after.completions.y -
-            before.completions.y -
+          after.panel.y -
+            before.panel.y -
             (after.ball.y - before.ball.y),
         ) > 2
       )
@@ -930,35 +933,35 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         throw new Error("Native movement drift");
       await showPanel(true);
       const expanded=await invoke('inspect');
-      if(!expanded.panel.visible||!expanded.completions.visible)throw Error('Opening panel dismissed retained completion');
+      if(!expanded.panel.visible||expanded.completions.visible||!boardView().rows.some(row=>row.completionId))throw Error('Opening panel dismissed retained completion');
       await handle({handled:true,ballInteractive:true,action:'drag-start',position:{x:geometry.x+5,y:geometry.y+5},interaction:{}});
       await movement;
       const dragged=await invoke('inspect');
-      if(!dragged.panel.visible||!dragged.completions.visible)throw Error('Dragging dismissed expanded panels');
+      if(!dragged.panel.visible||dragged.completions.visible)throw Error('Dragging dismissed unified panel');
       await handle({handled:true,ballInteractive:true,action:'drag-end',position:{x:geometry.x,y:geometry.y},interaction:{}});
       await showPanel(false);
-      if ((await invoke("inspect")).panel.visible)
-        throw new Error("Panel failed to hide");
+      if (!(await invoke("inspect")).panel.visible)
+        throw new Error("Manual collapse hid pending completion");
       await action("panel", "retention", [false]);
-      if ((await invoke("inspect")).completions.visible)
+      if ((await invoke("inspect")).panel.visible)
         throw new Error("Disabled reminders remained visible");
       await action("panel", "retention", [true]);
       const testId=[...inbox.items.keys()][0];
       await action('panel','completion-preferences',[{autoCloseCompletions:true,completionCloseMinutes:1}]);
       inbox.items.get(testId).receivedAt=Date.now()-61000;
       await renderCompletions();
-      if(!(await invoke('inspect')).completions.visible||!inbox.items.has(testId))throw Error('Legacy timeout dismissed an unconfirmed completion');
+      if(!(await invoke('inspect')).panel.visible||!inbox.items.has(testId))throw Error('Legacy timeout dismissed an unconfirmed completion');
       await action('panel','completion-preferences',[{autoCloseCompletions:false,completionEscalation:'angry'}]);
       const dragBefore=await invoke('inspect');
       // Drag away from the avatar so collision recovery does not mask DPI movement.
-      const dragDx=dragBefore.completions.x<dragBefore.ball.x?-20:20;
-      await action('completions','board-drag',[{phase:'start',x:100,y:100}]);
-      await action('completions','board-drag',[{phase:'end',x:100+dragDx,y:100}]);
+      const dragDx=dragBefore.panel.x<dragBefore.ball.x?-20:20;
+      await action('panel','board-drag',[{phase:'start',x:100,y:100}]);
+      await action('panel','board-drag',[{phase:'end',x:100+dragDx,y:100}]);
       const dragAfter=await invoke('inspect');
-      if(Math.abs(dragAfter.completions.x-dragBefore.completions.x-dragDx*geometry.scale)>2)throw Error(`Board drag DPI mismatch: ${JSON.stringify({before:dragBefore.completions,after:dragAfter.completions,scale:geometry.scale,dragDx})}`);
-      await action('completions','board-drag',[{phase:'reset'}]);
+      if(Math.abs(dragAfter.panel.x-dragBefore.panel.x-dragDx*geometry.scale)>2)throw Error(`Board drag DPI mismatch: ${JSON.stringify({before:dragBefore.panel,after:dragAfter.panel,scale:geometry.scale,dragDx})}`);
+      await action('panel','board-drag',[{phase:'reset'}]);
       if (boot.testMode !== "hold")
-        await action("completions", "completion", [
+        await action("panel", "completion", [
           [...inbox.items.keys()][0],
           "ack",
         ]);

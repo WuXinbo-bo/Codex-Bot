@@ -1,0 +1,101 @@
+# Unified Task Board
+
+## Ownership
+
+The native app uses one task surface: `panel`. `TaskCenter` owns actual task
+status and unread attention records; `CompletionInbox` owns durable completion
+acknowledgements; `TaskBoard` owns transient presentation, not task execution.
+The old completion webview remains hidden for host compatibility. Application
+update notices retain their existing independent update/installation workflow.
+The optional legacy Electron debug shell is not the production native path.
+
+Card identity is source + task + turn. Completion changes the same card to pale
+green and changes its actions from copy/open to acknowledge/open. An older
+unacknowledged turn remains separate when the same conversation starts again.
+Opening a link never acknowledges anything. The completion toggle hides records
+without deleting them; re-enabling it restores them. Restart restores the same
+durable inbox without changing its file format.
+
+## Visibility
+
+- Started, joined, resumed, queued and paused events create/coalesce transient
+  cards. Only actual visible, unpaused time consumes their four-second budget.
+- Hover, keyboard focus, outstanding actions and robot/board dragging pause
+  presentation. Offscreen cards do not consume the budget.
+- Manual expansion keeps active rows visible after transient presentation ends.
+- Collapse removes manual expansion and temporary cards, not pending records.
+- Unacknowledged completion, failure and stopped cards remain. Attention cards
+  remain until resolved or explicitly snoozed for five minutes.
+- Settings retain the pending cards above the settings content. Routine task
+  output and poll timestamps cannot restart card animations.
+- Known unread attention is retained when live evidence becomes inconclusive.
+
+The width is 280 logical pixels; rows are 48 pixels with four pixels separation.
+The normal viewport holds up to three rows and then scrolls. Settings reserve
+up to two pending rows above their own scrollable area. Existing visible row
+order stays stable during pointer/keyboard interaction; idle reconciliation
+places pending work first. Long titles truncate with the full title on hover.
+Task controls use icons and accessible names. No panel shadows are added.
+
+## Motion And Safety
+
+Entry is 220 ms, exit 160 ms, with no pre-entry sleep. The robot receives the
+same native panel-phase and lifecycle events used by the production renderer.
+Card state changes animate locally on the compositor; card acknowledgement has
+a 140 ms receipt gesture. Optional animation never gates notification delivery.
+Resumed and queued events reuse the existing varied work/arrival performances;
+paused events use the existing settling performances. No new art assets needed.
+
+Nudges target the completed card, not the whole window, and acknowledge their
+actual playback to the coordinator. Existing stage/cooldown caps remain in force.
+Reduced motion and disabled board animations suppress these effects. Board
+pointer moves coalesce before IPC; robot dragging retains the unified surface.
+
+Action requests carry card and event identities. Obsolete controls are rejected;
+late attention acknowledgements cannot acknowledge a newer task turn. Persisted
+acknowledgements precede UI removal. Lifecycle persistence runs before replacing
+a running card with its terminal state, preventing a brief hide between them.
+
+## Verification
+
+Run `node --test test/*.test.cjs` and `node scripts/build-tauri.cjs`.
+Against the local static server, run these scripts using Playwright CLI
+`run-code --filename`:
+
+- `test/unified-task-board.pw.js`: real coordinator and bridge, inline controls,
+  timed expiry, manual retention, completion retention, settings, multiple turns,
+  individual acknowledgement, four corners, board drag, restart restoration,
+  snooze/resume, hover pause, and rapid start-to-completion.
+- `test/unified-board-motion.pw.js`: actual start/completion performance state,
+  changed robot screenshot pixels, nudge playback, reduced motion, stale phase
+  and action rejection, entry/exit phases, and bounded native layout calls.
+- `test/unified-board-errors.pw.js`: pause/resume, retained failure and stopped
+  reminders, injected open/save failures, retry, and 360 x 420 work-area bounds.
+  Action errors stay inline so they cannot squeeze confirmation controls.
+
+Native verification: `node scripts/tauri.cjs build --no-bundle`, then
+`node scripts/test-native.cjs --dpi` and
+`node scripts/test-native.cjs --onboarding`. These run isolated test homes and do
+not confirm or alter the user's Codex tasks. Browser data are simulated; the
+native smoke test separately checks the installed Codex connection.
+
+Visual inspection artifacts are under ignored `output/playwright/unified-*`.
+The integration demo is `test/fixtures/panel-system.html`; it loads bounded
+production renderer instances and does not connect to the user's Codex account.
+
+## Results (2026-09-10)
+
+- 284 unit tests passed, including eight new board/lifecycle regression cases.
+- All three unified-board browser suites passed. Pixel comparisons confirmed
+  actual robot movement; task surfaces used 15 native bounds calls across the
+  motion scenario, not per-frame window movement.
+- Screenshots were inspected for completed cards, settings retention, actual
+  task acting/nudges, and a 360 x 420 work area at a 390-pixel browser viewport.
+- Native live-connection smoke passed at 150% scale, with pending retention,
+  board movement, manual collapse and preference migration checked.
+- Isolated missing-Codex/new-machine onboarding smoke passed.
+
+Physical mixed-DPI multi-monitor hardware was not available for this run;
+existing layout tests still cover negative coordinates and constrained areas.
+No GitHub release, version bump, installer publication or remote push is part
+of this change.

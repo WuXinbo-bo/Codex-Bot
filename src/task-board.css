@@ -1,0 +1,27 @@
+.panel-page .unified-board { grid-template-rows:auto minmax(0,1fr) auto; border-radius:8px; padding:8px; gap:6px; box-shadow:none; }
+.unified-board .task-scroll { grid-row:2; overflow:auto; scrollbar-width:thin; }
+.panel-page .unified-board .board-card { height:48px; margin:0 0 4px; border-radius:6px; padding:5px; gap:6px; background:#fff; transition:background-color 220ms; }
+.panel-page .unified-board .board-card:last-child { margin-bottom:0; }
+.unified-board .board-card[data-status="completed"] { background:#edf8ef; border-color:#c6e4cf; }
+.unified-board .board-card[data-status="needs_attention"] { background:#fff8e7; border-color:#ead7a1; }
+.unified-board .board-card[data-status="failed"] { background:#fff1f0; border-color:#edcbc7; }
+.unified-board .board-card[data-status="paused"],.unified-board .board-card[data-status="stopped"] { background:#f5f6f7; }
+.board-status { display:grid; place-items:center; flex:0 0 20px; width:20px; height:24px; color:#62726b; }
+.board-status svg { width:18px; height:18px; }
+.board-card[data-status="completed"] .board-status,.board-card[data-status="completed"] [data-action="ack"] { color:#27814b; }
+.board-card[data-status="needs_attention"] .board-status { color:#92701d; }
+.board-card[data-status="failed"] .board-status { color:#b24f47; }
+.unified-board .row-copy { min-width:0; flex:1; }
+.unified-board .row-copy strong { display:block; font-size:12px; font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.unified-board .brand-block { touch-action:none; cursor:grab; }
+.unified-board .brand-block:active { cursor:grabbing; }
+.panel-page .unified-board.settings-open { grid-template-rows:auto minmax(0,var(--board-cards-height,52px)) minmax(0,1fr) auto; }
+.panel-page .unified-board.settings-open .task-scroll { display:block !important; grid-row:2; }
+.panel-page .unified-board.settings-open:not(.has-board-cards) { grid-template-rows:auto minmax(0,1fr) auto; }
+.panel-page .unified-board.settings-open .task-scroll[hidden] { display:none !important; }
+.panel-page .unified-board.settings-open #diagnostics { grid-row:3; }
+.panel-page .unified-board.settings-open:not(.has-board-cards) #diagnostics { grid-row:2; }
+.panel-page .unified-board #feedback { grid-row:auto; max-height:32px; overflow:auto; font-size:11px; }
+.unified-board .board-action-error .row-copy { color:#a24137; }
+.panel-page .unified-board.inline-task-error:not(.settings-open) #feedback { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
+.board-no-motion *, .board-no-motion *::before { animation:none !important; transition:none !important; }

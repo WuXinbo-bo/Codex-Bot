@@ -8,6 +8,19 @@ const os = require("node:os");
 const path = require("node:path");
 
 const base = Date.parse("2026-09-08T00:00:00Z");
+test('each genuine pause or attention recovery emits resumed, not repeated starts',()=>{
+  const center=new TaskCenter({now:()=>base}),events=[];center.on('lifecycle',batch=>events.push(...batch));
+  for(const status of ['running','paused','running','running','needs_attention','running','paused','running'])update(center,[task(status)]);
+  assert.equal(events.filter(e=>e.kind==='resumed').length,3);
+  assert.equal(events.filter(e=>e.kind==='paused').length,2);
+  assert.equal(new Set(events.map(e=>e.id)).size,events.length);
+});
+test('inconclusive evidence retains the unanswered attention reminder until recovery',()=>{
+  const center=new TaskCenter({now:()=>base});update(center,[task('needs_attention')]);
+  const view=update(center,[task('unknown')]);
+  assert.equal(view.tasks[0].unread,true);assert.equal(view.tasks[0].reminderStatus,'needs_attention');
+  assert.equal(update(center,[task('running')]).tasks[0].unread,false);
+});
 test("quiet evidence restores the same known turn without duplicate lifecycle reminders", () => {
   const center = new TaskCenter({ now: () => base });
   const events = [];

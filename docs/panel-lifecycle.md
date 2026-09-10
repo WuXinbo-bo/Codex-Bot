@@ -1,5 +1,17 @@
 # Panel lifecycle contract
 
+## Unified native task board (2026-09-10)
+
+The current native app presents all task lifecycle notifications in `panel`.
+The separate `completions` surface is no longer shown; `toast` is reserved for
+application update notices, not task events. The earlier multi-window rules below
+are historical implementation notes, superseded by `unified-task-board.md`.
+
+Current regression entry points are `test/unified-task-board.pw.js`,
+`test/unified-board-motion.pw.js`, `test/task-board.test.cjs`, and the native
+smoke test. Older browser scripts expecting a visible `completions` or task
+`toast` window describe the retired layout and are not current acceptance gates.
+
 Completion records and window layout have different owners. A completion is
 durable until the user explicitly acknowledges its ID. Opening its task does
 not acknowledge it. Disabling completion reminders explicitly hides the board

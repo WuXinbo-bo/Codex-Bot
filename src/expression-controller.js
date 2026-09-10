@@ -226,7 +226,8 @@
     }
 
     function receiveLifecycle(events = []) {
-      for (const event of events) {
+      for (const original of events) {
+        const event = original && { ...original, kind: ({resumed:'started',queued:'joined',paused:'stopped'})[original.kind] || original.kind };
         if (!event?.id || lifecycleSeen.has(event.id)) continue;
         if(activity&&[56,57].includes(activity.priority)){cancelActivity('new-task');clearTimer('transient');transient=null;}
         lifecycleSeen.add(event.id);

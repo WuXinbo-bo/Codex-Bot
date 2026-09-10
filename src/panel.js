@@ -61,6 +61,7 @@
     $('snoozeButton').hidden = !entry.unread;
   }
   function renderList() {
+    if(window.metaBot?.onTaskBoard)return;
     $('activeCount').textContent = String(view.activeCount || 0);
     const filtered = visibleTasks();
     const visible = new Set(filtered.map(e => e.key));
