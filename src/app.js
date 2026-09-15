@@ -43,6 +43,7 @@
     ,onRandomControl: fn => { setRandomEnabled = fn; }
   });
 
+  const companionAvatar=window.MetaBotCompanionAvatar?.create({app,expressions,ball});
   function renderIndicator(detail = {}) {
     const status = String(detail.status || "offline");
     const total = Math.max(0, Number(detail.count) || 0);
@@ -68,7 +69,7 @@
     if(detail.duration)expressions?.interact('panel-phase',detail);
   });
   window.metaBot?.onIndicator(renderIndicator);
-  window.metaBot?.onInteraction((detail = {}) => {expressions?.interact(detail.type, detail);ball?.maskInteract(detail.type);});
+  window.metaBot?.onInteraction((detail = {}) => {if(!companionAvatar?.interact(detail)){expressions?.interact(detail.type, detail);ball?.maskInteract(detail.type);}});
   window.metaBot?.onMotionPreference?.((level) => {
     configuredMotionLevel = ["full", "soft", "reduced"].includes(level) ? level : "full";
     ball?.setMotionLevel(effectiveMotionLevel());
@@ -99,6 +100,7 @@
   window.__metaBotDebug = { getExpressionState: () => expressions?.getState(), getPerformanceState: () => performanceDiagnostics(), getMotionLevel: effectiveMotionLevel };
   window.addEventListener("beforeunload", () => {
     expressions?.stop();
+    companionAvatar?.destroy();
     ball?.destroy();
   });
 })();

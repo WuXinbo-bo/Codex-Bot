@@ -7,6 +7,7 @@
   <title>Meta Bot 状态</title>
   <link rel="stylesheet" href="./style.css">
   <link rel="stylesheet" href="./task-board.css">
+  <link rel="stylesheet" href="./companion.css">
 </head>
 <body class="panel-page">
   <section id="setup" hidden aria-label="首次连接向导">
@@ -35,6 +36,7 @@
         <div class="brand-line"><span id="headerDot" class="mini-dot offline" role="img" tabindex="0" aria-label="Codex 未连接"></span><strong>Codex Bot</strong></div>
       </div>
       <nav class="toolbar" aria-label="面板工具">
+        <button id="companionButton" class="icon-button" type="button" aria-label="陪伴工具" title="陪伴工具"><i data-lucide="house"></i></button>
         <button id="diagnosticsButton" class="icon-button" type="button" aria-label="设置与连接诊断" aria-expanded="false" data-tooltip="设置与连接诊断"><i data-lucide="settings"></i></button>
         <button id="refreshButton" class="icon-button" type="button" aria-label="刷新状态" data-tooltip="刷新状态"><i data-lucide="refresh-cw"></i></button>
         <button id="closeButton" class="icon-button" type="button" aria-label="收起气泡" data-tooltip="收起气泡"><i data-lucide="x"></i></button>
@@ -48,6 +50,7 @@
         <button type="button" class="settings-tab" data-settings-tab="appearance">外观皮肤</button>
         <button type="button" class="settings-tab" data-settings-tab="motion">动作与随机</button>
         <button type="button" class="settings-tab" data-settings-tab="updates">关于更新</button>
+        <button type="button" class="settings-tab" data-settings-tab="companion">陪伴</button>
       </nav>
       <div class="settings-section" data-settings-section="updates" hidden>
         <strong>Codex Bot <span id="updateVersion"></span></strong>
@@ -96,7 +99,7 @@
       </div>
       <div class="settings-section" data-settings-section="connection">
       <button id="setupReopen" type="button">连接向导与修复</button>
-      <label><input id="retainCompletions" type="checkbox" checked> 启用完成提醒（查看不清除，确认后清除）</label>
+      <label><input id="retainCompletions" type="checkbox" checked> 启用完成提醒（确认或成功查看后清除）</label>
       <label><input id="boardAnimation" type="checkbox" checked> 任务板甩出与催促动画</label>
       <label>未处理催促<select id="completionEscalation"><option value="off">关闭</option><option value="gentle">轻柔</option><option value="standard" selected>标准</option><option value="angry">生气</option></select></label>
       <label><input id="enabled-codex" type="checkbox"> Codex</label><output id="health-codex"></output>
@@ -116,6 +119,7 @@
   </main>
   <script src="../node_modules/lucide/dist/umd/lucide.min.js"></script>
   <script src="./appearance.js"></script><script src="./mask-system.js"></script><script src="./base-emotions.js"></script><script src="./m1-rig.js"></script><script src="./m1-accessories.js"></script><script src="./prop-scores.js"></script><script src="./activity-scores.js"></script><script src="./m1-activities.js"></script><script src="./m1-renderer.js"></script><script src="./companion-memory.js"></script><script src="./expression-controller.js"></script><script src="./panel-motion.js"></script><script src="./panel.js"></script><script src="./appearance-settings.js"></script>
+  <script src="./companion-system.js"></script><script src="./companion-panel.js"></script>
   <script src="./onboarding.js"></script>
   <script src="./updates.js"></script>
   <script src="./task-board.js"></script>

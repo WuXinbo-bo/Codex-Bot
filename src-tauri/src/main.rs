@@ -82,6 +82,7 @@ async fn native_op(
                 "config.json",
                 "task-notices.json",
                 "completion-inbox.json",
+                "companion.json",
                 "window-state.json",
                 "cache/snapshot.json",
             ];

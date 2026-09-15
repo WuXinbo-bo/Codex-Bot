@@ -51,6 +51,9 @@ if (tauri) {
     });
   };
   window.metaBot = {
+    onCompanion:fn=>subscribe('companion:update',fn),
+    onCompanionOpen:fn=>subscribe('companion:open',fn),
+    companion:(action,value={})=>request('companion',[action,value]),
     onUpdate: fn=>subscribe('update:state',fn),
     onUpdateOpen: fn=>subscribe('update:open',fn),
     getUpdateState: ()=>request('update-state'),

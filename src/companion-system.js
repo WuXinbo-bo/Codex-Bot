@@ -29,7 +29,7 @@
     cue(name,priority=35){if(this.state.enabled&&!this.state.sleeping){this.effects.push({name,priority});this.effects=this.effects.slice(-12);}}
     emit(name,priority=35){this.cue(name,priority);this.lastCue=this.now();}
     quiet(){return this.state.sleeping||this.state.focusUntil>this.now();}
-    snapshot(){return {...this.export(),tasks:this.tasks.map(e=>({key:e.key,turn:turnKey(e.task),title:e.task.title,status:e.task.status,active:e.active})),game:this.gameView(),lastResult:this.lastResult||'',focused:this.state.focusUntil>this.now()};}
+    snapshot(){return {...this.export(),tasks:this.tasks.filter(e=>e.active).map(e=>({key:e.key,turn:turnKey(e.task),title:e.task.title,status:e.task.status,active:e.active})),game:this.gameView(),lastResult:this.lastResult||'',focused:this.state.focusUntil>this.now()};}
     update(view){this.tasks=view.tasks||[];}
     record(task){const key=turnKey(task);let r=this.state.records.find(r=>r.key===key);if(!r){r={key,started:this.now(),failed:false,type:/测试|test|debug|bug|修复/i.test(task.title||'')?'inspect':/文档|readme|写作|整理/i.test(task.title||'')?'document':/分析|研究|检索|research/i.test(task.title||'')?'research':'code'};this.state.records.push(r);this.state.records=this.state.records.slice(-50);}return r;}
     lifecycle(events,entries){
@@ -47,7 +47,7 @@
         if(event.kind==='failed'){r.failed=true;event.companionCue='work_retry';}
         if(event.kind==='completed'){
           event.companionCue=r.failed?'work_recovered':this.now()-r.started>300000?'work_relief':'work_review';
-          if(!this.state.history.some(h=>h.key===key))this.state.history.unshift({key,task:copy(task),title:task.title||task.id,at:this.now()});
+          if(!this.state.history.some(h=>h.key===key))this.state.history.unshift({key,task:{source:task.source,id:task.id,turnId:task.turnId},title:String(task.title||task.id).slice(0,300),at:this.now()});
           this.state.history=this.state.history.slice(0,20);
           for(const note of this.state.notes.filter(n=>n.turn===key))this.alert('note:'+note.id,'便签：'+note.text);
           this.state.notes=this.state.notes.filter(n=>n.turn!==key);
@@ -56,12 +56,12 @@
       }
     }
     alert(id,title){if(!this.state.alerts.some(a=>a.id===id))this.state.alerts.push({id,title,at:this.now()});this.state.alerts=this.state.alerts.slice(-30);}
-    tick(){
+    tick({ambient=true}={}){
       let dirty=false;const now=this.now();
       if(this.state.timer&&now>=this.state.timer.until){this.alert('timer:'+this.state.timer.id,'沙漏计时结束');this.state.timer=null;this.emit('timer_done',45);dirty=true;}
       if(this.state.focusUntil&&now>=this.state.focusUntil){this.alert('focus:'+this.state.focusUntil,'专注时段结束，可以伸展一下');this.state.focusUntil=0;this.emit('stretch',35);dirty=true;}
       if(this.game&&now>=this.game.ends)this.endGame('小互动结束');
-      if(this.state.enabled&&!this.quiet()&&!this.game&&now-this.lastWork>45000&&now-this.lastCue>15000){
+      if(ambient&&this.state.enabled&&!this.quiet()&&!this.game&&now-this.lastWork>45000&&now-this.lastCue>15000){
         const active=this.tasks.find(t=>t.key===this.state.pinned&&t.active)||this.tasks.find(t=>t.active&&t.fresh);
         if(active){const r=this.record(active.task);this.emit(now-r.started>180000?'work_rest':now-r.started>60000?'work_wait':'work_'+r.type,15);}
         else this.emit('space_'+this.state.space,10);

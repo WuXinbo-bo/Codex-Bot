@@ -1,7 +1,8 @@
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'),require('./base-emotions.js'));
-  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory,root.MetaBotBaseEmotions);
-})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory,BaseEmotions) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'),require('./base-emotions.js'),require('./companion-performances.js'));
+  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory,root.MetaBotBaseEmotions,root.MetaBotCompanionPerformances);
+})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory,BaseEmotions,CompanionPerformances) {
+  Object.assign(Activities.CLIPS,CompanionPerformances?.clips);Object.assign(Activities.LABELS,CompanionPerformances?.labels);
   const LEGACY_POOLS = Object.freeze({
     offline: ["waiting", "calm", "neutral"],
     idle: ["neutral", "calm", "curious", "waiting"],
@@ -94,6 +95,8 @@
     let nextTheaterAt=now()+45000;
     let retainedTheaterCount=0;
     let randomEnabled = true;
+    let companionQuiet = false;
+    let companionInteraction = false;
     let pendingReminder = null;
     let taskKey = null;
     let freshState = false;
@@ -121,6 +124,7 @@
     const ambientMs=()=>ambientSpans.reduce((sum,s)=>sum+Math.max(0,s.end-Math.max(s.start,now()-300000)),0)+(activity?.priority===5?Math.max(0,now()-Math.max(activity.startedAt,now()-300000)):0);
     const activityReport=()=>({counts:structuredClone(activityStats),ambientMs:ambientMs()});
     function ambientAllowed(name){
+      if(companionQuiet)return false;
       while(ambientSpans.length&&ambientSpans[0].end<now()-300000)ambientSpans.shift();
       const limit=status==='running'?90000:150000;
       const jitter=Activities.THEATERS[name]?1.04:Activities.LABELS[name]&&!Activities.Scores.meta[name]&&!Activities.PropScores.meta[name]&&!Activities.NARRATIVES[name]&&!name.startsWith('performance_')?1.1:1;
@@ -263,7 +267,8 @@
       let narrative=null;
       if(kind==='completed')for(const event of events)if(!memoryEvents.has(event.id)){memoryEvents.add(event.id);narrative=memory.observe('completed')||narrative;}
       while(memoryEvents.size>128)memoryEvents.delete(memoryEvents.values().next().value);
-      const clip = (preferences.stories&&narrative) || pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
+      const companionClip='performance_companion_'+events.find(e=>e.companionCue)?.companionCue;
+      const clip = Activities.CLIPS[companionClip]?companionClip:(preferences.stories&&narrative) || pickPerformance(kind) || choices[Math.floor(random() * choices.length)];
       lifecycleCurrent = { kind, events, clip };
       if(kind==='completed'&&(Activities.PropScores.meta[clip]||Activities.Scores.meta[clip])){
         for(const e of events)completionProps.set(JSON.stringify([e.taskId,e.turnId||'']),(Activities.PropScores.meta[clip]||Activities.Scores.meta[clip]).prop);
@@ -631,6 +636,14 @@
 
     function interact(type, detail = {}) {
       if (!type) return current;
+      if(type==='companion-mode'){const wasQuiet=companionQuiet;companionQuiet=detail.quiet===true;companionInteraction=detail.active===true;if((companionQuiet&&!wasQuiet&&activity?.priority<50)||(detail.enabled===false&&activity?.name.startsWith('performance_companion_')))restoreBase();return current;}
+      if(type==='companion-cue'){
+        if(companionQuiet&&Number(detail.priority)<35)return current;
+        const name=Activities.CLIPS['performance_companion_'+detail.name]?'performance_companion_'+detail.name:detail.name;
+        if(motionLevel==='reduced')playTransient('micro_confirm',{priority:Math.min(48,Number(detail.priority)||35),duration:120});
+        else if(!dragging)playActivity(name,Math.min(48,Number(detail.priority)||35));
+        return current;
+      }
       if(type==='completion-confirmed'){
         const name=memory.observe('confirmed');
         const key=JSON.stringify([detail.taskId,detail.turnId||'']),prop=completionProps.get(key);completionProps.delete(key);
@@ -722,7 +735,11 @@
           setMotion({ mode: "settling", intensity: clamp(releaseSpeed / 1400, 0, 1) });
           const edge = String(detail.edgeDirection || "");
           const impact = edge.includes("left") ? "edge_left" : edge.includes("right") ? "edge_right" : edge.includes("top") ? "edge_top" : edge.includes("bottom") ? "edge_bottom" : "edge_impact";
-          if (orbited && !detail.edgeHit) { orbited = false; playActivity("dizzy", 80); }
+          if(companionInteraction&&!orbited&&motionLevel!=='reduced'){
+            cancelActivity('landed');clearTimer('transient');transient=null;
+            playActivity('performance_companion_'+(detail.edgeHit?'edge':'land'),56);
+          }
+          else if (orbited && !detail.edgeHit) { orbited = false; playActivity("dizzy", 80); }
           else if (!detail.edgeHit && releaseSpeed < 100) {
             if(panelOpen&&motionLevel!=='reduced'){const selected=pickPanel('move');playActivity(selected,56,null,Activities.Scores.panelFrames(selected,panelSide));}else restoreBase();
           }
