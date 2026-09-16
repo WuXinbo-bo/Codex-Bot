@@ -13,83 +13,23 @@
     ['water','一起浇花','按住水壶，在水位到达绿线时松开',20,'cup'],
     ['plane','纸飞机投递','从左边拖向邮筒，松手送出纸飞机',25,'fold']
   ].map(([id,label,hint,seconds,clip])=>({id,label,hint,seconds,clip}));
-  const SPACES={stool:'折叠小凳',mat:'工作垫',lamp:'小台灯',box:'收纳箱',plant:'小盆栽',tray:'道具托盘'};
-  const copy=value=>JSON.parse(JSON.stringify(value));
-  const turnKey=t=>JSON.stringify([t.source,t.id,t.turnId||'']);
   const finite=(n,min,max)=>Number.isFinite(Number(n))?Math.max(min,Math.min(max,Number(n))):min;
   class Companion {
     constructor(saved={},options={}){
       this.now=options.now||Date.now;this.random=options.random||Math.random;
-      this.state={enabled:true,mouse:true,space:'mat',sleeping:false,focusUntil:0,timer:null,notes:[],alerts:[],history:[],records:[],day:'',pinned:null,wateredAt:0,...copy(saved)};
-      for(const key of ['notes','alerts','history','records'])this.state[key]=Array.isArray(this.state[key])?this.state[key].slice(-50):[];
-      if(!Object.hasOwn(SPACES,this.state.space))this.state.space='mat';
-      this.tasks=[];this.game=null;this.effects=[];this.lastCue=0;this.lastGame=null;this.seen=new Set();this.lastWork=0;
+      this.state={enabled:saved.enabled!==false,mouse:saved.mouse!==false};
+      this.tasks=[];this.game=null;this.effects=[];this.lastGame=null;
     }
-    export(){return copy(this.state);}
-    cue(name,priority=35){if(this.state.enabled&&!this.state.sleeping){this.effects.push({name,priority});this.effects=this.effects.slice(-12);}}
-    emit(name,priority=35){this.cue(name,priority);this.lastCue=this.now();}
-    quiet(){return this.state.sleeping||this.state.focusUntil>this.now();}
-    snapshot(){return {...this.export(),tasks:this.tasks.filter(e=>e.active).map(e=>({key:e.key,turn:turnKey(e.task),title:e.task.title,status:e.task.status,active:e.active})),game:this.gameView(),lastResult:this.lastResult||'',focused:this.state.focusUntil>this.now()};}
+    export(){return {...this.state};}
+    emit(name,priority=35){if(this.state.enabled){this.effects.push({name,priority});this.effects=this.effects.slice(-12);}}
+    snapshot(){return {...this.export(),game:this.gameView(),lastResult:this.lastResult||''};}
     update(view){this.tasks=view.tasks||[];}
-    record(task){const key=turnKey(task);let r=this.state.records.find(r=>r.key===key);if(!r){r={key,started:this.now(),failed:false,type:/测试|test|debug|bug|修复/i.test(task.title||'')?'inspect':/文档|readme|写作|整理/i.test(task.title||'')?'document':/分析|研究|检索|research/i.test(task.title||'')?'research':'code'};this.state.records.push(r);this.state.records=this.state.records.slice(-50);}return r;}
-    lifecycle(events,entries){
-      for(const event of events){
-        if(this.seen.has(event.id))continue;this.seen.add(event.id);if(this.seen.size>256)this.seen.delete(this.seen.values().next().value);
-        const task=entries.get(event.taskId)?.task;if(!task)continue;
-        if(this.game)this.endGame('任务有新进展，先照看任务');
-        const r=this.record(task),key=turnKey(task);
-        if(['started','joined','resumed'].includes(event.kind)){
-          this.state.sleeping=false;
-          const day=new Date(this.now()).toLocaleDateString('en-CA');
-          event.companionCue=this.state.day!==day?'work_open':event.kind==='joined'?'work_join':event.kind==='resumed'?'work_resume':'work_'+r.type;
-          this.state.day=day;this.lastWork=this.now();
-        }
-        if(event.kind==='failed'){r.failed=true;event.companionCue='work_retry';}
-        if(event.kind==='completed'){
-          event.companionCue=r.failed?'work_recovered':this.now()-r.started>300000?'work_relief':'work_review';
-          if(!this.state.history.some(h=>h.key===key))this.state.history.unshift({key,task:{source:task.source,id:task.id,turnId:task.turnId},title:String(task.title||task.id).slice(0,300),at:this.now()});
-          this.state.history=this.state.history.slice(0,20);
-          for(const note of this.state.notes.filter(n=>n.turn===key))this.alert('note:'+note.id,'便签：'+note.text);
-          this.state.notes=this.state.notes.filter(n=>n.turn!==key);
-        }
-        if(!this.state.enabled)delete event.companionCue;
-      }
-    }
-    alert(id,title){if(!this.state.alerts.some(a=>a.id===id))this.state.alerts.push({id,title,at:this.now()});this.state.alerts=this.state.alerts.slice(-30);}
-    tick({ambient=true}={}){
-      let dirty=false;const now=this.now();
-      if(this.state.timer&&now>=this.state.timer.until){this.alert('timer:'+this.state.timer.id,'沙漏计时结束');this.state.timer=null;this.emit('timer_done',45);dirty=true;}
-      if(this.state.focusUntil&&now>=this.state.focusUntil){this.alert('focus:'+this.state.focusUntil,'专注时段结束，可以伸展一下');this.state.focusUntil=0;this.emit('stretch',35);dirty=true;}
-      if(this.game&&now>=this.game.ends)this.endGame('小互动结束');
-      if(ambient&&this.state.enabled&&!this.quiet()&&!this.game&&now-this.lastWork>45000&&now-this.lastCue>15000){
-        const active=this.tasks.find(t=>t.key===this.state.pinned&&t.active)||this.tasks.find(t=>t.active&&t.fresh);
-        if(active){const r=this.record(active.task);this.emit(now-r.started>180000?'work_rest':now-r.started>60000?'work_wait':'work_'+r.type,15);}
-        else this.emit('space_'+this.state.space,10);
-        this.lastWork=now;
-      }
-      return dirty;
-    }
+    lifecycle(events){if(events.length&&this.game)this.endGame('任务有新进展，先照看任务');}
+    tick(){if(this.game&&this.now()>=this.game.ends)this.endGame('小互动结束');}
     command(action,value={}){
-      const now=this.now();
       if(action==='preferences'){
         for(const k of ['enabled','mouse'])if(typeof value[k]==='boolean')this.state[k]=value[k];
-        if(value.space){if(!Object.hasOwn(SPACES,value.space))throw Error('未知生活物件');this.state.space=value.space;this.emit('space_'+value.space);}
         if(!this.state.enabled)this.endGame('陪伴已关闭');
-      }else if(action==='focus'){
-        const minutes=finite(value.minutes,0,120);this.state.focusUntil=minutes?now+minutes*60000:0;if(minutes)this.endGame('专注时段开始');this.emit(minutes?'focus_on':'pack',40);
-      }else if(action==='timer'){
-        const minutes=finite(value.minutes,0,120);this.state.timer=minutes?{id:String(now),until:now+minutes*60000}:null;this.emit('timer_set');
-      }else if(action==='note'){
-        const entry=this.tasks.find(e=>e.key===value.key&&e.active);const text=String(value.text||'').trim().slice(0,160);
-        if(!entry||!text)throw Error('请选择进行中的任务并填写便签');
-        const turn=turnKey(entry.task);this.state.notes=this.state.notes.filter(n=>n.turn!==turn);this.state.notes.push({id:turn+':'+now,turn,text});this.state.notes=this.state.notes.slice(-30);this.emit('note');
-      }else if(action==='remove-note'){this.state.notes=this.state.notes.filter(n=>n.id!==value.id);
-      }else if(action==='pin'){
-        if(value.key&&!this.tasks.some(e=>e.key===value.key&&e.active))throw Error('任务已不在进行中');this.state.pinned=value.key||null;this.emit('flag');
-      }else if(action==='water'){this.state.wateredAt=now;this.emit('water');
-      }else if(action==='sleep'){this.endGame('收拾好了，下次再玩');this.emit('pack',45);this.state.sleeping=true;
-      }else if(action==='wake'){this.state.sleeping=false;this.emit('work_open',40);
-      }else if(action==='ack'){this.state.alerts=this.state.alerts.filter(a=>a.id!==value.id);this.emit('file',40);
       }else if(action==='game'){this.startGame(value.id);
       }else if(action==='game-input'){this.input(value);
       }else if(action==='game-stop'){this.endGame('小物件已收好');
@@ -97,7 +37,7 @@
       return this.snapshot();
     }
     startGame(id){
-      if(!this.state.enabled||this.quiet())throw Error('先结束专注或唤醒机器人，再开始小互动');
+      if(!this.state.enabled)throw Error('先开启小互动');
       if(this.tasks.some(e=>e.fresh&&['needs_attention','failed'].includes(e.task.status)&&e.unread))throw Error('先处理任务提醒，再来玩');
       if(id==='random'){const choices=GAMES.filter(g=>g.id!==this.lastGame);id=choices[Math.floor(this.random()*choices.length)].id;}
       const spec=GAMES.find(g=>g.id===id);if(!spec)throw Error('未知小游戏');
@@ -136,7 +76,7 @@
       else if(attempt&&!['move'].includes(kind))g.message='差一点，慢慢来';
       return hit;
     }
-    endGame(reason){if(this.game){this.lastResult=reason+' · 配合 '+this.game.score+' 次';this.game=null;this.effects.push({name:'pack',priority:30});}}
+    endGame(reason){if(this.game){this.lastResult=reason+' · 配合 '+this.game.score+' 次';this.game=null;}}
   }
-  return {Companion,GAMES,SPACES,turnKey};
+  return {Companion,GAMES};
 });

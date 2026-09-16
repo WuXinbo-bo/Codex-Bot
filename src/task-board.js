@@ -51,7 +51,7 @@
       if(!row){row=create(item);rows.set(item.id,row);list.append(row);}
       const changed=row.item?.status!==item.status;
       if(changed)row.actionError='';
-      row.item=item;row.dataset.status=item.status;row.dataset.persistent=String(item.persistent);row.dataset.stale=String(Boolean(item.stale));row.dataset.pinned=String(Boolean(item.pinned));
+      row.item=item;row.dataset.status=item.status;row.dataset.persistent=String(item.persistent);row.dataset.stale=String(Boolean(item.stale));
       row.classList.toggle('board-action-error',Boolean(row.actionError));
       const title=row.querySelector('strong');title.textContent=row.actionError||item.title;title.title=row.actionError?`${item.title}\n${row.actionError}`:item.title;
       const status=row.querySelector('.board-status');

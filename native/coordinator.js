@@ -37,10 +37,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   const board = new TaskBoard();
   let boardHovered = false, boardFocused = false, boardBusy = false;
   const boardView = () => {
-    const value=board.view(center.view(), visibleCompletions(), {manual:panelVisible,retain:retainCompletions(config),settings:settingsVisible});
-    for(const row of value.rows)row.pinned=row.key===companion.state.pinned;
-    value.rows.push(...companion.state.alerts.map(a=>({id:'companion:'+a.id,eventId:a.id,title:a.title,status:'needs_attention',persistent:true,companionAlert:true,actions:['ack','open']})));
-    return value;
+    return board.view(center.view(), visibleCompletions(), {manual:panelVisible,retain:retainCompletions(config),settings:settingsVisible});
   };
   const panelWanted = () => panelVisible || setupVisible || boardView().rows.length > 0;
   const panelSize = () => rect(setupVisible ? 360 : 280, setupVisible ? 430 : settingsVisible ? 380 + Math.min(2, boardView().rows.length) * 52 : 64 + Math.max(1, Math.min(3, boardView().rows.length)) * 52);
@@ -83,7 +80,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(json!==lastCompanionJSON){lastCompanionJSON=json;await publish('ball','companion:update',value);await publish('panel','companion:update',value);}
     for(const effect of companion.effects.splice(0))if(companion.state.enabled)await interact('companion-cue',effect);
   }
-  async function openCompanion(group='work'){settingsVisible=true;panelVisible=true;await publish('panel','companion:open',{group});await placeChildren();}
+  async function openCompanion(){settingsVisible=true;panelVisible=true;await publish('panel','companion:open',{});await placeChildren();}
   const diagnostic = (e) => {
     console.error(e);
     publish("panel", "status:diagnostic", { message: String(e) }).catch(
@@ -283,15 +280,13 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     persist("task-notices.json", center.saved).catch(() => {});
   });
   center.on("lifecycle", (events) => {
-    const companionEntries=new Map([...center.entries].map(([key,entry])=>[key,{task:{...entry.task}}]));
-    if(companion.game)companion.endGame('任务有新进展，先照看任务');
-    actions=actions.then(async()=>{
-      companion.lifecycle(events,companionEntries);
-      companionSavePending=true;
-      interact("task-lifecycle", { events });
-      await saveCompanion();
-      await syncCompanion();
-    }).catch(diagnostic);
+    companion.lifecycle(events);
+    for(const event of events){
+      if(['started','joined','resumed'].includes(event.kind))event.companionCue='panel_receive';
+      else if(event.kind==='completed')event.companionCue='panel_stamp';
+    }
+    interact("task-lifecycle", { events });
+    syncCompanion().catch(diagnostic);
     board.push(events);
     for (const e of events)
       lifecycle.set(e.id, {
@@ -487,7 +482,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         releaseSpeed: detail.velocity?.speed || 0,
       });
     } else if (result.action === "ball-click") {
-      if(companion.state.enabled&&detail.ballPoint?.x<42&&detail.ballPoint?.y>90){await openCompanion('space');return;}
       interact("ball-click", detail);
       await showPanel(!panelVisible, true);
     } else if (result.action === "hide-bubble") await showPanel(false);
@@ -542,11 +536,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     toast: new Set(["ready",'notice-open','notice-ack','notice-next','notice-hover']),
   };
   let actions = Promise.resolve();
-  let companionSavePending=false;
-  async function saveCompanion(){
-    await persist('companion.json',companion.export());
-    companionSavePending=false;
-  }
   for(const type of ['update-state','update-check','update-download','update-install','update-preferences','update-dismiss','update-open'])allowed.panel.add(type);
   allowed.toast.add('update-open');allowed.toast.add('update-dismiss');
   async function action(from, type, args) {
@@ -556,15 +545,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(type==='companion'){
       if(a==='state'){await syncCompanion();return companion.snapshot();}
       if(a==='show'){await openCompanion();return {ok:true};}
-      if(a==='inspect'){await refresh();companion.emit('work_inspect',40);await syncCompanion();return {ok:true,message:health.codex?.state==='connected'?'Codex 已连接':'Codex 尚未连接，请检查连接设置'};}
-      if(a==='copy'||a==='history-open'){
-        const task=a==='copy'?center.entries.get(b?.key)?.task:companion.state.history.find(h=>h.key===b?.key)?.task;
-        if(!task)throw Error('任务已不可用');
-        await invoke(a==='copy'?'copy':'open',a==='copy'?{text:taskTarget(task,config)}:{url:taskTarget(task,config)});
-        companion.emit(a==='copy'?'fold':'file',40);await syncCompanion();return {ok:true};
-      }
       const previous=companion.export();
-      try{companion.command(a,b);if(!['game','game-input','game-stop'].includes(a))await persist('companion.json',companion.export());}
+      try{companion.command(a,b);if(a==='preferences')await persist('companion.json',companion.export());}
       catch(error){companion.state=previous;companion.effects=[];throw error;}
       await syncCompanion();await placeChildren();return {ok:true};
     }
@@ -578,7 +560,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(type==='board-task'){
       const row=boardView().rows.find(row=>row.id===a?.id);
       if(!row||row.eventId!==a.eventId||!row.actions.includes(a.action))return {ok:false,error:'任务状态已变化，请重试'};
-      if(row.companionAlert){if(a.action==='open'){await openCompanion();return {ok:true};}return action('panel','companion',['ack',{id:row.eventId}]);}
       if(row.completionId)return action('panel','completion',[row.completionId,a.action]);
       if(a.action==='open')return action('panel','open',[row.key]);
       if(a.action==='copy'){await action('panel','task',[row.key,'copy']);return {ok:true};}
@@ -739,7 +720,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         )
           center.action(item.taskId, "ack");
         await interact('completion-confirmed',{taskId:item.taskId,turnId:item.turnId});
-        companion.emit('file',48);await syncCompanion();
         await renderCompletions();
         return { ok: true };
       } catch (e) {
@@ -900,7 +880,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   let companionTickBusy=false;
   setInterval(()=>{
     if(stopping||companionTickBusy)return;companionTickBusy=true;
-    actions=actions.then(async()=>{const dirty=companion.tick({ambient:config.appearance?.random!==false&&config.appearance?.stories!==false&&config.appearance?.motion!=='reduced'});companionSavePending=companionSavePending||dirty;if(companionSavePending)await saveCompanion();await syncCompanion();if(dirty)await placeChildren();}).catch(diagnostic).finally(()=>{companionTickBusy=false;});
+    actions=actions.then(async()=>{companion.tick();await syncCompanion();}).catch(diagnostic).finally(()=>{companionTickBusy=false;});
   },1000);
   if (boot.testMode) {
     try {

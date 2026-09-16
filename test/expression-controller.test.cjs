@@ -55,7 +55,7 @@ test('rehearsal and acknowledgement connect to real lifecycle without extra task
   h.controller.update('idle',0,{quiet:true});h.controller.interact('activity-request',{name:'story_practice'});h.clock.advance(6000);
   h.controller.interact('task-lifecycle',{events:[{id:'story-done',kind:'completed',taskId:'a'}]});h.clock.advance(180);
   assert.equal(h.controller.getState().activity.name,'story_delivery');assert.deepEqual(events,['completed']);
-  h.controller.interact('completion-confirmed');assert.equal(h.controller.getState().activity.name,'story_acknowledge');assert.equal(read().story.afterglow,false);
+  h.controller.interact('completion-confirmed');assert.equal(h.controller.getState().activity.name,'performance_companion_panel_file');assert.equal(read().story.afterglow,false);
   h.controller.stop();assert.equal(h.clock.pending(),0);
 });
 test('noticed narrative hides its prop instead of resuming it immediately',()=>{

@@ -1,8 +1,3 @@
-.companion-space { position:absolute; left:1px; bottom:3px; width:42px; height:39px; z-index:2; pointer-events:none; }
-.companion-space svg { width:100%; height:100%; fill:#e4eee8; stroke:#668374; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
-.companion-space.is-lit svg { fill:#fff0a6; stroke:#8b7540; }
-.companion-space.is-sleeping { opacity:.65; }
-.lamp-rays { opacity:0; }.is-lit .lamp-rays { opacity:1; }
 .companion-tools { display:grid; gap:9px; padding:4px 0; }
 .companion-tools fieldset { min-width:0; margin:0; padding:8px; border:1px solid #dce5df; border-radius:8px; }
 .companion-tools legend { padding:0 4px; font-size:12px; font-weight:600; }
@@ -14,20 +9,13 @@
 .companion-tools button:hover { background:#edf5ef; }
 .companion-tools button:focus-visible { outline:2px solid #487559; outline-offset:1px; }
 .companion-tools button svg { width:14px; height:14px; vertical-align:middle; }
-.companion-tools select,.companion-tools input[type=text] { width:100%; }
+.companion-tools select { width:100%; }
 .companion-tools small { color:#607569; font-size:11px; }
-.companion-tools ul { list-style:none; padding:0; margin:4px 0; display:grid; gap:4px; }
-.companion-tools li { display:flex; align-items:center; gap:4px; font-size:11px; overflow-wrap:anywhere; }
-.companion-tools li span { flex:1; min-width:0; }
 .companion-tools #companionFeedback { color:#8d562e; font-size:11px; }
 .companion-game { position:relative; touch-action:none; border:1px solid #d4e2d8; border-radius:9px; background:#f3f8f4; overflow:hidden; height:132px; }
 .companion-game svg { width:100%; height:100%; display:block; }
 .companion-game:focus-visible { outline:2px solid #487559; }
 .companion-game text { font:10px 'Segoe UI',sans-serif; fill:#253e2e; text-anchor:middle; dominant-baseline:middle; }
 .companion-games-controls { display:flex; gap:4px; justify-content:center; }
-.companion-tools .space-buttons { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:4px; }
-.space-buttons button[aria-pressed=true] { border-color:#518165; background:#e6f1e9; }
-.companion-tools [data-companion-group][aria-pressed=true] { border-color:#518165; background:#e6f1e9; }
 .panel-page .settings-tabs { flex-wrap:wrap; }
-.board-card[data-pinned=true] .row-copy strong::before { content:'⚑ '; color:#947510; }
 .board-card .board-status[data-icon=stamp] { color:#27814b; }

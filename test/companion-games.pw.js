@@ -2,7 +2,6 @@ async(page)=>{
   await page.goto('http://127.0.0.1:4187/test/fixtures/panel-system.html?companion=1');
   await page.waitForFunction(()=>!!window.panelDemo);
   const panel=page.frameLocator('iframe[title="panel"]');
-  await panel.getByRole('button',{name:'短时互动',exact:true}).click();
   const ids=await panel.locator('#companionGameSelect option').evaluateAll(nodes=>nodes.map(n=>n.value));
   const passed=[];
   for(const id of ids){

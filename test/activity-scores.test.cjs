@@ -9,7 +9,7 @@ function harness(seed=61){
 }
 test('180 complete scores cover 108 base expressions and all 45 retained props',()=>{
   assert.equal(Object.keys(S.meta).length,180);assert.equal(Object.keys(A.CLIPS).filter(id=>!id.startsWith('performance_companion_')).length,435);
-  assert.equal(Object.keys(A.CLIPS).filter(id=>id.startsWith('performance_companion_')).length,35);
+  assert.equal(Object.keys(A.CLIPS).filter(id=>id.startsWith('performance_companion_')).length,11);
   assert.deepEqual(Object.values(S.meta).reduce((a,m)=>(a[m.type]=(a[m.type]||0)+1,a),{}),{emotion:96,task:36,panel:16,social:16,theater:12,continuation:4});
   const used=new Set(Object.values(S.clips).flat().map(f=>f.expression));
   for(const id of R.CORE_EXPRESSION_NAMES)assert.ok(used.has(id),id);
@@ -84,7 +84,8 @@ test('all mouse and panel choreography groups are used by actual interaction eve
     h.c.interact('task-lifecycle',{events:[{id:'confirm'+i,taskId:'a',turnId:String(i),kind:'completed'}]});h.advance(180);h.advance(8500);
     h.c.interact('completion-confirmed',{taskId:'a',turnId:String(i)});seen.add(h.c.getState().activity?.name);h.advance(20000);
   }
-  for(const [id,m] of Object.entries(S.meta).filter(([,m])=>['panel','social'].includes(m.type)||m.route==='confirmation'))assert.ok(seen.has(id),id);
+  for(const [id,m] of Object.entries(S.meta).filter(([,m])=>m.type==='social'||(m.type==='panel'&&m.route!=='confirm')))assert.ok(seen.has(id),id);
+  assert.ok(seen.has('performance_companion_panel_file'));
   h.c.stop();assert.equal(h.pending(),0);
 });
 test('a visible phase never truncates panel acting, and new task feedback preempts it',()=>{

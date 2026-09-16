@@ -636,7 +636,7 @@
 
     function interact(type, detail = {}) {
       if (!type) return current;
-      if(type==='companion-mode'){const wasQuiet=companionQuiet;companionQuiet=detail.quiet===true;companionInteraction=detail.active===true;if((companionQuiet&&!wasQuiet&&activity?.priority<50)||(detail.enabled===false&&activity?.name.startsWith('performance_companion_')))restoreBase();return current;}
+      if(type==='companion-mode'){const wasQuiet=companionQuiet;companionQuiet=detail.quiet===true;companionInteraction=detail.active===true;if((companionQuiet&&!wasQuiet&&activity?.priority<50)||(detail.enabled===false&&activity?.name.startsWith('performance_companion_')&&!activity.name.startsWith('performance_companion_panel_')))restoreBase();return current;}
       if(type==='companion-cue'){
         if(companionQuiet&&Number(detail.priority)<35)return current;
         const name=Activities.CLIPS['performance_companion_'+detail.name]?'performance_companion_'+detail.name:detail.name;
@@ -645,14 +645,15 @@
         return current;
       }
       if(type==='completion-confirmed'){
-        const name=memory.observe('confirmed');
+        memory.observe('confirmed');
         const key=JSON.stringify([detail.taskId,detail.turnId||'']),prop=completionProps.get(key);completionProps.delete(key);
-        if(preferences.stories&&!dragging&&['idle','completed','offline'].includes(status)){
+        if(!dragging&&['idle','completed','offline'].includes(status)){
           if(motionLevel==='reduced')playTransient('micro_confirm',{priority:57,duration:120});
-          else if(prop&&randomEnabled){
-            const selected=random()<.2?'theater_activity_take_delivery':pickPanel('confirm');
-            playActivity(selected,57,null,Activities.Scores.panelFrames(selected,panelSide,prop));
-          }else playActivity(name,57,null,prop?Activities.PropScores.confirmationFrames(prop):null);
+          else {
+            const name='performance_companion_panel_file';
+            const frames=prop?Activities.CLIPS[name].map((frame,index)=>index===0?{...frame,pose:{...frame.pose,accessories:{[prop]:{opacity:1}}}}:frame):null;
+            playActivity(name,57,null,frames);
+          }
         }
         return current;
       }

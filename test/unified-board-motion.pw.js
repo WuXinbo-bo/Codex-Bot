@@ -13,7 +13,7 @@ async(page)=>{
   if(pixelsA.equals(pixelsB))throw Error('Robot did not render actual motion');
   await page.getByRole('button',{name:'完成任务',exact:true}).click();
   await panel.locator('[data-status="completed"]').waitFor({state:'visible'});
-  await page.waitForFunction(()=>{const w=panelDemo.frames.ball.contentWindow,s=w.__metaBotDebug.getExpressionState();return s.activity?.priority===55&&(w.MetaBotActivities.PERFORMANCES.completed.some(id=>'performance_'+id===s.activity.name)||['work_review','work_recovered','work_relief'].some(id=>'performance_companion_'+id===s.activity.name));});
+  await page.waitForFunction(()=>{const w=panelDemo.frames.ball.contentWindow,s=w.__metaBotDebug.getExpressionState();return s.activity?.priority===55&&(w.MetaBotActivities.PERFORMANCES.completed.some(id=>'performance_'+id===s.activity.name)||s.activity.name==='performance_companion_panel_stamp');});
   const finish=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState().activity.name);
   await page.locator('#stage').screenshot({path:'output/playwright/unified-board-acting.png'});
   await page.mouse.move(1050,740);
