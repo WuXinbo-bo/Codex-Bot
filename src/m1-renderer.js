@@ -154,6 +154,7 @@
     let velocity = { ...REST };
     let motionMode = "idle";
     let armPose = current.arms;
+    let renderedBody = current.body;
     let performanceStarted = started;
     let beatStarted=started,beatMs=0,beatId=null;
     let performanceMs = 2600;
@@ -177,6 +178,7 @@
       const strength = (motionLevel === "reduced" ? 0 : motionLevel === "soft" ? 0.5 : 1)*art.amplitude;
       const breathe = active ? Math.sin((now - started) / 1250) * pose.breathe * strength : 0;
       const b = pose.body;
+      renderedBody = b;
       const sx = (motion.stretch + acting.squash) * strength;
       const cross = motion.cross * strength;
       // Exponentiating this traceless symmetric matrix preserves area in every drag direction.
@@ -533,7 +535,19 @@
     setExpression(expression,{duration:0});
     render(current, started);
     wake();
-    return { setAppearance, setExpression,
+    function projectPointer(point){
+      if(!point||!Number.isFinite(point.x)||!Number.isFinite(point.y))return null;
+      const matrix=body.getScreenCTM();if(!matrix)return null;
+      const local=new DOMPoint(point.x,point.y).matrixTransform(matrix.inverse()),b=renderedBody;
+      const result={x:64+(local.x-b.cx)*52/b.rx,y:64+(local.y-b.cy)*52/b.ry,inBody:body.isPointInFill(local)};
+      for(const [side,element]of [['left',leftArm],['right',rightArm]]){
+        const arm=armPose[side],m=element.getScreenCTM();if(!m||Number(element.getAttribute('opacity'))<.5)continue;
+        const hand=new DOMPoint(arm.x,arm.y).matrixTransform(m);
+        if(Math.hypot(point.x-hand.x,point.y-hand.y)<14)result.hand=side;
+      }
+      return result;
+    }
+    return { setAppearance, setExpression, projectPointer,
       getAccessoryExposure:()=>({...propExposure}),
       setPerformanceContext(value){performanceContext={...performanceContext,...value};if(value.theater){maskController?.clear(true);shapeDue=0;}wake();},
       setMask(name,chain){const ok=maskController?.preview(name,chain);wake();return ok;},

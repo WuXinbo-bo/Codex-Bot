@@ -69,7 +69,7 @@
     if(detail.duration)expressions?.interact('panel-phase',detail);
   });
   window.metaBot?.onIndicator(renderIndicator);
-  window.metaBot?.onInteraction((detail = {}) => {if(!companionAvatar?.interact(detail)){expressions?.interact(detail.type, detail);ball?.maskInteract(detail.type);}});
+  window.metaBot?.onInteraction((detail = {}) => {expressions?.interact(detail.type, detail);companionAvatar?.interact(detail);ball?.maskInteract(detail.type);});
   window.metaBot?.onMotionPreference?.((level) => {
     configuredMotionLevel = ["full", "soft", "reduced"].includes(level) ? level : "full";
     ball?.setMotionLevel(effectiveMotionLevel());
@@ -97,7 +97,7 @@
   window.metaBot?.onCompletionNudge?.(({stage})=>{
     expressions?.interact('completion-nudge',{stage});
   });
-  window.__metaBotDebug = { getExpressionState: () => expressions?.getState(), getPerformanceState: () => performanceDiagnostics(), getMotionLevel: effectiveMotionLevel };
+  window.__metaBotDebug = { getExpressionState: () => expressions?.getState(), getMouseState:()=>companionAvatar?.snapshot(), getPerformanceState: () => performanceDiagnostics(), getMotionLevel: effectiveMotionLevel };
   window.addEventListener("beforeunload", () => {
     expressions?.stop();
     companionAvatar?.destroy();

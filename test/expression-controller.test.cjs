@@ -50,6 +50,33 @@ function harness(settings = {}) {
   return { clock, controller, expressions, motions, gazes, active };
 }
 
+test('mouse playback yields to press, drag, task queues and game preference without consuming selection',()=>{
+  const {Director}=require('../src/mouse-director');const h=harness();h.clock.advance(1000);
+  h.controller.update('idle',0,{quiet:true});h.controller.interact('companion-mode',{active:true});
+  const d=new Director({now:h.clock.now,play:detail=>h.controller.playMouse(detail)});
+  h.controller.interact('press');assert.equal(d.emit('pet'),false);assert.equal(d.snapshot().accepted,0);
+  h.controller.interact('ball-click');assert.equal(d.emit('pet'),true);assert.match(h.controller.getState().activity.name,/performance_mouse_/);
+  h.controller.interact('drag-start');assert.equal(h.controller.playMouse({name:'performance_mouse_melt',group:'pet'}),false);
+  h.controller.interact('drag-end');
+  h.controller.interact('task-lifecycle',{events:[{id:'mouse-task',kind:'started',taskId:'mouse-task'}]});
+  assert.equal(h.controller.playMouse({name:'performance_mouse_soft',group:'landing'}),false);
+  h.clock.advance(200);assert.ok(!h.controller.getState().activity?.name.startsWith('performance_mouse_'));
+  h.controller.stop();h.controller.interact('companion-mode',{active:true,quiet:true});
+  assert.equal(h.controller.playMouse({name:'performance_mouse_melt',group:'pet'}),false);
+  h.controller.interact('companion-mode',{active:false,quiet:false,enabled:false});
+  assert.equal(h.controller.playMouse({name:'performance_mouse_melt',group:'pet'}),false);h.controller.stop();
+});
+
+test('reduced mouse response is brief and disabling mouse cancels its frames',()=>{
+  const h=harness();h.controller.update('idle',0,{quiet:true});h.controller.interact('companion-mode',{active:true});
+  h.controller.setMotionLevel('reduced');
+  assert.equal(h.controller.playMouse({name:'performance_mouse_melt',group:'pet'}),true);
+  assert.equal(h.controller.getState().activity,null);h.clock.advance(200);assert.equal(h.controller.getState().transient,null);
+  h.controller.setMotionLevel('full');assert.equal(h.controller.playMouse({name:'performance_mouse_melt',group:'pet'}),true);
+  h.controller.interact('companion-mode',{active:false,enabled:false});assert.equal(h.controller.getState().activity,null);
+  h.clock.advance(3500);assert.ok(!h.controller.getState().activity?.name.startsWith('performance_mouse_'));h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
 test('rehearsal and acknowledgement connect to real lifecycle without extra task events',()=>{
   const events=[];let read;const h=harness({onLifecycle:event=>events.push(event.kind),onPerformanceDiagnostics:fn=>read=fn});
   h.controller.update('idle',0,{quiet:true});h.controller.interact('activity-request',{name:'story_practice'});h.clock.advance(6000);

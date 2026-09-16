@@ -1,8 +1,9 @@
 (function (root, factory) {
-  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'),require('./base-emotions.js'),require('./companion-performances.js'));
-  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory,root.MetaBotBaseEmotions,root.MetaBotCompanionPerformances);
-})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory,BaseEmotions,CompanionPerformances) {
+  if (typeof module === "object" && module.exports) module.exports = factory(require("./m1-activities.js"),require('./appearance.js'),require('./companion-memory.js'),require('./base-emotions.js'),require('./companion-performances.js'),require('./mouse-performances.js'));
+  else root.MetaBotExpressionController = factory(root.MetaBotActivities,root.MetaBotAppearance,root.MetaBotCompanionMemory,root.MetaBotBaseEmotions,root.MetaBotCompanionPerformances,root.MetaBotMousePerformances);
+})(typeof self !== "undefined" ? self : globalThis, function (Activities,Appearance,Memory,BaseEmotions,CompanionPerformances,MousePerformances) {
   Object.assign(Activities.CLIPS,CompanionPerformances?.clips);Object.assign(Activities.LABELS,CompanionPerformances?.labels);
+  Object.assign(Activities.CLIPS,MousePerformances?.clips);Object.assign(Activities.LABELS,MousePerformances?.labels);
   const LEGACY_POOLS = Object.freeze({
     offline: ["waiting", "calm", "neutral"],
     idle: ["neutral", "calm", "curious", "waiting"],
@@ -636,7 +637,7 @@
 
     function interact(type, detail = {}) {
       if (!type) return current;
-      if(type==='companion-mode'){const wasQuiet=companionQuiet;companionQuiet=detail.quiet===true;companionInteraction=detail.active===true;if((companionQuiet&&!wasQuiet&&activity?.priority<50)||(detail.enabled===false&&activity?.name.startsWith('performance_companion_')&&!activity.name.startsWith('performance_companion_panel_')))restoreBase();return current;}
+      if(type==='companion-mode'){const wasQuiet=companionQuiet;companionQuiet=detail.quiet===true;companionInteraction=detail.active===true;if((companionQuiet&&!wasQuiet&&activity?.priority<50)||(detail.enabled===false&&(activity?.name.startsWith('performance_mouse_')||activity?.name.startsWith('performance_companion_')&&!activity.name.startsWith('performance_companion_panel_'))))restoreBase();return current;}
       if(type==='companion-cue'){
         if(companionQuiet&&Number(detail.priority)<35)return current;
         const name=Activities.CLIPS['performance_companion_'+detail.name]?'performance_companion_'+detail.name:detail.name;
@@ -829,6 +830,15 @@
       return motionLevel;
     }
 
+    function playMouse(detail={}){
+      if(!MousePerformances?.clips[detail.name]||!companionInteraction||companionQuiet||dragging||lifecycleQueue.size||['failed','needs_attention','unknown'].includes(status))return false;
+      const landing=detail.group==='landing';
+      if(transient?.priority>=50&&!(landing&&['performance_companion_land','performance_companion_edge'].includes(activity?.name)))return false;
+      const priority=landing?56:46;
+      if(motionLevel==='reduced')return playTransient('micro_confirm',{priority,duration:140,transition:100});
+      return playActivity(detail.name,priority,null,MousePerformances.frames(detail.name,detail));
+    }
+    function cancelMouse(){if(activity?.name.startsWith('performance_mouse_'))restoreBase();}
     function stop() {
       if (lifecycleTimer !== null) unschedule(lifecycleTimer);
       lifecycleTimer = null; lifecycleQueue.clear();
@@ -860,7 +870,7 @@
     });
     setMotionLevel(motionLevel);
     options.onPerformanceDiagnostics?.(()=>({activities:activityReport(),continuation:pendingScore?{...pendingScore}:null,props:{exposure:exposure(),source:options.getAccessoryExposure?'renderer':'timeline',followup:propFollowup?{...propFollowup}:null},base:baseDirector.snapshot(),history:performanceRecent.map(item=>({...item})),counts:Object.fromEntries(performanceHistory),story:memory.snapshot(),personality:preferences.personality,appearance:appearanceDirector.snapshot(),emotion:{...emotionMemory,intensity:emotionMemory.intensity*Math.exp(-(now()-emotionMemory.at)/60000)}}));
-    return { update, interact, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
+    return { update, interact, playMouse, cancelMouse, stop, setMotionLevel, getCurrent: () => current, getState: () => ({ status, count, current, activity: activity ? { ...activity } : null, suspendedActivity: suspendedActivity ? { ...suspendedActivity } : null, pendingReminder, transient: transient ? { ...transient } : null, motionLevel, recent: recent.slice(), baseDueAt, theater: { nextAt: nextTheaterAt, completed: Object.fromEntries(theaterCounts), events: theaterEvents.map(event => ({ ...event })), blocker: !randomEnabled ? "disabled" : motionLevel === "reduced" ? "reduced-motion" : transient ? "performing" : now() < nextTheaterAt ? "cooldown" : "ready" }, reaction: lastReaction ? { ...lastReaction } : null, mood: interactionMood(), pressStreak: now() - lastPressAt < 1600 ? pressStreak : 0 }), pools: POOLS };
   }
 
   return { POOLS, WEIGHTS, COOLDOWNS, poolFor, weightedPick, createSeededRandom, createExpressionController };

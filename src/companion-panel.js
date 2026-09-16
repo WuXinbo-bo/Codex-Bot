@@ -3,6 +3,7 @@
   const section=document.createElement('div');section.className='settings-section companion-tools';section.dataset.settingsSection='companion';section.hidden=true;
   section.innerHTML=`
     <div class="tool-row"><label><input id="companionEnabled" type="checkbox">短时互动</label><label><input id="companionMouse" type="checkbox">鼠标互动</label></div>
+    <small>头顶慢慢来回可以抚摸，身体两侧快速来回可以挠痒；靠近、绕圈或停在手边，看看它怎样回应。</small>
     <output id="companionFeedback" role="status"></output>
     <fieldset><legend>休息片刻 · 12 种小互动</legend><select id="companionGameSelect" aria-label="选择小互动"></select><div class="tool-row"><button id="startCompanionGame">开始</button><button id="randomCompanionGame">随机玩一个</button><button data-tool="game-stop">收好</button></div><small id="gameHint">每次 18–25 秒；任务有新进展时自动让路</small><div id="companionGame" class="companion-game" tabindex="0" aria-label="小互动区域，左右键移动，空格操作" hidden></div><div id="gameKeys" class="companion-games-controls" hidden><button data-game-x="20">左</button><button data-game-x="50">中</button><button data-game-x="80">右</button></div><output id="gameScore" role="status"></output><small>可用鼠标、左右键和空格；按住类玩法用空格按下与松开。纸飞机先在左侧按下，再移动到右侧松开。</small></fieldset>`;
   document.getElementById('diagnostics').append(section);

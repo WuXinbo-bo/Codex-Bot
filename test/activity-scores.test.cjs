@@ -8,7 +8,8 @@ function harness(seed=61){
   return {c,advance,calls,events,read:()=>diagnostics(),configure:v=>behavior(v),random:v=>randomControl(v),pending:()=>timers.size};
 }
 test('180 complete scores cover 108 base expressions and all 45 retained props',()=>{
-  assert.equal(Object.keys(S.meta).length,180);assert.equal(Object.keys(A.CLIPS).filter(id=>!id.startsWith('performance_companion_')).length,435);
+  assert.equal(Object.keys(S.meta).length,180);assert.equal(Object.keys(A.CLIPS).filter(id=>!/^performance_(companion|mouse)_/.test(id)).length,435);
+  assert.equal(Object.keys(A.CLIPS).filter(id=>id.startsWith('performance_mouse_')).length,30);
   assert.equal(Object.keys(A.CLIPS).filter(id=>id.startsWith('performance_companion_')).length,11);
   assert.deepEqual(Object.values(S.meta).reduce((a,m)=>(a[m.type]=(a[m.type]||0)+1,a),{}),{emotion:96,task:36,panel:16,social:16,theater:12,continuation:4});
   const used=new Set(Object.values(S.clips).flat().map(f=>f.expression));
