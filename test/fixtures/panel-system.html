@@ -1,6 +1,7 @@
 <!doctype html><html lang="zh-CN"><meta charset="utf-8"><title>真实面板集成演示</title>
 <style>body{font:14px system-ui;margin:12px;background:#f1f5f3;color:#243a30}button{padding:8px;margin:4px;border:1px solid #bfd1c7;border-radius:8px;background:white}#stage{position:relative;width:900px;height:520px;background:#e5ece8;border-radius:14px;overflow:hidden}iframe{position:absolute;border:0;background:transparent}#log{white-space:pre-wrap;font-size:12px}#wrap{overflow:auto}button:disabled{opacity:.5}</style>
 <p>仅模拟任务数据与系统窗口；使用生产 coordinator、bridge、机器人、任务板和通知界面。不会连接你的 Codex。</p>
+<p><a href="mouse-interactions.html">鼠标互动：30 套动作逐套预览与手势练习</a></p>
 <div id="buttons"><button data-action="show">展开面板</button><button data-action="hide">收起面板</button><button data-action="start">开始任务</button><button data-action="finish">完成任务</button><button data-action="both">多任务</button><button data-action="pause">暂停任务</button><button data-action="resume">继续任务</button><button data-action="attention">等待处理</button><button data-action="fail">任务失败</button><button data-action="stop">停止任务</button></div>
 <div id="wrap"><div id="stage"></div></div><output id="log">正在加载；若失败，请运行 node scripts/build-tauri.cjs</output>
 <script src="panel-system.js"></script></html>

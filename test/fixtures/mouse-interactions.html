@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="zh-CN"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>鼠标互动 · 30 套回应</title><link rel="icon" href="data:,">
+<style>
+*{box-sizing:border-box}body{margin:24px auto;padding:0 20px;max-width:820px;font:14px system-ui;color:#27352e;background:#f6f7f5}h1{font-size:22px}p{line-height:1.7}.controls{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0}button,select{font:inherit;background:white;border:1px solid #cbd5cd;border-radius:8px;padding:8px;max-width:100%}button{cursor:pointer}#stage{height:300px;display:grid;place-items:center;background:#fff;border:1px solid #dce2dd;border-radius:20px;touch-action:none}#avatar{width:128px;height:128px;pointer-events:none}output{display:block;margin:12px 0;min-height:44px;line-height:1.6;color:#516259}a{color:#346247}
+</style>
+<h1>鼠标互动 · 10 类 / 30 套回应</h1>
+<p>逐套预览只运行一个机器人。切换到“试试鼠标”后，在头顶缓慢来回抚摸、两侧快速挠动、身体下方左右移动、周围绕圈，或停在手边等它邀请击掌。按住机器人可以拖动。</p>
+<div class="controls"><select id="clip" aria-label="动作"></select><button id="previous">上一套</button><button id="next">下一套</button><button id="replay">重播</button><button id="live">试试鼠标</button></div>
+<div class="controls"><label>任务状态 <select id="status"><option value="idle">空闲</option><option value="running">执行中：小幅回应</option><option value="needs_attention">需要处理：任务优先</option></select></label><label><input id="reduced" type="checkbox">减少动态</label></div>
+<div id="stage"><div id="avatar"></div></div><output id="state" aria-live="polite"></output>
+<p><a href="panel-system.html?companion=1">真实任务板、鼠标输入与 12 种短时互动</a> · <a href="m1-visual.html">完整分页图册</a></p>
+<script src="../../src/base-emotions.js"></script><script src="../../src/m1-rig.js"></script><script src="../../src/m1-accessories.js"></script><script src="../../src/prop-scores.js"></script><script src="../../src/activity-scores.js"></script><script src="../../src/m1-activities.js"></script><script src="../../src/appearance.js"></script><script src="../../src/mask-system.js"></script><script src="../../src/m1-renderer.js"></script><script src="../../src/companion-memory.js"></script><script src="../../src/companion-performances.js"></script><script src="../../src/mouse-performances.js"></script><script src="../../src/mouse-director.js"></script><script src="../../src/expression-controller.js"></script><script src="../../src/companion-avatar.js"></script>
+<script src="mouse-interactions.js"></script></html>
