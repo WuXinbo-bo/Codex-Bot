@@ -23,12 +23,27 @@ test('completion uses the same card identity, survives all clocks and remains in
   assert.equal(b.view(view,[completion],{retain:false}).rows.length,0);
   assert.equal(b.view(view,[completion]).rows.length,1);
 });
-test('a new turn reuses and retains the unacknowledged task card without completed actions',()=>{
+test('a new turn reuses the card but releases old completion persistence',()=>{
   const b=new TaskBoard();const rows=b.view({tasks:[entry('running','two')]},[completion],{manual:true}).rows;
   assert.equal(rows.length,1);assert.equal(rows[0].id,cardId(key,'one'));
-  assert.equal(rows[0].status,'running');assert.equal(rows[0].persistent,true);assert.equal(rows[0].completionId,undefined);
+  assert.equal(rows[0].status,'running');assert.equal(rows[0].persistent,false);assert.equal(rows[0].completionId,undefined);
   assert.deepEqual(rows[0].actions,['copy','open']);
-  b.dismissTransient();assert.equal(b.view({tasks:[entry('running','two')]},[completion],{settings:true}).rows.length,1);
+  b.dismissTransient();assert.equal(b.view({tasks:[entry('running','two')]},[completion],{settings:true}).rows.length,0);
+});
+
+test('unconfirmed completion reruns expire normally for both same and new turns',()=>{
+  for(const turnId of ['one','two']){
+    let now=0;const b=new TaskBoard(()=>now);
+    const original=b.view({tasks:[entry('completed')]},[completion]).rows[0];
+    b.push([{id:'resume',kind:'resumed',taskId:key,turnId}]);
+    const view={tasks:[entry('running',turnId)]};
+    const running=b.view(view,[completion]).rows[0];
+    assert.equal(running.id,original.id);assert.equal(running.persistent,false);
+    b.presented.add(running.id);now=4000;b.tick(true,false);
+    assert.equal(b.view(view,[completion]).rows.length,0);
+    assert.equal(b.view(view,[completion],{manual:true}).rows.length,1);
+    b.dismissTransient();assert.equal(b.view(view,[completion]).rows.length,0);
+  }
 });
 
 test('new completion replaces retained turn with latest actions and old timers cannot hide it',()=>{
@@ -49,7 +64,8 @@ test('same-turn rerun cannot expose the old completion controls before its new r
 test('retained completion never masks pause, failure, attention or uncertain running state',()=>{
   const b=new TaskBoard();
   for(const status of ['running','queued','paused','needs_attention','failed','stopped','unknown']){
-    const row=b.view({tasks:[entry(status,'two')]},[completion]).rows[0];
+    const e=entry(status,'two');e.active=true;
+    const row=b.view({tasks:[e]},[completion],{manual:true}).rows[0];
     assert.equal(row.status,status);assert.equal(row.completionId,undefined);
   }
   assert.equal(b.view({tasks:[entry('running','two')]},[completion],{retain:false}).rows.length,0);

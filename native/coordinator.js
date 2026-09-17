@@ -51,6 +51,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   const nudged=new Map(),pendingNudges=new Map();let boardOffset={x:0,y:0},boardDrag=null,policyFlight=false;
   const oldCompletions=boot.stored['completion-inbox.json']||[];
   inbox.restore(oldCompletions);
+  inbox.discardSuperseded(center.saved);
   let completionMigrationError;
   if(JSON.stringify(oldCompletions)!==JSON.stringify([...inbox.items.values()])){
     try{await invoke('store',{name:'completion-inbox.json',value:[...inbox.items.values()]});}
@@ -76,6 +77,13 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     storage = result.catch((e) => diagnostic(e));
     return result;
   };
+  async function flushCompletions() {
+    const snapshot = JSON.stringify([...inbox.items.values()]);
+    try {
+      await persist('completion-inbox.json', JSON.parse(snapshot));
+      completionSaveDirty = snapshot !== JSON.stringify([...inbox.items.values()]);
+    } catch (error) { completionSaveDirty = true; throw error; }
+  }
   const publish = (target, topic, data) =>
     target === "ball"
       ? (receive({ topic, data }), Promise.resolve())
@@ -310,9 +318,16 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await renderCompletions();
   }
   center.on("update", (view) => {
+    if(inbox.discardSuperseded(center.saved))completionSaveDirty=true;
     syncCompanion().catch(diagnostic);
     // Lifecycle persistence must finish before a terminal snapshot replaces its card.
-    queueMicrotask(()=>{actions=actions.then(()=>placeChildren()).catch(diagnostic);});
+    queueMicrotask(()=>{actions=actions.then(async()=>{
+      if(completionSaveDirty){
+        try{await flushCompletions();}
+        catch(error){diagnostic(error);}
+      }
+      await placeChildren();
+    }).catch(diagnostic);});
     publish("panel", "status:update", view).catch(diagnostic);
     publish("ball", "indicator:update", view.indicator);
     persist("task-notices.json", center.saved).catch(() => {});
@@ -836,11 +851,11 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       noticeLane.removeUpdates();
       if (events[0].kind === "completed") {
         for (const e of events)
-          if (e.targetTask) {
+          if (e.targetTask && board.events.get(e.taskId)?.id===e.id && center.entries.get(e.taskId)?.task.status==='completed' && center.entries.get(e.taskId)?.task.turnId===e.turnId) {
             const { targetTask, ...notice } = e;
             inbox.add(notice, targetTask);
           }
-        try{await persist("completion-inbox.json", [...inbox.items.values()]);completionSaveDirty=false;}
+        try{await flushCompletions();}
         catch(error){completionSaveDirty=true;diagnostic(error);}
         await renderCompletions();
         await syncNotices();
@@ -971,7 +986,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(!completionSaveDirty||completionSaveQueued||stopping)return;
     completionSaveQueued=true;
     actions=actions.then(async()=>{
-      try{await persist('completion-inbox.json',[...inbox.items.values()]);completionSaveDirty=false;}
+      try{await flushCompletions();}
       finally{completionSaveQueued=false;}
     }).catch(diagnostic);
   },3000);
@@ -1055,7 +1070,9 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       center.update(buildSnapshot([continuedTask],{sources:{codex:'connected'}}));
       await actions;await placeChildren();
       const continuedRows=boardView().rows;
-      if(continuedRows.length!==1||continuedRows[0].id!==originalCard.id||continuedRows[0].status!=='running'||continuedRows[0].completionId||!continuedRows[0].persistent)throw Error('Native rerun duplicated or lost retained card');
+      if(continuedRows.length!==1||continuedRows[0].id!==originalCard.id||continuedRows[0].status!=='running'||continuedRows[0].completionId||continuedRows[0].persistent||inbox.items.size)throw Error('Native rerun duplicated the card or retained completion persistence');
+      await showPanel(false);
+      if((await invoke('inspect')).panel.visible)throw Error('Running card could not be collapsed');
       center.update(buildSnapshot([{...continuedTask,status:'completed',eventAt:new Date().toISOString()}],{sources:{codex:'connected'}}));
       await actions;await placeChildren();
       const savedCompletions=(await invoke('bootstrap')).stored['completion-inbox.json'];

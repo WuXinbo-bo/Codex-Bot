@@ -35,6 +35,12 @@ async(page)=>{
   await page.waitForFunction(()=>panelDemo.frames.panel.contentDocument.querySelectorAll('.board-card').length===2);
   await page.getByRole('button',{name:'完成任务',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.bot().inbox.items.size===2);
+  // Inbox persistence precedes rendering; inspect colors after the card's
+  // background transition reaches its completed-state value.
+  await page.waitForFunction(()=>{
+    const w=panelDemo.frames.panel.contentWindow,rows=[...w.document.querySelectorAll('.board-card')];
+    return rows.length===2&&rows.every(row=>row.dataset.status==='completed'&&w.getComputedStyle(row).backgroundColor==='rgb(237, 248, 239)');
+  });
   const shape=await panel.locator('.board-card').first().evaluate(el=>({color:getComputedStyle(el).backgroundColor,shadow:getComputedStyle(el).boxShadow,width:el.getBoundingClientRect().width}));
   if(shape.color!=='rgb(237, 248, 239)'||shape.shadow!=='none'||shape.width>270)throw Error('Card visual contract '+JSON.stringify(shape));
   await page.locator('#stage').screenshot({path:'output/playwright/unified-board-completions.png'});

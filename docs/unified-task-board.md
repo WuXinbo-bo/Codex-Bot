@@ -12,9 +12,10 @@ The optional legacy Electron debug shell is not the production native path.
 Card identity is source + task. Turn and event IDs version actions, not rows.
 Completion changes the same card to pale green and changes its actions from
 copy/open to acknowledge/open. If the same conversation starts again before
-confirmation, that card returns to its live state and stays visible; the newest
-completion replaces the old pending completion rather than adding another row.
-After confirmation, the next run shows a normal transient continuation card.
+confirmation, that card returns to its live state as a normal transient
+continuation card. It no longer inherits completion persistence. Authoritative
+continuation supersedes the old inbox record; a later completion becomes the
+only new pending completion. The same rule applies after confirmation.
 Distinct tasks and sources never merge, even when their titles match.
 Successfully opening a completed task acknowledges that task's pending completion, just
 like its checkmark. Opening an active, failed or attention task does not acknowledge
@@ -70,8 +71,9 @@ pointer moves coalesce before IPC; robot dragging retains the unified surface.
 Action requests carry card and event identities. Obsolete controls are rejected;
 late attention acknowledgements cannot acknowledge a newer task turn. Completion
 actions revalidate after opening Codex and after saving. If execution restarts
-during a save, the pending record is restored; no new-turn confirmation or filing
-gesture is emitted. Completion save failures retain the in-memory reminder and
+during a save, the latest inbox snapshot is saved; the superseded completion is
+not restored and no new-turn confirmation or filing gesture is emitted.
+Completion save failures retain the in-memory reminder and
 retry the latest inbox snapshot through the serialized action queue. Persisted
 acknowledgements precede UI removal. Lifecycle persistence runs before replacing
 a running card with its terminal state, preventing a brief hide between them.
@@ -87,12 +89,14 @@ Against the local static server, run these scripts using Playwright CLI
   individual acknowledgement, four corners, board drag, restart restoration,
   snooze/resume, hover pause, and rapid start-to-completion.
 - `test/task-card-continuation.pw.js`: three repeated runs on the same DOM card,
-  actual continuation gesture, retained running card, legacy duplicate migration,
+  actual continuation gesture, expiring/collapsible running card, legacy duplicate migration,
   restart after confirmation, delayed open/save races, old completion rejection,
   persistence retry and distinct tasks with matching titles.
-- `test/task-card-ack-failure.pw.js`: a failed/stopped run carrying an older
-  completion cannot partially acknowledge itself when the inbox write fails;
-  retry clears both durable records together.
+- `test/task-card-ack-failure.pw.js`: failure acknowledgement save errors allow
+  retry without restoring a superseded completion.
+- `test/task-card-resume-retention.pw.js`: same-turn resumption, independent
+  completion retention, failed cleanup retries, startup repair, and delayed
+  completion writes cannot make a running card persistent.
 - `test/unified-board-motion.pw.js`: actual start/completion performance state,
   changed robot screenshot pixels, nudge playback, reduced motion, stale phase
   and action rejection, entry/exit phases, and bounded native layout calls.
@@ -132,6 +136,9 @@ of this change.
 
 ## Task-card continuation verification (2026-09-17)
 
+The original running-card retention behavior in this section is superseded by
+the completion-only retention correction below.
+
 - All 308 Node tests pass, including task identity, old-turn rejection,
   same-turn continuation, legacy inbox consolidation and persistence rollback.
 - Browser checks pass three repeated runs on one DOM node, the production
@@ -146,3 +153,21 @@ of this change.
   one reused card and one latest persisted completion across a rerun; the live
   Codex connection is healthy and reports one active task in this run.
 - Isolated missing-Codex / uninitialized-home onboarding smoke passes.
+
+## Completion-only retention correction (2026-09-17)
+
+- Pending completion persistence belongs to the completed state, not the task
+  identity. Resuming in either the same turn or a new turn uses the same DOM
+  card, returns to the four-second visible-time budget, and allows collapse.
+- Manually expanded active tasks remain until collapsed. Unread failures,
+  stopped tasks and attention reminders keep their separate persistence rules.
+- Superseded completion records are removed using authoritative saved task
+  state, including during bootstrap. Missing/offline/unknown evidence alone
+  never dismisses a completion. Newer completions remain until acknowledged.
+- Queued obsolete completion callbacks are rejected. Inbox flushes compare
+  their saved snapshot to current memory so a concurrent state change still
+  receives a subsequent save; failed saves retain the retry flag.
+- Verified: 312 unit tests; continuation, resume-retention, acknowledgement
+  failure and unified-board browser suites; release configuration check;
+  native release build and 150% DPI live-connection smoke. The native smoke
+  also explicitly collapses the resumed task before completing it again.

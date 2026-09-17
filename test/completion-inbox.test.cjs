@@ -44,3 +44,34 @@ test('failed persistence does not silently acknowledge a completion', () => {
   assert.throws(() => inbox.acknowledge('a'));
   assert.ok(inbox.items.has('a'));
 });
+
+test('authoritative continuation retires old completion across same-turn and new-turn runs',()=>{
+  const key=JSON.stringify(['codex','a']);
+  for(const turn of ['one','two']){
+    const inbox=new CompletionInbox();
+    inbox.add({id:'done',turnId:'one',eventAt:'2026-09-17T00:00:00Z'},{source:'codex',id:'a'});
+    const saved={[key]:{eventId:JSON.stringify([turn,'running','2026-09-17T00:00:01Z']),retiredTurns:turn==='two'?['one']:[]}};
+    assert.equal(inbox.discardSuperseded(saved),true);
+    assert.equal(inbox.items.size,0);
+    assert.equal(inbox.add({id:'done',turnId:'one'},{source:'codex',id:'a'}),false);
+    inbox.add({id:'latest',turnId:turn,eventAt:'2026-09-17T00:00:02Z'},{source:'codex',id:'a'});
+    inbox.discardSuperseded(saved);assert.ok(inbox.items.has('latest'));
+  }
+});
+
+test('migration removes superseded completions but keeps missing, unknown and older evidence',()=>{
+  const key=JSON.stringify(['codex','a']);
+  const item={id:'done',turnId:'one',eventAt:'2026-09-17T00:00:00Z',task:{source:'codex',id:'a'}};
+  const inbox=new CompletionInbox();
+  for(const saved of [{},{[key]:{eventId:'invalid'}},{[key]:{eventId:'null'}},{[key]:{eventId:JSON.stringify(['one','unknown','2026-09-17T00:00:01Z'])}},{[key]:{eventId:JSON.stringify(['one','running','2026-09-16T00:00:00Z'])}}]){
+    inbox.restore([item]);assert.equal(inbox.discardSuperseded(saved),false);assert.equal(inbox.items.size,1);
+  }
+  assert.equal(inbox.discardSuperseded({[key]:{eventId:JSON.stringify(['one','running','2026-09-17T00:00:01Z'])}}),true);
+});
+
+test('superseded completion save failure keeps the original durable inbox for retry',()=>{
+  const inbox=new CompletionInbox();inbox.add({id:'done',turnId:'one'},{source:'codex',id:'a'});
+  inbox.save=()=>{throw Error('disk unavailable');};
+  assert.throws(()=>inbox.discardSuperseded({[JSON.stringify(['codex','a'])]:{retiredTurns:['one']}}));
+  assert.ok(inbox.items.has('done'));
+});

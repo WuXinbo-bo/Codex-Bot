@@ -44,7 +44,7 @@ class TaskBoard {
       const retained = pending.get(id);
       const status = entry.task.status === 'unknown' && entry.reminderStatus ? entry.reminderStatus : entry.task.status;
       const actionable = entry.unread && !entry.snoozedUntil && ['needs_attention', 'failed', 'stopped'].includes(status);
-      const persistent = actionable || Boolean(retained);
+      const persistent = actionable || Boolean(retained && status === 'completed');
       const notice = this.notices.get(id);
       const latestEvent=this.events.get(id);
       if(retained && status==='completed' && entry.task.turnId===retained.turnId && (!latestEvent || latestEvent.kind==='completed' && latestEvent.id===retained.id)){this.notices.delete(id);continue;}

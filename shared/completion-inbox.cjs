@@ -34,6 +34,25 @@ class CompletionInbox {
     fs.writeFileSync(`${this.file}.tmp`, JSON.stringify([...this.items.values()]));
     fs.renameSync(`${this.file}.tmp`, this.file);
   }
+  discardSuperseded(taskNotices) {
+    const previous = this.items;
+    this.items = new Map([...previous].filter(([, item]) => {
+      const saved = taskNotices[completionKey(item)];
+      if (!saved) return true;
+      if (item.turnId && saved.retiredTurns?.includes(item.turnId)) return false;
+      let event;
+      try { event = JSON.parse(saved.eventId); } catch { return true; }
+      if (!Array.isArray(event)) return true;
+      const [turn, status, at] = event;
+      // Only authoritative, same-turn execution evidence supersedes a completion.
+      // Missing tasks, offline snapshots and unknown status are not a dismissal.
+      const continued = ['running', 'queued', 'paused', 'needs_attention', 'failed', 'stopped'].includes(status);
+      return !(turn === item.turnId && continued && Date.parse(at) >= completionTime(item));
+    }));
+    if (this.items.size === previous.size) return false;
+    try { this.save(); } catch (error) { this.items = previous; throw error; }
+    return true;
+  }
   add(event, task) {
     if (this.seen.has(event.id)) return false;
     const item = { ...event, receivedAt: event.receivedAt || Date.now(), task: { source: task.source, id: task.id, title: event.title, turnId: event.turnId } };
