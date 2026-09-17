@@ -67,11 +67,14 @@ pub fn geometry(app: &AppHandle) -> Result<Value, String> {
 
 pub fn window(app: &AppHandle, args: &Value) -> Result<Value, String> {
     let label = args["label"].as_str().ok_or("Missing window label")?;
-    if !["ball", "panel", "completions", "toast"].contains(&label) {
+    if !["ball", "panel", "completions", "toast", "menu"].contains(&label) {
         return Err("Invalid window".into());
     }
     let win = app.get_webview_window(label).ok_or("Window not found")?;
     match args["action"].as_str().unwrap_or("") {
+        "raise" => unsafe {
+            SetWindowPos(win.hwnd().map_err(|e| e.to_string())?.0 as HWND, HWND_TOPMOST, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOACTIVATE);
+        },
         "hide" => win.hide().map_err(|e| e.to_string())?,
         "show" => {
             win.set_focusable(args["focus"] == true)
@@ -129,6 +132,8 @@ unsafe extern "system" fn mouse(code: i32, wparam: WPARAM, lparam: LPARAM) -> LR
             WM_MOUSEMOVE => Some("move"),
             WM_LBUTTONDOWN => Some("down"),
             WM_LBUTTONUP => Some("up"),
+            WM_RBUTTONDOWN => Some("right-down"),
+            WM_RBUTTONUP => Some("right-up"),
             _ => None,
         };
         if let (Some(kind), Some(app)) = (kind, APP.get()) {
@@ -159,7 +164,7 @@ pub fn start_input(app: &AppHandle) {
             let _ = app.emit_to(
                 "ball",
                 "native:mouse",
-                json!({"kind":kind,"x":x,"y":y,"button":1}),
+                json!({"kind":kind,"x":x,"y":y,"button":if kind.starts_with("right") {2} else {1}}),
             );
         }
     });

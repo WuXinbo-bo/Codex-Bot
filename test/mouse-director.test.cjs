@@ -46,10 +46,10 @@ test('a stationary pointer does not cause endless catch games; a hand click comp
   h=setup();h.move(10,40);h.advance(1300);h.d.tick();assert.equal(h.played.at(-1).name,'performance_mouse_five');
   h.d.input({type:'press',mousePoint:{x:20,y:25,hand:'left'}});h.d.input({type:'ball-click'});assert.equal(h.played.at(-1).name,'performance_mouse_bump');
 });
-test('task progress, games and disabled preferences cancel chains; work uses small reactions',()=>{
+test('task progress, quiet and disabled preferences cancel chains; work uses small reactions',()=>{
   const h=setup();h.d.emit('pet');h.d.input({type:'task-lifecycle'});assert.equal(h.d.snapshot().chain,null);
-  h.context.game={};h.advance(10000);assert.equal(h.d.emit('pet'),false);h.d.input({type:'hover-move',ballPoint:{x:50,y:25}});assert.equal(h.d.snapshot().samples,0);
-  h.context.game=null;h.context.status='running';assert.equal(h.d.emit('catch'),false);assert.equal(h.d.emit('pet'),true);assert.equal(h.played.at(-1).busy,true);
+  h.context.quiet=true;h.advance(10000);assert.equal(h.d.emit('pet'),false);h.d.input({type:'hover-move',ballPoint:{x:50,y:25}});assert.equal(h.d.snapshot().samples,0);
+  h.context.quiet=false;h.context.status='running';assert.equal(h.d.emit('catch'),false);assert.equal(h.d.emit('pet'),true);assert.equal(h.played.at(-1).busy,true);
   h.context.enabled=false;h.d.input({type:'hover-move',ballPoint:{x:50,y:25}});assert.equal(h.d.snapshot().chain,null);
 });
 
@@ -62,4 +62,12 @@ test('press and drag never initiate entertainment; release chooses a contextual 
   const h=setup();h.d.input({type:'press',ballPoint:{x:40,y:60}});assert.equal(h.d.emit('pet'),false);
   h.d.input({type:'drag-start'});assert.equal(h.d.emit('pet'),false);
   h.d.input({type:'drag-end',edgeHit:true,edgeDirection:'right'});assert.equal(h.played.at(-1).name,'performance_mouse_edge');assert.equal(h.played.at(-1).side,'right');
+});
+
+test('continuous response follows direction, decays on pause and stops for menu or urgent tasks',()=>{
+  const h=setup();h.move(35,25);h.d.emit('pet');assert.equal(h.d.response().kind,'pet');assert.ok(h.d.response().x<0);
+  h.move(85,25);assert.ok(h.d.response().x>0);h.advance(2800);assert.equal(h.d.response().intensity,0);
+  h.context.menu=true;assert.equal(h.d.response(),null);assert.equal(h.d.emit('pet'),false);
+  h.advance(10000);assert.equal(h.d.command('greet'),true);assert.equal(h.played.at(-1).explicit,true);
+  h.context.status='needs_attention';assert.equal(h.d.command('greet'),false);assert.equal(h.d.response(),null);
 });

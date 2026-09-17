@@ -1,0 +1,30 @@
+async(page)=>{
+  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+  await page.setViewportSize({width:1100,height:820});await page.goto('http://127.0.0.1:4187/test/fixtures/panel-system.html');await page.waitForFunction(()=>!!window.panelDemo);
+  const menu=page.frameLocator('iframe[title="menu"]'),panel=page.frameLocator('iframe[title="panel"]');
+  const open=async()=>{await page.evaluate(()=>{const g=panelDemo.bot().geometry();panelDemo.mouse({kind:'right-up',x:g.x+64*g.scale,y:g.y+64*g.scale});});await menu.getByRole('menu').waitFor({state:'visible'});};
+  await open();if(await menu.getByRole('menuitem').count()!==6)throw Error('Expected six root commands');
+  if(await page.evaluate(()=>panelDemo.windows.panel?.visible))throw Error('Right click toggled task board');
+  await page.locator('iframe[title="menu"]').screenshot({path:'output/playwright/context-menu-root.png'});
+  await menu.getByRole('menuitem',{name:'和它互动'}).click();await menu.getByRole('menuitem',{name:'伸个手',exact:true}).click();
+  await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getMouseState().events.some(e=>e.gesture==='invite-five'));
+  await page.waitForFunction(()=>!panelDemo.windows.menu.visible);
+  await open();await menu.getByRole('menuitem',{name:'安静一会儿'}).click();await menu.getByRole('menuitem',{name:'安静 15 分钟',exact:true}).click();
+  await page.waitForFunction(()=>panelDemo.bot().companion.snapshot().quietUntil>Date.now());
+  await page.getByRole('button',{name:'开始任务',exact:true}).click();await page.getByRole('button',{name:'完成任务',exact:true}).click();await panel.locator('[data-status="completed"]').waitFor();
+  await open();const before=await page.evaluate(()=>({...panelDemo.windows.menu}));
+  await page.getByRole('button',{name:'多任务',exact:true}).click();
+  const after=await page.evaluate(()=>panelDemo.windows.menu);if(before.x!==after.x||before.y!==after.y)throw Error('Task update moved open menu');
+  await menu.locator('#close').click();await page.waitForFunction(()=>!panelDemo.windows.menu.visible);
+  if(!await panel.locator('[data-status="completed"]').isVisible())throw Error('Closing menu hid completion');
+  await open();await page.evaluate(()=>panelDemo.mouse({kind:'down',x:880,y:500}));await page.waitForFunction(()=>!panelDemo.windows.menu.visible);
+  if(await page.evaluate(()=>panelDemo.bot().inbox.items.size)===0)throw Error('Outside click acknowledged task');
+  await open();await menu.getByRole('menuitem',{name:'外观与动作',exact:true}).click();await panel.locator('[data-settings-section="appearance"]').waitFor({state:'visible'});
+  await open();await menu.getByRole('menuitem',{name:'收到托盘',exact:true}).click();await page.waitForFunction(()=>!panelDemo.windows.ball.visible&&!panelDemo.windows.panel.visible);
+  await page.evaluate(()=>panelDemo.tray('show'));await page.waitForFunction(()=>panelDemo.windows.ball.visible&&panelDemo.windows.panel.visible);
+  if(await page.evaluate(()=>panelDemo.bot().inbox.items.size)===0)throw Error('Tray restore lost completion');
+  await page.evaluate(()=>panelDemo.resize(360,420));await open();const r=await page.evaluate(()=>panelDemo.windows.menu);if(r.x<0||r.y<0||r.x+r.width>360||r.y+r.height>420)throw Error('Menu clipped at screen edge');
+  await menu.getByRole('menuitem',{name:'查看任务',exact:true}).focus();await page.keyboard.press('Escape');await page.waitForFunction(()=>!panelDemo.windows.menu.visible);
+  if(errors.length)throw Error(errors.join('\n'));
+  return {root:6,manualInteraction:true,quietWithTaskReminders:true,stablePosition:true,completionRetained:true,outsideDismiss:true,settings:true,trayRestore:true,edges:true,escape:true,errors};
+}

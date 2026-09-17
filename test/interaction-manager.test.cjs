@@ -3,6 +3,13 @@ const assert = require("node:assert/strict");
 const { InteractionManager, InteractionState } = require("../shared/interaction-manager.cjs");
 const { createBallDragController } = require("../shared/ball-drag.cjs");
 
+test('visible hand hit regions extend the circular body without capturing outside the avatar window',()=>{
+  const m=new InteractionManager({dragController:createBallDragController({threshold:6}),extraBallHitTest:p=>p.x<15&&p.y<25});
+  m.setBallBounds({x:0,y:0,width:128,height:128});
+  assert.equal(m.hitTestBall({x:8,y:15}),true);assert.equal(m.hitTestBall({x:125,y:3}),false);assert.equal(m.hitTestBall({x:-5,y:15}),false);
+  assert.equal(m.handleMouseDown({x:8,y:15}).action,'press');assert.equal(m.handleMouseUp({x:8,y:15}).action,'ball-click');
+});
+
 test("InteractionManager handles ball click", () => {
   const dragController = createBallDragController({ threshold: 6 });
   const manager = new InteractionManager({

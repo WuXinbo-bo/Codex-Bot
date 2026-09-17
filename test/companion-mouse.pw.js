@@ -20,7 +20,7 @@ async(page)=>{
   await page.getByRole('button',{name:'开始任务',exact:true}).click();
   await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getExpressionState().activity?.name==='performance_companion_panel_receive');
   if(await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getMouseState().chain)!==null)throw Error('Task did not cancel chain');
-  await panel.locator('#companionButton').click();await panel.locator('#companionMouse').uncheck();
+  await panel.getByRole('button',{name:'设置与连接诊断',exact:true}).click();await panel.locator('[data-settings-tab="companion"]').click();await panel.locator('#companionMouse').uncheck();
   await page.waitForFunction(()=>panelDemo.bot().companion.state.mouse===false);
   const count=await page.evaluate(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getMouseState().accepted);
   for(const x of [.3,.5,.7,.5,.3,.5]){await move(x,.18);await page.waitForTimeout(100);}

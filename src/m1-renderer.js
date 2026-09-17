@@ -154,6 +154,8 @@
     let velocity = { ...REST };
     let motionMode = "idle";
     let armPose = current.arms;
+    let mouseResponse=null;
+    let mouseLayer={rotate:0,y:0,soft:0,reach:0};
     let renderedBody = current.body;
     let performanceStarted = started;
     let beatStarted=started,beatMs=0,beatId=null;
@@ -228,7 +230,7 @@
         path.setAttribute('transform',id==='sweatSlide'&&active&&motionLevel!=='reduced'?`translate(0 ${accentAge*8})`:'');
       }
       accents.setAttribute('transform',`translate(64 64) matrix(${a} ${off} ${off} ${d} 0 0) translate(-64 -64) translate(${b.cx} ${b.cy}) scale(${b.rx/52} ${b.ry/52}) translate(-64 -64)`);
-      const occupied=Boolean(Rig.BaseEmotions.entries[expression])||Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater;
+      const occupied=Boolean(Rig.BaseEmotions.entries[expression])||Object.values(pose.accessories).some(p=>p.opacity>.01)||Object.values(pose.arms).some(p=>p.opacity>.1)||performanceContext.panel||performanceContext.lifecycle||performanceContext.theater||performanceContext.quiet||performanceContext.menu;
       maskController?.context(occupied);
       const m=maskController?.tick(motionLevel==='reduced');
       faceMask.setAttribute('opacity',m?.visible?'1':'0');
@@ -429,7 +431,11 @@
       const wanted = tracking ? gazeTarget : {x:clamp(current.gaze.x+micro.gazeX*thought,-1,1),y:clamp(current.gaze.y+micro.gazeY*thought,-1,1)};
       gaze.x += (wanted.x - gaze.x) * gazeEase;
       gaze.y += (wanted.y - gaze.y) * gazeEase;
+      const response=reduced?null:mouseResponse,amount=response?.intensity||0;
+      const mouseTarget={rotate:response?(response.kind==='tickle'?-response.x*6:response.x*(response.kind==='pet'?9:4))*amount:0,y:response?(['pet','nest'].includes(response.kind)?-3:response.y)*amount:0,soft:response?.kind==='pet'?.08*amount:0,reach:response?.kind==='hand'?amount:0};
+      for(const key of Object.keys(mouseLayer))mouseLayer[key]+=(mouseTarget[key]-mouseLayer[key])*(reduced?1:1-Math.exp(-dt*6));
       const armTarget={left:{...current.arms.left,y:current.arms.left.y+micro.leftHand*thought},right:{...current.arms.right,y:current.arms.right.y+micro.rightHand*thought}};
+      if(response&&mouseLayer.reach>.01){const side=response.side==='right'?'right':'left',hand=armTarget[side];hand.x+=(Math.max(-6,Math.min(24,side==='left'?64+response.x*64:64-response.x*64))-hand.x)*mouseLayer.reach*.45;hand.y+=(Math.max(14,Math.min(60,64+response.y*64))-hand.y)*mouseLayer.reach*.45;}
       armPose = Rig.interpolate(armPose, armTarget, reduced ? 1 : 1 - Math.exp(-dt * (motionMode==='dragging'?22:appearance.artStyle==='clay'?7:appearance.artStyle==='rubber'?9:12)));
       for (let step = 0; step < 4; step += 1) {
         for (const key of Object.keys(REST)) {
@@ -443,6 +449,8 @@
         nextBlink = now + 3000 + random() * 3500;
       }
       const expressive={...current,body:{...current.body,cy:current.body.cy+micro.nod*thought,rotate:current.body.rotate+micro.lean*thought},eyes:{left:{...current.eyes.left,closed:clamp(current.eyes.left.closed+micro.left*thought,0,1)},right:{...current.eyes.right,closed:clamp(current.eyes.right.closed+micro.right*rightThought,0,1)}}};
+      expressive.body.rotate+=mouseLayer.rotate;expressive.body.cy+=mouseLayer.y;
+      expressive.eyes.left.closed=clamp(expressive.eyes.left.closed+mouseLayer.soft,0,1);expressive.eyes.right.closed=clamp(expressive.eyes.right.closed+mouseLayer.soft,0,1);
       render(expressive, now);
       const unsettled = Object.keys(REST).some((key) => Math.abs(motion[key] - motionTarget[key]) > 0.0001 || Math.abs(velocity[key]) > 0.001);
       if (active || maskController?.state().current || transitionDuration || unsettled || Math.hypot(gaze.x - wanted.x, gaze.y - wanted.y) > 0.001) wake();
@@ -548,6 +556,7 @@
       return result;
     }
     return { setAppearance, setExpression, projectPointer,
+      setMouseResponse(value,immediate=false){mouseResponse=value;if(immediate)mouseLayer={rotate:0,y:0,soft:0,reach:0};wake();},
       getAccessoryExposure:()=>({...propExposure}),
       setPerformanceContext(value){performanceContext={...performanceContext,...value};if(value.theater){maskController?.clear(true);shapeDue=0;}wake();},
       setMask(name,chain){const ok=maskController?.preview(name,chain);wake();return ok;},

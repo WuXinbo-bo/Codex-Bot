@@ -16,10 +16,10 @@ async(page)=>{
   const hand=await page.evaluate(()=>{
     const w=panelDemo.frames.ball.contentWindow,arms=[...w.document.querySelectorAll('[data-part^="arm-"]')],g=panelDemo.bot().geometry();
     const hands=arms.map(arm=>{const p=arm.getPointAtLength(arm.getTotalLength()-Math.sqrt(20));return new w.DOMPoint(p.x,p.y).matrixTransform(arm.getScreenCTM());}).sort((a,b)=>a.y-b.y);
-    const p=hands[0];return {x:g.x+p.x*g.scale,y:g.y+p.y*g.scale};
+    const p=hands[0];return {x:g.x+p.x*g.scale,y:g.y+p.y*g.scale,distance:Math.hypot(p.x-64,p.y-64)};
   });
   await page.evaluate(p=>{panelDemo.mouse({kind:'down',...p});panelDemo.mouse({kind:'up',...p});},hand);
-  await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getMouseState().events.some(e=>e.gesture==='high-five'),{},{timeout:5000});
+  try{await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.__metaBotDebug.getMouseState().events.some(e=>e.gesture==='high-five'),{},{timeout:5000});}catch(e){throw Error('Visible hand failed: '+JSON.stringify(hand));}
   await page.waitForFunction(()=>panelDemo.frames.ball.contentWindow.document.querySelector('#ballButton').getAttribute('aria-expanded')==='true');
   if(errors.length)throw Error(errors.join('\n'));
   return {nativeTickle:true,nativeOrbit:true,nativeMirror:true,visibleHandHighFive:true,clickStillOpensPanel:true,errors};

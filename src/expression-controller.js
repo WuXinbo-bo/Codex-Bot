@@ -97,6 +97,14 @@
     let retainedTheaterCount=0;
     let randomEnabled = true;
     let companionQuiet = false;
+    let dragRestTimer=null;
+    function armDragRest(){
+      if(dragRestTimer!==null)unschedule(dragRestTimer);
+      dragRestTimer=schedule(()=>{dragRestTimer=null;if(dragging&&companionInteraction&&!companionQuiet&&motionLevel!=='reduced'&&(!transient||transient.priority<=70)){
+        setGaze(0,.5);setMotion({mode:'dragging',y:-2,stretch:.025});
+        playTransient('hold',{priority:70,transition:350,pose:{body:{cy:65,rotate:3},arms:{left:Activities.poseFor('curious').arms.left,right:Activities.poseFor('steady').arms.right}}});
+      }},700);
+    }
     let companionInteraction = false;
     let pendingReminder = null;
     let taskKey = null;
@@ -222,6 +230,7 @@
     }
 
     function playSocial(group, priority = 28) {
+      if(companionQuiet&&priority<50)return false;
       if (dragging || transient?.priority >= 50 || transient?.priority > priority) return false;
       if(preferences.personality==='quiet'&&['hover','dwell','return'].includes(group))return playTransient('attentive',{priority,duration:450,transition:300});
       const name = pickReaction(group);
@@ -637,6 +646,17 @@
 
     function interact(type, detail = {}) {
       if (!type) return current;
+      if(type==='mouse-menu'){
+        if(!dragging&&!companionQuiet&&(!transient||transient.priority<46)){
+          if(motionLevel==='reduced')playTransient('micro_confirm',{priority:32,duration:120});
+          else {
+            const name='performance_companion_menu_'+(detail.visible?'offer':'stow');
+            const frames=detail.side==='left'?Activities.CLIPS[name].map(f=>({...f,pose:{...f.pose,body:{...f.pose.body,rotate:-(f.pose.body?.rotate||0)},arms:{left:f.pose.arms.right,right:f.pose.arms.left}}})):null;
+            playActivity(name,32,null,frames);
+          }
+        }
+        return current;
+      }
       if(type==='companion-mode'){const wasQuiet=companionQuiet;companionQuiet=detail.quiet===true;companionInteraction=detail.active===true;if((companionQuiet&&!wasQuiet&&activity?.priority<50)||(detail.enabled===false&&(activity?.name.startsWith('performance_mouse_')||activity?.name.startsWith('performance_companion_')&&!activity.name.startsWith('performance_companion_panel_'))))restoreBase();return current;}
       if(type==='companion-cue'){
         if(companionQuiet&&Number(detail.priority)<35)return current;
@@ -727,10 +747,11 @@
         }
         case "ball-click":
         case "hold-release": clearGaze(); setMotion({ mode: "settling", intensity: 0.3 }); releaseTransient(65); playSocial(type === "hold-release" ? "release" : pressStreak >= 3 ? "hold" : "click", 45); break;
-        case "drag-start": deferLifecycle(); dragFace = reactionPose("drag"); dragging = true; panelMoveStyle=(panelMoveStyle+1)%4;orbited = false; dragPose = "slow_drag"; setMotion({ mode: "dragging", stretch: -0.08, y: -3 }); if (motionLevel === "reduced") playTransient("lifted", { priority: 70 }); else playActivity("lifted", 70); break;
-        case "drag-move": updateDragMotion(detail); break;
+        case "drag-start": deferLifecycle(); dragFace = reactionPose("drag"); dragging = true; armDragRest();panelMoveStyle=(panelMoveStyle+1)%4;orbited = false; dragPose = "slow_drag"; setMotion({ mode: "dragging", stretch: -0.08, y: -3 }); if (motionLevel === "reduced") playTransient("lifted", { priority: 70 }); else playActivity("lifted", 70); break;
+        case "drag-move": armDragRest();updateDragMotion(detail); break;
         case "drag-orbit": orbited = true; playTransient("orbit", { priority: 78, duration: 420, next: () => ({ name: dragPose, priority: 70 }) }); break;
         case "drag-end": {
+          if(dragRestTimer!==null)unschedule(dragRestTimer);dragRestTimer=null;
           dragging = false;
           clearGaze();
           const releaseSpeed = Math.max(0, Number(detail.releaseSpeed ?? detail.velocity?.speed) || 0);
@@ -840,6 +861,7 @@
     }
     function cancelMouse(){if(activity?.name.startsWith('performance_mouse_'))restoreBase();}
     function stop() {
+      if(dragRestTimer!==null)unschedule(dragRestTimer);dragRestTimer=null;
       if (lifecycleTimer !== null) unschedule(lifecycleTimer);
       lifecycleTimer = null; lifecycleQueue.clear();
       cancelActivity(); pendingReminder = null; pendingPanel=null; panelContact=null; suspendedActivity = null; dragging = false; pointerNear = false;

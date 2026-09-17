@@ -12,7 +12,7 @@ fn client_request(
     id: u64,
     args: Value,
 ) -> Result<(), String> {
-    if !["ball", "panel", "completions", "toast"].contains(&window.label()) {
+    if !["ball", "panel", "completions", "toast", "menu"].contains(&window.label()) {
         return Err("Invalid caller".into());
     }
     window
@@ -39,7 +39,7 @@ async fn native_op(
         "geometry" => windows::geometry(&app),
         "inspect" => {
             let mut result = serde_json::Map::new();
-            for label in ["ball", "panel", "completions", "toast"] {
+            for label in ["ball", "panel", "completions", "toast", "menu"] {
                 if let Some(win) = app.get_webview_window(label) {
                     let p = win.outer_position().map_err(|e| e.to_string())?;
                     let s = win.outer_size().map_err(|e| e.to_string())?;
@@ -51,7 +51,7 @@ async fn native_op(
         "window" => windows::window(&app, &args),
         "publish" => {
             let target = args["target"].as_str().ok_or("Missing target")?;
-            if !["ball", "panel", "completions", "toast"].contains(&target) {
+            if !["ball", "panel", "completions", "toast", "menu"].contains(&target) {
                 return Err("Invalid target".into());
             }
             app.emit_to(target, "bridge:event", &args)
@@ -60,7 +60,7 @@ async fn native_op(
         }
         "reply" => {
             let target = args["target"].as_str().ok_or("Missing target")?;
-            if !["ball", "panel", "completions", "toast"].contains(&target) {
+            if !["ball", "panel", "completions", "toast", "menu"].contains(&target) {
                 return Err("Invalid target".into());
             }
             app.emit_to(target, "bridge:reply", &args)
@@ -140,6 +140,7 @@ fn main() {
                 ("panel", "panel.html", 320.0, 190.0),
                 ("completions", "completions.html", 320.0, 52.0),
                 ("toast", "lifecycle-toast.html", 260.0, 82.0),
+                ("menu", "context-menu.html", 204.0, 292.0),
                 ("ball", "index.html", 128.0, 128.0),
             ] {
                 let win = WebviewWindowBuilder::new(app, label, WebviewUrl::App(page.into()))
@@ -162,6 +163,9 @@ fn main() {
                     let app = app.handle().clone();
                     let label = label.to_owned();
                     move |event| {
+                        if label == "menu" && matches!(event, tauri::WindowEvent::Focused(false)) {
+                            let _ = app.emit_to("ball", "native:menu-dismiss", ());
+                        }
                         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
                             api.prevent_close();
                             let _ = app.emit_to("ball", "native:tray", "hide");
@@ -181,12 +185,12 @@ fn main() {
             let menu = tauri::menu::Menu::with_items(
                 app,
                 &[
-                    &tauri::menu::MenuItem::with_id(app, "show", "Show tasks", true, None::<&str>)?,
-                    &tauri::menu::MenuItem::with_id(app, "refresh", "Refresh", true, None::<&str>)?,
+                    &tauri::menu::MenuItem::with_id(app, "show", "显示机器人与任务", true, None::<&str>)?,
+                    &tauri::menu::MenuItem::with_id(app, "refresh", "刷新连接", true, None::<&str>)?,
                     &tauri::menu::MenuItem::with_id(
                         app,
                         "quit",
-                        "Quit Meta Bot",
+                        "退出 Codex Bot",
                         true,
                         None::<&str>,
                     )?,

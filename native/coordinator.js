@@ -17,10 +17,13 @@ import { NoticeLane } from '../shared/notice-lane.cjs';
 import { TaskBoard } from '../shared/task-board.cjs';
 import { createUpdateManager } from "../shared/update-manager.cjs";
 import CompanionSystem from '../src/companion-system.js';
+import { menuPosition, contains } from '../shared/context-menu.cjs';
 
-export async function startCoordinator({ invoke, listen, receive, workbenchAdapter = null }) {
+export async function startCoordinator({ invoke, listen, receive, workbenchAdapter = null, hitTestAvatar=()=>false }) {
   const boot = await invoke("bootstrap");
   const companion = new CompanionSystem.Companion(boot.stored['companion.json'] || {});
+  let menuVisible=false,menuBounds=null,tucked=false,menuRevision=0,quietTimer=null,mouseSequence=0,lastMenuJSON='';
+  const mouseRequests=new Map();
   let config = boot.stored["config.json"] || {};
   if(config.appearance?.schemaVersion!==2||(config.appearance.artStyle!=='auto'&&!Object.hasOwn(Appearance.ART_STYLES,config.appearance.artStyle))||config.appearance.eyeStyle!==Appearance.normalizeEye(config.appearance.eyeStyle)){
     config={...config,appearance:Appearance.migrate(config.appearance)};
@@ -78,7 +81,32 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     const value=companion.snapshot();
     const json=JSON.stringify(value);
     if(json!==lastCompanionJSON){lastCompanionJSON=json;await publish('ball','companion:update',value);await publish('panel','companion:update',value);}
-    for(const effect of companion.effects.splice(0))if(companion.state.enabled)await interact('companion-cue',effect);
+    await syncMenu();
+  }
+  const menuState=()=>({...companion.snapshot(),visible:menuVisible,side:menuBounds&&menuBounds.x+menuBounds.width/2<geometry.x+geometry.width/2?'left':'right',status:center.view().indicator?.status||'idle',reduced:config.appearance?.motion==='reduced'});
+  async function syncMenu(force=false){const value=menuState(),json=JSON.stringify(value);if(force||json!==lastMenuJSON){lastMenuJSON=json;await publish('menu','context-menu:update',value);}}
+  async function showMenu(show){
+    if(show&&(tucked||drag.isActive()||boardDrag))return;
+    const revision=++menuRevision;menuVisible=show;
+    if(show)interaction.cancel();
+    if(show&&!menuBounds)menuBounds=menuPosition(geometry,geometry.area,panelBounds&&visibleWindows.get('panel')?[panelBounds]:[],geometry.scale);
+    await publish('ball','context-menu:update',menuState());
+    if(show){
+      await bounds('menu',menuBounds,menuBounds);if(revision!==menuRevision)return;await syncMenu();if(revision!==menuRevision)return;await win('menu','show',{focus:true});
+    }else{
+      await syncMenu();
+      if(config.appearance?.motion!=='reduced')await new Promise(resolve=>setTimeout(resolve,110));
+      if(revision===menuRevision){await win('menu','hide');menuBounds=null;}
+    }
+  }
+  function armQuiet(){clearTimeout(quietTimer);const left=companion.quietUntil-Date.now();if(left>0)quietTimer=setTimeout(()=>syncCompanion().catch(diagnostic),left+10);}
+  async function requestMouse(command){
+    const id=++mouseSequence;
+    return new Promise(resolve=>{
+      const timer=setTimeout(()=>{mouseRequests.delete(id);resolve(false);},1500);
+      mouseRequests.set(id,{resolve:value=>{clearTimeout(timer);mouseRequests.delete(id);resolve(value);}});
+      interact('mouse-command',{command,id}).catch(()=>mouseRequests.get(id)?.resolve(false));
+    });
   }
   async function openCompanion(){settingsVisible=true;panelVisible=true;await publish('panel','companion:open',{});await placeChildren();}
   const diagnostic = (e) => {
@@ -144,6 +172,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   const interaction = new InteractionManager({
     dragController: drag,
     ballRadius: 64 * geometry.scale,
+    extraBallHitTest:point=>hitTestAvatar({x:(point.x-geometry.x)/geometry.scale,y:(point.y-geometry.y)/geometry.scale}),
     proximityRadius: 180 * geometry.scale,
     setTimeout: (fn, ms) => setTimeout(fn, ms),
     clearTimeout: (id) => clearTimeout(id),
@@ -184,6 +213,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     layoutQueue=result.catch(diagnostic);return result;
   }
   async function layoutChildren() {
+    if(tucked){for(const label of ['panel','completions','toast','menu']){await win(label,'hide');visibleWindows.set(label,false);}return;}
     completionVisible=retainCompletions(config)&&inbox.items.size>0;
     const wanted=panelWanted();
     await publish('panel','board:update',{...boardView(),animation:config.notifications?.boardAnimation!==false&&config.appearance?.motion!=='reduced'});
@@ -225,10 +255,11 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await publish('ball','bubble:visibility',wanted);
     armNoticeTimer();
     await publish('panel','panel:overflow',{count:layoutSuppressed.has('completions')?visibleCompletions().length:0});
+    if(menuVisible){await syncMenu();await win('menu','raise');}
   }
   async function showPanel(show, focus = false) {
     panelVisible = show;
-    if(!show){board.dismissTransient();settingsVisible=false;companion.endGame('小物件已收好');await syncCompanion();await publish('panel','board:settings-close',true);}
+    if(!show){board.dismissTransient();settingsVisible=false;await publish('panel','board:settings-close',true);}
     interaction.setBubbleVisible(show);
     await placeChildren();
     if(show&&focus&&!layoutSuppressed.has('panel'))await win('panel','show',{focus:true});
@@ -271,7 +302,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     await renderCompletions();
   }
   center.on("update", (view) => {
-    companion.update(view);
     syncCompanion().catch(diagnostic);
     // Lifecycle persistence must finish before a terminal snapshot replaces its card.
     queueMicrotask(()=>{actions=actions.then(()=>placeChildren()).catch(diagnostic);});
@@ -280,7 +310,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     persist("task-notices.json", center.saved).catch(() => {});
   });
   center.on("lifecycle", (events) => {
-    companion.lifecycle(events);
     for(const event of events){
       if(['started','joined','resumed'].includes(event.kind))event.companionCue='panel_receive';
       else if(event.kind==='completed')event.companionCue='panel_stamp';
@@ -442,6 +471,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   }
   let lastInteractive = null;
   async function handle(result) {
+    if(menuVisible||tucked)return;
     if (!result?.handled) return;
     if (lastInteractive !== Boolean(result.ballInteractive)) {
       lastInteractive = Boolean(result.ballInteractive);
@@ -489,6 +519,19 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   }
   interaction.on("action", (r) => handle(r).catch(diagnostic));
   await listen("native:mouse", (e) => {
+    if(tucked)return;
+    if(e.kind==='right-up'){
+      if(interaction.hitTestBall(e)&&!drag.isActive())showMenu(!menuVisible).catch(diagnostic);
+      return;
+    }
+    if(e.kind==='right-down'){
+      if(menuVisible&&!contains(menuBounds,e)&&!interaction.hitTestBall(e))showMenu(false).catch(diagnostic);
+      return;
+    }
+    if(menuVisible){
+      if(e.kind==='down'&&!contains(menuBounds,e))showMenu(false).catch(diagnostic);
+      return;
+    }
     const result =
       e.kind === "down"
         ? interaction.handleMouseDown(e)
@@ -500,9 +543,11 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   await listen("native:geometry", () => {
     if (!moving)
       invoke("geometry")
-        .then((g) => {
+        .then(async(g) => {
           geometry = g;
           interaction.setBallBounds(g);
+          interaction.ballRadius=64*g.scale;interaction.proximityRadius=180*g.scale;
+          if(menuVisible){menuBounds=null;await showMenu(true);}
           return placeChildren();
         })
         .catch(diagnostic);
@@ -511,8 +556,10 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     diagnostic(e);
     publish("ball", "input:fallback", true);
   });
+  await listen('native:menu-dismiss',()=>{if(menuVisible)showMenu(false).catch(diagnostic);});
   const allowed = {
-    ball: new Set(["ready", "toggle", "show", "hide", "lifecycle",'companion']),
+    ball: new Set(["ready", "toggle", "show", "hide", "lifecycle",'companion','context-menu','mouse-result']),
+    menu: new Set(['ready','context-menu']),
     panel: new Set([
       "ready",
       "companion",
@@ -542,12 +589,30 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (!allowed[from]?.has(type))
       throw new Error("Unauthorized window action");
     const [a, b] = args || [];
+    if(type==='mouse-result'){mouseRequests.get(a)?.resolve(b===true);return true;}
+    if(type==='context-menu'){
+      if(a==='open'){await showMenu(true);return {ok:true};}
+      if(a==='close'){await showMenu(false);return {ok:true};}
+      if(a!=='action'||!menuVisible)return {ok:false,error:'菜单已收起，请重新打开'};
+      if(['five','greet','tease','surprise'].includes(b)){
+        if(!await requestMouse(b))return {ok:false,error:'它正照看任务或暂时休息，稍后再试。'};
+        await showMenu(false);return {ok:true};
+      }
+      if(/^quiet:(0|15|30|60)$/.test(b)){
+        companion.command('quiet',{minutes:Number(b.split(':')[1])});armQuiet();await syncCompanion();await showMenu(false);return {ok:true};
+      }
+      if(!['tasks','appearance','settings','tuck'].includes(b))throw Error('未知菜单操作');
+      await showMenu(false);
+      if(b==='tuck'){tucked=true;await publish('ball','companion:visibility',false);await win('ball','hide');await placeChildren();return {ok:true};}
+      if(b==='tasks'){await showPanel(true,true);return {ok:true};}
+      settingsVisible=true;panelVisible=true;await placeChildren();await win('panel','show',{focus:true});await publish('panel','settings:open',b==='appearance'?'appearance':'connection');return {ok:true};
+    }
     if(type==='companion'){
       if(a==='state'){await syncCompanion();return companion.snapshot();}
       if(a==='show'){await openCompanion();return {ok:true};}
       const previous=companion.export();
-      try{companion.command(a,b);if(a==='preferences')await persist('companion.json',companion.export());}
-      catch(error){companion.state=previous;companion.effects=[];throw error;}
+      try{companion.command(a,b);if(a==='preferences')await persist('companion.json',companion.export());if(a==='quiet')armQuiet();}
+      catch(error){companion.state=previous;throw error;}
       await syncCompanion();await placeChildren();return {ok:true};
     }
     if(type==='board-presentation'){
@@ -649,6 +714,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       await placeChildren();if(['start','reset'].includes(a.phase))interact('panel-move');return {ok:true};
     }
     if (type === "ready") {
+      if(from==='menu')await syncMenu(true);
       if(from==='panel'){lastCompanionJSON='';await syncCompanion();}
       if(from==='toast'){toastKey=null;await syncNotices();}
       if(from==='panel')await publish(from,'update:state',updates.snapshot());
@@ -667,7 +733,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (type === "panel-view") {
       if(typeof a!=='boolean')throw Error('Invalid panel view');
       settingsVisible=a;
-      if(!a){companion.endGame('小物件已收好');await syncCompanion();}
       panelVisible=true;
       await placeChildren();
       return {ok:true};
@@ -790,6 +855,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     }
     if (type === "quit") {
       updates.stop();
+      clearTimeout(quietTimer);
       stopping = true;
       poller.stop();
       await storage;
@@ -814,7 +880,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       }
     };
     if (
-      ["completion", "retention", "source", "task", "lifecycle",'notice-ack','completion-preferences','board-task','companion'].includes(
+      ["completion", "retention", "source", "task", "lifecycle",'notice-ack','completion-preferences','board-task','companion','context-menu'].includes(
         request.action,
       )
     )
@@ -822,11 +888,12 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     else run().catch(diagnostic);
   });
   await listen("native:tray", (type) => {
-    if (type === "refresh") refresh().catch(diagnostic);
-    else showPanel(type === "show", true).catch(diagnostic);
+    (async()=>{if(type==='show'){tucked=false;await win('ball','show');await publish('ball','companion:visibility',true);}
+      if (type === "refresh")await refresh();else await showPanel(type === "show", true);
+    })().catch(diagnostic);
   });
   await listen('update:progress',value=>updates.progress(value));
-  for (const target of ["ball", "panel", "completions", "toast"])
+  for (const target of ["ball", "panel", "completions", "toast", "menu"])
     await publish(target, "native:ready", true);
   const saved = boot.stored["window-state.json"];
   await move(
@@ -877,11 +944,6 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     action,
     services: health,
   };
-  let companionTickBusy=false;
-  setInterval(()=>{
-    if(stopping||companionTickBusy)return;companionTickBusy=true;
-    actions=actions.then(async()=>{companion.tick();await syncCompanion();}).catch(diagnostic).finally(()=>{companionTickBusy=false;});
-  },1000);
   if (boot.testMode) {
     try {
       stopping = true;
@@ -943,6 +1005,12 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       await new Promise((r) => setTimeout(r, 5000));
       if (!inbox.items.size)
         throw new Error("Completion lifecycle not retained");
+      await showMenu(true);
+      const nativeMenu=(await invoke('inspect')).menu;
+      if(!nativeMenu.visible||Math.abs(nativeMenu.width-204*geometry.scale)>2||nativeMenu.x<geometry.area.x||nativeMenu.y<geometry.area.y||nativeMenu.x+nativeMenu.width>geometry.area.x+geometry.area.width||nativeMenu.y+nativeMenu.height>geometry.area.y+geometry.area.height)throw Error('Native context menu bounds mismatch');
+      await action('menu','context-menu',['action','quiet:15']);
+      if((await invoke('inspect')).menu.visible||!inbox.items.size||companion.snapshot().quietUntil<Date.now())throw Error('Menu quiet action changed pending completion');
+      await showMenu(true);await action('menu','context-menu',['action','quiet:0']);
       const start = {
         x: geometry.area.x + geometry.area.width / 2,
         y: geometry.area.y + geometry.area.height / 3,
@@ -1011,6 +1079,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         retention: true,
         settings: true,
         move: true,
+        contextMenu: true,
         renderer: {
           width: innerWidth,
           height: innerHeight,

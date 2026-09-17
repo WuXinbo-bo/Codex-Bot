@@ -7,12 +7,12 @@
       this.lastAccepted=-Infinity;this.leftAt=-Infinity;this.enteredAt=0;this.near=false;this.pressed=null;this.dragging=false;
       this.pointer=null;this.chain=null;this.lastSample=-Infinity;this.lastMove=0;this.dwellUsed=false;this.lastGesture=null;this.taps=0;this.tapAt=0;this.accepted=0;this.rejected=0;
     }
-    eligible(){const c=this.context();return c.enabled!==false&&!c.game&&!c.hidden&&!urgentStates.has(c.status);}
+    eligible(explicit=false){const c=this.context();return c.enabled!==false&&!c.quiet&&!c.hidden&&(!c.menu||explicit)&&!urgentStates.has(c.status);}
     reset(){this.samples=[];this.chain=null;this.near=false;this.pointer=null;this.pressed=null;this.dragging=false;}
     interrupt(){this.samples=[];this.chain=null;this.pressed=null;this.dwellUsed=true;this.enteredAt=this.now();}
-    emit(group,{variant,side,gesture=group,continuation=false}={}){
+    emit(group,{variant,side,gesture=group,continuation=false,explicit=false}={}){
       const now=this.now(),c=this.context(),busy=busyStates.has(c.status);
-      if(!this.eligible()||this.dragging||this.pressed)return false;
+      if(!this.eligible(explicit)||this.dragging||this.pressed)return false;
       if(busy&&['catch','mirror','orbit','tickle','social'].includes(group))return false;
       const chained=continuation&&this.chain?.group===group&&this.chain.until>now&&this.chain.count<3;
       if(now-this.lastAccepted<(group==='landing'||variant==='bump'?0:chained?2100:1200)||(!chained&&now<(this.cooldowns[group]||0)))return false;
@@ -20,13 +20,31 @@
       const available=names.filter(name=>!recent.includes(name));const pool=available.length?available:names.filter(name=>name!==recent.at(-1));
       const name=variant?names.find(n=>n==='performance_mouse_'+variant):pool[Math.floor(Math.min(.999999,this.random())*pool.length)];
       if(!name)return false;
-      const detail={name,group,side:side||((this.pointer?.x??64)<64?'left':'right'),busy,gesture};
+      const detail={name,group,side:side||((this.pointer?.x??64)<64?'left':'right'),busy,gesture,explicit};
       if(!this.play(detail)){this.rejected++;return false;}
       this.accepted++;this.lastAccepted=now;this.lastGesture=gesture;this.cooldowns[group]=now+(group==='social'?9000:busy?12000:6500);
       this.history[group]=recent.concat(name).slice(-2);this.events.push({...detail,at:now});this.events=this.events.slice(-24);
       if(['pet','catch','mirror'].includes(group))this.chain=chained?{...this.chain,count:this.chain.count+1}:{group,count:1,until:now+9000};
       else if(variant==='five')this.chain={group:'five',count:1,until:now+6500};
       return true;
+    }
+    command(type){
+      if(type==='five')return this.emit('social',{variant:'five',explicit:true,gesture:'invite-five'});
+      if(type==='greet')return this.emit('approach',{explicit:true,gesture:'greeting'});
+      if(type==='tease')return this.emit('cheek',{explicit:true,gesture:'tease'});
+      if(type==='surprise'){
+        const groups=busyStates.has(this.context().status)?['approach','pet','cheek']:['approach','pet','cheek','catch','mirror'];
+        const available=groups.filter(g=>this.now()>=(this.cooldowns[g]||0));
+        return available.length?this.emit(available[Math.min(available.length-1,Math.floor(this.random()*available.length))],{explicit:true}):false;
+      }
+      return false;
+    }
+    response(){
+      if(!this.eligible()||!this.pointer||!this.near||this.pressed)return null;
+      const now=this.now(),p=this.pointer,still=now-this.lastMove,last=this.events.at(-1),busy=busyStates.has(this.context().status);
+      if(this.dragging)return null;
+      const recent=last&&now-last.at<4000,kind=this.chain?.group==='five'&&this.chain.until>now?'hand':recent&&['pet','tickle','orbit','mirror'].includes(last.group)?last.group:p.y<43&&still>650?'nest':'follow';
+      return {kind,x:Math.max(-1,Math.min(1,(p.x-64)/64)),y:Math.max(-1,Math.min(1,(p.y-64)/64)),side:last?.side||'left',intensity:(busy?.35:1)*(still<900?1:Math.max(0,1-(still-900)/1800))};
     }
     input(detail){
       const type=detail.type,now=this.now();
@@ -88,7 +106,7 @@
       if(!this.dwellUsed&&still>1300&&p.y>36&&p.y<96&&Math.abs(p.x-64)<90){if(this.emit('catch',{continuation:true}))this.dwellUsed=true;return;}
       if(now-this.enteredAt<1700&&now-this.lastAccepted>7000&&still>350)this.emit('approach');
     }
-    snapshot(){return {accepted:this.accepted,rejected:this.rejected,lastGesture:this.lastGesture,samples:this.samples.length,chain:this.chain?{...this.chain}:null,events:this.events.map(e=>({...e}))};}
+    snapshot(){return {accepted:this.accepted,rejected:this.rejected,lastGesture:this.lastGesture,response:this.response(),samples:this.samples.length,chain:this.chain?{...this.chain}:null,events:this.events.map(e=>({...e}))};}
   }
   return {Director};
 });

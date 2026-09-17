@@ -44,6 +44,9 @@
   });
 
   const companionAvatar=window.MetaBotCompanionAvatar?.create({app,expressions,ball});
+  window.metaBot?.setAvatarHitTest?.(point=>!!ball?.projectPointer(point)?.hand);
+  document.addEventListener('contextmenu',event=>{event.preventDefault();if(fallbackEnabled)window.metaBot?.contextMenu('open');});
+  ballButton.addEventListener('keydown',event=>{if(event.key==='ContextMenu'||event.shiftKey&&event.key==='F10'){event.preventDefault();window.metaBot?.contextMenu('open');}});
   function renderIndicator(detail = {}) {
     const status = String(detail.status || "offline");
     const total = Math.max(0, Number(detail.count) || 0);
@@ -69,7 +72,10 @@
     if(detail.duration)expressions?.interact('panel-phase',detail);
   });
   window.metaBot?.onIndicator(renderIndicator);
-  window.metaBot?.onInteraction((detail = {}) => {expressions?.interact(detail.type, detail);companionAvatar?.interact(detail);ball?.maskInteract(detail.type);});
+  window.metaBot?.onInteraction((detail = {}) => {
+    if(detail.type==='mouse-command'){window.metaBot.mouseResult(detail.id,companionAvatar?.command(detail.command)===true);return;}
+    expressions?.interact(detail.type, detail);companionAvatar?.interact(detail);ball?.maskInteract(detail.type);
+  });
   window.metaBot?.onMotionPreference?.((level) => {
     configuredMotionLevel = ["full", "soft", "reduced"].includes(level) ? level : "full";
     ball?.setMotionLevel(effectiveMotionLevel());

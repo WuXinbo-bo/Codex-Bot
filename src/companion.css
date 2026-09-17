@@ -1,21 +1,4 @@
-.companion-tools { display:grid; gap:9px; padding:4px 0; }
-.companion-tools fieldset { min-width:0; margin:0; padding:8px; border:1px solid #dce5df; border-radius:8px; }
-.companion-tools legend { padding:0 4px; font-size:12px; font-weight:600; }
-.companion-tools .tool-row { display:flex; flex-wrap:wrap; align-items:center; gap:5px; }
-.companion-tools button,.companion-tools select,.companion-tools input { min-height:28px; min-width:0; max-width:100%; border:1px solid #d9e3dc; border-radius:6px; padding:4px 6px; color:#263d30; background:#fff; font-family:inherit; font-size:12px; line-height:1.4; }
-.companion-tools input[type=checkbox] { min-height:0; }
-#companionButton::after { content:none; display:none; }
-.companion-tools output:empty { display:none !important; }
-.companion-tools button:hover { background:#edf5ef; }
-.companion-tools button:focus-visible { outline:2px solid #487559; outline-offset:1px; }
-.companion-tools button svg { width:14px; height:14px; vertical-align:middle; }
-.companion-tools select { width:100%; }
-.companion-tools small { color:#607569; font-size:11px; }
-.companion-tools #companionFeedback { color:#8d562e; font-size:11px; }
-.companion-game { position:relative; touch-action:none; border:1px solid #d4e2d8; border-radius:9px; background:#f3f8f4; overflow:hidden; height:132px; }
-.companion-game svg { width:100%; height:100%; display:block; }
-.companion-game:focus-visible { outline:2px solid #487559; }
-.companion-game text { font:10px 'Segoe UI',sans-serif; fill:#253e2e; text-anchor:middle; dominant-baseline:middle; }
-.companion-games-controls { display:flex; gap:4px; justify-content:center; }
-.panel-page .settings-tabs { flex-wrap:wrap; }
-.board-card .board-status[data-icon=stamp] { color:#27814b; }
+.companion-tools{display:grid;gap:12px;padding:4px 0}
+.companion-tools small{color:#607569;font-size:12px;line-height:1.7}
+.companion-tools output:empty{display:none}
+.companion-tools output{color:#8d562e;font-size:12px}

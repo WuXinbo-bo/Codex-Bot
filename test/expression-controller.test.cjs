@@ -77,6 +77,13 @@ test('reduced mouse response is brief and disabling mouse cancels its frames',()
   h.clock.advance(3500);assert.ok(!h.controller.getState().activity?.name.startsWith('performance_mouse_'));h.controller.stop();assert.equal(h.clock.pending(),0);
 });
 
+test('holding a drag still settles gently, resumes immediately and never leaves timers behind',()=>{
+  const h=harness();h.controller.update('idle',0,{quiet:true});h.controller.interact('companion-mode',{active:true});
+  h.controller.interact('drag-start');h.clock.advance(750);assert.equal(h.controller.getCurrent(),'hold');
+  h.controller.interact('drag-move',{velocity:{x:800,y:0,speed:800}});assert.equal(h.controller.getCurrent(),'fast_drag');
+  h.controller.interact('drag-end',{releaseSpeed:800});h.controller.stop();assert.equal(h.clock.pending(),0);
+});
+
 test('rehearsal and acknowledgement connect to real lifecycle without extra task events',()=>{
   const events=[];let read;const h=harness({onLifecycle:event=>events.push(event.kind),onPerformanceDiagnostics:fn=>read=fn});
   h.controller.update('idle',0,{quiet:true});h.controller.interact('activity-request',{name:'story_practice'});h.clock.advance(6000);

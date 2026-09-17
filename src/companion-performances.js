@@ -11,7 +11,7 @@
   add('dodge','轻轻躲开，再探头看看',[f('surprise',null,'brace',{cx:59,rotate:-8},500),f('curious',null,'question',{cx:66,rotate:8},1000),f('calm',null,'rest')]);
   add('land','落地缓冲，重新站稳',[f('steady',null,'down',{cy:72,rx:56,ry:43},500),f('curious',null,'open',{cy:63,rx:50,ry:53},800),f('calm',null,'rest',{},1100)]);
   add('edge','扶住屏幕边缘',[f('surprise',null,'brace',{rotate:-6},650),f('steady',null,'grip',{},1100),f('calm',null,'rest',{cy:69},1400)]);
-  add('game_hit','和你配合成功',[f('attentive',null,'open',{},450),f('micro_confirm','spark','present',{},650)]);
-  add('game_proud','又一次配合成功',[f('delight','spark','up',{},650),f('confident',null,'present',{},900)]);
+  add('menu_offer','侧身递出小菜单',[f('curious',null,'open',{rotate:-5},350),f('attentive',null,'present',{},550),f('calm',null,'rest',{},350)]);
+  add('menu_stow','轻轻收回小菜单',[f('attentive',null,'grip',{},300),f('calm',null,'down',{rotate:3},500),f('calm',null,'rest',{},300)]);
   return {clips,labels};
 });

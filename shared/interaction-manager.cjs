@@ -28,6 +28,7 @@ class InteractionManager extends EventEmitter {
     this.coordinateSystem = options.coordinateSystem;
     this.dragController = options.dragController;
     this.ballRadius = options.ballRadius || 64;
+    this.extraBallHitTest = options.extraBallHitTest || (()=>false);
     this.proximityRadius = Math.max(this.ballRadius, Number(options.proximityRadius || 180));
     this.holdThreshold = Math.max(0, Number(options.holdThreshold ?? 420));
     this.hoverDwellThresholds = Array.isArray(options.hoverDwellThresholds)
@@ -119,7 +120,7 @@ class InteractionManager extends EventEmitter {
    */
   hitTestBall(point) {
     if (!this.ballBounds || !point) return false;
-    return this._pointInsideCircle(point, this.ballBounds, this.ballRadius);
+    return this._pointInsideCircle(point, this.ballBounds, this.ballRadius) || this._pointInsideRect(point,this.ballBounds)&&this.extraBallHitTest(point);
   }
 
   /**

@@ -9,6 +9,7 @@ async(page)=>{
   await page.evaluate(()=>panelDemo.faults.releaseStore());
   await panel.locator('#companionFeedback').filter({hasText:'模拟保存失败'}).waitFor();
   if(await page.evaluate(()=>panelDemo.bot().companion.state.mouse)!==true)throw Error('Failed preference changed state');
+  await panel.locator('#companionMouse:checked:not(:disabled)').waitFor();
   await page.getByRole('button',{name:'完成任务',exact:true}).click();
   await panel.locator('[data-status="completed"]').waitFor();
   if(await page.evaluate(()=>panelDemo.stored['companion.json']?.mouse)===false)throw Error('Failed preference persisted');

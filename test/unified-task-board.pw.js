@@ -78,12 +78,17 @@ async(page)=>{
   report.resumeAndSnooze=true;
   await page.mouse.move(1050,740);
   await page.waitForFunction(()=>!panelDemo.windows.panel.visible,{},{timeout:9000});
-  await page.getByRole('button',{name:'开始任务',exact:true}).click();
-  await panel.locator('.board-card').waitFor({state:'visible'});
-  await panel.locator('.board-card').hover();
+  // Enter in the same browser turn as rendering: paced automation calls can
+  // otherwise consume the entire four-second notice before hover arrives.
+  await page.evaluate(async()=>{
+    await panelDemo.act('start');
+    const w=panelDemo.frames.panel.contentWindow;
+    while(!w.document.querySelector('.board-card'))await new Promise(w.requestAnimationFrame);
+    w.document.querySelector('#panel').dispatchEvent(new w.PointerEvent('pointerenter'));
+  });
   await page.waitForTimeout(4400);
   if(!await page.evaluate(()=>panelDemo.windows.panel.visible))throw Error('Hover did not pause timer');
-  await page.mouse.move(1050,740);
+  await page.evaluate(()=>{const w=panelDemo.frames.panel.contentWindow;w.document.querySelector('#panel').dispatchEvent(new w.PointerEvent('pointerleave'));});
   await page.waitForFunction(()=>!panelDemo.windows.panel.visible,{},{timeout:7000});
   report.hoverPauses=true;
   await page.getByRole('button',{name:'多任务',exact:true}).click();

@@ -6,6 +6,7 @@ if (tauri) {
   const latest = new Map();
   const pending = new Map();
   let sequence = 0;
+  let avatarHitTest=()=>false;
   let coordinatorReady;
   const ready = new Promise((resolve) => {
     coordinatorReady = resolve;
@@ -51,6 +52,12 @@ if (tauri) {
     });
   };
   window.metaBot = {
+    setAvatarHitTest:fn=>{avatarHitTest=fn;},
+    contextMenu:(action,value)=>request('context-menu',[action,value]),
+    onContextMenu:fn=>subscribe('context-menu:update',fn),
+    mouseResult:(id,value)=>request('mouse-result',[id,value]),
+    onSettingsOpen:fn=>subscribe('settings:open',fn),
+    onCompanionVisibility:fn=>subscribe('companion:visibility',fn),
     onCompanion:fn=>subscribe('companion:update',fn),
     onCompanionOpen:fn=>subscribe('companion:open',fn),
     companion:(action,value={})=>request('companion',[action,value]),
@@ -121,6 +128,7 @@ if (tauri) {
       await listening;
       if (document.getElementById("ball"))
         await startCoordinator({
+          hitTestAvatar:point=>avatarHitTest(point),
           invoke: (op, args = {}) => invoke("native_op", { op, args }),
           listen: (topic, fn) =>
             tauri.event.listen(topic, (e) => fn(e.payload)),

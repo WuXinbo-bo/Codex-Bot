@@ -1,6 +1,6 @@
 {
   "identifier": "local-ui",
   "description": "Local companion windows; privileged operations validate their caller in Rust.",
-  "windows": ["ball", "panel", "completions", "toast"],
+  "windows": ["ball", "panel", "completions", "toast", "menu"],
   "permissions": ["core:event:allow-listen", "core:event:allow-unlisten"]
 }

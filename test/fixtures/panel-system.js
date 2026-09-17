@@ -33,7 +33,7 @@
     }}};
   };
   try{
-    for(const [label,file] of [['panel','panel.html'],['completions','completions.html'],['toast','lifecycle-toast.html'],['ball','index.html']]){
+    for(const [label,file] of [['panel','panel.html'],['completions','completions.html'],['toast','lifecycle-toast.html'],['menu','context-menu.html'],['ball','index.html']]){
       const response=await fetch('../../dist/tauri/'+file,{cache:'no-store'});if(!response.ok)throw Error('先运行 node scripts/build-tauri.cjs');
       let html=await response.text();
       html=html.replace('<head>',`<head><base href="${new URL('../../dist/tauri/',location.href)}"><style>:root{color-scheme:light!important}</style><script>parent.attachDemo('${label}',window)</script>`);
@@ -52,7 +52,8 @@
       update();log('已发送真实任务状态：'+action);
     }
     for(const b of document.querySelectorAll('[data-action]'))b.onclick=()=>act(b.dataset.action).catch(e=>log(e.message));
-    window.panelDemo={frames,events,windows,stored,faults,act,bot,resize:(width,height)=>{geometry.area={x:0,y:0,width,height};Object.assign(document.getElementById('stage').style,{width:width+'px',height:height+'px'});emit('ball','native:geometry',{});},mouse:e=>emit('ball','native:mouse',e)};log('已就绪：真实生产界面，模拟数据。点击开始任务，等待动作，再点击完成。');
+    window.panelDemo={frames,events,windows,stored,faults,act,bot,tray:type=>emit('ball','native:tray',type),resize:(width,height)=>{geometry.area={x:0,y:0,width,height};Object.assign(document.getElementById('stage').style,{width:width+'px',height:height+'px'});emit('ball','native:geometry',{});},mouse:e=>emit('ball','native:mouse',e)};log('已就绪：真实生产界面，模拟数据。右键机器人试试菜单，任务按钮可检查提醒。');
+    frames.ball.contentDocument.addEventListener('contextmenu',e=>{e.preventDefault();const g=bot().geometry();emit('ball','native:mouse',{kind:'right-up',x:g.x+e.clientX*g.scale,y:g.y+e.clientY*g.scale});});
     if(new URLSearchParams(location.search).has('companion'))await bot().action('panel','companion',['show']);
   }catch(e){log(e.message);}
 })();
