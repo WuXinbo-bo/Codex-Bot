@@ -47,9 +47,15 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   const center = new TaskCenter();
   center.saved = boot.stored["task-notices.json"] || {};
   const inbox = new CompletionInbox();
+  let completionSaveDirty=false,completionSaveQueued=false;
   const nudged=new Map(),pendingNudges=new Map();let boardOffset={x:0,y:0},boardDrag=null,policyFlight=false;
-  for (const item of boot.stored["completion-inbox.json"] || [])
-    if (item?.id && item.task?.id) inbox.items.set(item.id, {...item,receivedAt:Number(item.receivedAt)||Date.now()});
+  const oldCompletions=boot.stored['completion-inbox.json']||[];
+  inbox.restore(oldCompletions);
+  let completionMigrationError;
+  if(JSON.stringify(oldCompletions)!==JSON.stringify([...inbox.items.values()])){
+    try{await invoke('store',{name:'completion-inbox.json',value:[...inbox.items.values()]});}
+    catch(error){completionMigrationError=error;completionSaveDirty=true;}
+  }
   let geometry = await invoke("geometry"),
     panelVisible = false,
     completionVisible = false,
@@ -115,6 +121,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       console.error,
     );
   };
+  if(completionMigrationError)diagnostic(completionMigrationError);
   let updateSnapshot=null, updateToast=false, updateNoticeFlight=false;
   const noticeLane=new NoticeLane();let toastKey=null,noticeFlight=Promise.resolve(),noticeHovered=false;
   function armNoticeTimer(){
@@ -214,7 +221,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   }
   async function layoutChildren() {
     if(tucked){for(const label of ['panel','completions','toast','menu']){await win(label,'hide');visibleWindows.set(label,false);}return;}
-    completionVisible=retainCompletions(config)&&inbox.items.size>0;
+    completionVisible=retainCompletions(config)&&boardView().rows.some(row=>row.completionId);
     const wanted=panelWanted();
     await publish('panel','board:update',{...boardView(),animation:config.notifications?.boardAnimation!==false&&config.appearance?.motion!=='reduced'});
     const specs=[];
@@ -267,7 +274,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     interact(show ? "bubble-open" : "bubble-close");
   }
   async function renderCompletions() {
-    completionVisible = retainCompletions(config) && visibleCompletions().length > 0;
+    completionVisible = retainCompletions(config) && boardView().rows.some(row=>row.completionId);
     await publish('panel','completion:preferences',CompletionPolicy.normalize(config.notifications));
     await placeChildren();
   }
@@ -275,7 +282,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   async function checkCompletionPolicy(){
     if(stopping||policyFlight)return;policyFlight=true;
     try{
-      const items=visibleCompletions();
+      const visibleIds=new Set(boardView().rows.map(row=>row.completionId).filter(Boolean));
+      const items=visibleCompletions().filter(item=>visibleIds.has(item.id));
       if(completionVisible&&visibleWindows.get('panel')&&!boardDrag&&Date.now()>nextBoardLook){
         nextBoardLook=Date.now()+45000;
         const p=panelTargets.get('panel');
@@ -311,7 +319,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
   });
   center.on("lifecycle", (events) => {
     for(const event of events){
-      if(['started','joined','resumed'].includes(event.kind))event.companionCue='panel_receive';
+      if(event.kind==='resumed')event.companionCue='panel_resume';
+      else if(['started','joined'].includes(event.kind))event.companionCue='panel_receive';
       else if(event.kind==='completed')event.companionCue='panel_stamp';
     }
     interact("task-lifecycle", { events });
@@ -624,14 +633,29 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     }
     if(type==='board-task'){
       const row=boardView().rows.find(row=>row.id===a?.id);
-      if(!row||row.eventId!==a.eventId||!row.actions.includes(a.action))return {ok:false,error:'任务状态已变化，请重试'};
+      if(!row||row.saving||row.eventId!==a.eventId||!row.actions.includes(a.action))return {ok:false,error:'任务状态已变化，请重试'};
       if(row.completionId)return action('panel','completion',[row.completionId,a.action]);
       if(a.action==='open')return action('panel','open',[row.key]);
       if(a.action==='copy'){await action('panel','task',[row.key,'copy']);return {ok:true};}
       const entry=center.entries.get(row.key),snooze=a.action==='snooze';
-      await persist('task-notices.json',{...center.saved,[row.key]:{eventId:entry.eventId,acknowledged:!snooze,unread:snooze,snoozedUntil:snooze?Date.now()+300000:0}});
-      const current=center.entries.get(row.key);
-      if(current?.eventId===entry.eventId&&current.task.turnId===entry.task.turnId)center.action(row.key,a.action);
+      const carried=!snooze&&[...inbox.items.values()].find(item=>item.taskId===row.key);
+      const stillCurrent=()=>{const current=center.entries.get(row.key);return current?.eventId===entry.eventId&&current.task.turnId===entry.task.turnId;};
+      try{
+        await persist('task-notices.json',{...center.saved,[row.key]:{...center.saved[row.key],eventId:entry.eventId,acknowledged:!snooze,unread:snooze,snoozedUntil:snooze?Date.now()+300000:0}});
+        if(!stillCurrent())throw Error('任务已继续，保留新状态');
+        if(carried)await persist('completion-inbox.json',[...inbox.items.values()].filter(item=>item.id!==carried.id));
+        if(!stillCurrent())throw Error('任务已继续，保留新状态');
+        if(carried)inbox.acknowledge(carried.id);
+        center.action(row.key,a.action);
+      }catch(error){
+        // Both records represent one acknowledgement. Roll back the saved intent
+        // if clearing its carried completion fails or a new turn arrives.
+        try{
+          await persist('task-notices.json',center.saved);
+          if(carried)await persist('completion-inbox.json',[...inbox.items.values()]);
+        }catch(restoreError){completionSaveDirty=true;diagnostic(restoreError);}
+        return {ok:false,error:String(error)};
+      }
       await placeChildren();return {ok:true};
     }
     if(type==='notice-hover'){noticeHovered=a===true;armNoticeTimer();return {ok:true};}
@@ -640,7 +664,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(type==='notice-open'||type==='notice-ack'){
       const notice=noticeLane.peek();if(!notice?.persistent||notice.id!==a)return {ok:false,error:'提醒已变化'};
       if(type==='notice-open')await invoke('open',{url:taskTarget(notice.task,config)});
-      else {const entry=center.entries.get(notice.key);if(!entry||entry.eventId!==a)return {ok:false};const saved={...center.saved,[notice.key]:{eventId:entry.eventId,acknowledged:true,unread:false,snoozedUntil:0}};await persist('task-notices.json',saved);center.action(notice.key,'ack');}
+      else {const entry=center.entries.get(notice.key);if(!entry||entry.eventId!==a)return {ok:false};const saved={...center.saved,[notice.key]:{...center.saved[notice.key],eventId:entry.eventId,acknowledged:true,unread:false,snoozedUntil:0}};await persist('task-notices.json',saved);if(center.entries.get(notice.key)?.eventId===a)center.action(notice.key,'ack');}
       await syncNotices();return {ok:true};
     }
     if(type==='update-state')return updates.snapshot();
@@ -701,7 +725,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     }
     if(type==='nudge-played'){
       const p=pendingNudges.get(a?.id);
-      if(!p||p.at!==a.at||p.stage!==a.stage||!completionVisible||!inbox.items.has(a.id))return {ok:false};
+      if(!p||p.at!==a.at||p.stage!==a.stage||!completionVisible||!boardView().rows.some(row=>row.completionId===a.id))return {ok:false};
       if(a.phase==='started'){await publish('ball','completion:nudge',a);return {ok:true};}
       pendingNudges.delete(a.id);nudged.set(a.id,{stage:a.stage,at:Date.now()});return {ok:true};
     }
@@ -769,14 +793,26 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if (type === "completion") {
       const item = inbox.items.get(a);
       if (!item || !["open", "ack"].includes(b)) return { ok: false };
+      const expectedEvent=center.entries.get(item.taskId)?.eventId;
+      const stillCurrent=()=>{
+        const current=center.entries.get(item.taskId);
+        const event=board.events.get(item.taskId);
+        return inbox.items.get(a)===item && (!event||event.kind==='completed'&&event.id===item.id) && (!current || current.eventId===expectedEvent && current.task.turnId===item.turnId && current.task.status==='completed');
+      };
+      if(!stillCurrent())return {ok:false,error:'任务已继续，请使用当前任务卡'};
       try {
         if (b === "open") {
           await invoke("open", { url: taskTarget(item.task, config) });
         }
+        if(!stillCurrent())return {ok:false,error:'任务已继续，保留新状态'};
         await persist(
           "completion-inbox.json",
           [...inbox.items.values()].filter((i) => i.id !== a),
         );
+        if(!stillCurrent()){
+          await persist('completion-inbox.json',[...inbox.items.values()]);
+          return {ok:false,error:'任务已继续，保留新状态'};
+        }
         inbox.acknowledge(a);
         const current = center.entries.get(item.taskId);
         if (
@@ -804,7 +840,8 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
             const { targetTask, ...notice } = e;
             inbox.add(notice, targetTask);
           }
-        await persist("completion-inbox.json", [...inbox.items.values()]);
+        try{await persist("completion-inbox.json", [...inbox.items.values()]);completionSaveDirty=false;}
+        catch(error){completionSaveDirty=true;diagnostic(error);}
         await renderCompletions();
         await syncNotices();
       } else {
@@ -930,6 +967,14 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
     if(board.tick(visibleWindows.get('panel')&&!setupVisible,boardHovered||boardFocused||boardBusy||!!boardDrag||drag.isActive()))placeChildren().catch(diagnostic);
   },100);
   setInterval(()=>checkCompletionPolicy().catch(diagnostic),1000);
+  setInterval(()=>{
+    if(!completionSaveDirty||completionSaveQueued||stopping)return;
+    completionSaveQueued=true;
+    actions=actions.then(async()=>{
+      try{await persist('completion-inbox.json',[...inbox.items.values()]);completionSaveDirty=false;}
+      finally{completionSaveQueued=false;}
+    }).catch(diagnostic);
+  },3000);
   if(!boot.testMode){await updates.start().catch(diagnostic);setInterval(()=>maybeUpdateNotice().catch(diagnostic),2000);}
   await refresh();
   window.__nativeBot = {
@@ -1005,6 +1050,16 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
       await new Promise((r) => setTimeout(r, 5000));
       if (!inbox.items.size)
         throw new Error("Completion lifecycle not retained");
+      const originalCard=boardView().rows.find(row=>row.completionId);
+      const continuedTask={...synthetic,turnId:'native-test-next',eventAt:new Date().toISOString()};
+      center.update(buildSnapshot([continuedTask],{sources:{codex:'connected'}}));
+      await actions;await placeChildren();
+      const continuedRows=boardView().rows;
+      if(continuedRows.length!==1||continuedRows[0].id!==originalCard.id||continuedRows[0].status!=='running'||continuedRows[0].completionId||!continuedRows[0].persistent)throw Error('Native rerun duplicated or lost retained card');
+      center.update(buildSnapshot([{...continuedTask,status:'completed',eventAt:new Date().toISOString()}],{sources:{codex:'connected'}}));
+      await actions;await placeChildren();
+      const savedCompletions=(await invoke('bootstrap')).stored['completion-inbox.json'];
+      if(inbox.items.size!==1||savedCompletions.length!==1||savedCompletions[0].turnId!==continuedTask.turnId)throw Error('Native rerun did not persist latest completion');
       await showMenu(true);
       const nativeMenu=(await invoke('inspect')).menu;
       if(!nativeMenu.visible||Math.abs(nativeMenu.width-204*geometry.scale)>2||nativeMenu.x<geometry.area.x||nativeMenu.y<geometry.area.y||nativeMenu.x+nativeMenu.width>geometry.area.x+geometry.area.width||nativeMenu.y+nativeMenu.height>geometry.area.y+geometry.area.height)throw Error('Native context menu bounds mismatch');
@@ -1080,6 +1135,7 @@ export async function startCoordinator({ invoke, listen, receive, workbenchAdapt
         settings: true,
         move: true,
         contextMenu: true,
+        taskContinuation: true,
         renderer: {
           width: innerWidth,
           height: innerHeight,

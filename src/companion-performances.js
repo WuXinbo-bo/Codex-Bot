@@ -3,6 +3,7 @@
   const f=(expression,prop,hand,body={},duration=900)=>({expression,duration,pose:{body,arms:{left:A.rest,right:A[hand]||A.rest},accessories:prop?{[prop]:{opacity:1}}:{}}});
   const add=(id,label,frames)=>{clips['performance_companion_'+id]=frames;labels['performance_companion_'+id]=label;};
   add('panel_receive','伸手接过任务卡',[f('curious','card','open',{rotate:-6},650),f('attentive','card','grip',{cy:68},850),f('focus','card','present',{},850)]);
+  add('panel_resume','拿起原来的卡片继续',[f('attentive','card','down',{rotate:3},450),f('context_sort','card','grip',{},650),f('focus','card','present',{rotate:-3},650)]);
   add('panel_stamp','确认并盖上完成章',[f('double_check','card','grip',{},900),f('focus','stamp','up',{},650),f('micro_confirm','stamp','push',{cy:68},600),f('complete','card','present',{},1050)]);
   add('panel_file','把确认的任务卡收好',[f('attentive','card','open',{},650),f('context_sort','folder','grip',{},800),f('micro_confirm','folder','down',{},850)]);
   add('pet','向你的手心靠近',[f('curious',null,'rest',{cy:60,rotate:-5}),f('delight',null,'think',{cy:57,ry:54},1200),f('calm',null,'rest',{},1100)]);

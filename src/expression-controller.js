@@ -245,6 +245,15 @@
         if (!event?.id || lifecycleSeen.has(event.id)) continue;
         if(activity&&[56,57].includes(activity.priority)){cancelActivity('new-task');clearTimer('transient');transient=null;}
         lifecycleSeen.add(event.id);
+        // One task owns one prop/card: a newer turn supersedes queued and playing
+        // gestures for its old turn, even when the old completion was unconfirmed.
+        if(activity?.priority===55 && lifecycleCurrent?.events.some(item=>item.taskId===event.taskId && (item.turnId!==event.turnId || original.kind==='resumed'))){
+          cancelActivity('task-continued');clearTimer('transient');transient=null;
+        }
+        for(const [kind,items] of lifecycleQueue){
+          const remaining=items.filter(item=>item.taskId!==event.taskId||item.turnId===event.turnId && original.kind!=='resumed');
+          if(remaining.length)lifecycleQueue.set(kind,remaining);else lifecycleQueue.delete(kind);
+        }
         const urgency={failed:6,attention:5,completed:4,stopped:3,started:2,joined:1};
         if(activity?.priority===55 && (urgency[event.kind]||0)>(urgency[lifecycleCurrent?.kind]||0)){
           cancelActivity('lifecycle-preemption');clearTimer('transient');transient=null;

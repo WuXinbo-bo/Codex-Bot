@@ -27,7 +27,7 @@
       if(op==='publish'){events.push({topic:args.topic,target:args.target,data:args.data});emit(args.target,'bridge:event',args);return;}
       if(op==='reply'){emit(args.target,'bridge:reply',args);return;}
       if(op==='store'){if(faults.delayStore===args.name){faults.delayStore=null;await new Promise(resolve=>{faults.releaseStore=resolve;});}if(faults.store===args.name){faults.store=null;throw Error('模拟保存失败');}stored[args.name]=structuredClone(args.value);return true;}
-      if(op==='open'){if(faults.open){faults.open=false;throw Error('模拟打开失败');}log('模拟系统打开任务链接（演示不会打开真实 Codex）');return true;}
+      if(op==='open'){if(faults.delayOpen){faults.delayOpen=false;await new Promise(resolve=>{faults.releaseOpen=resolve;});}if(faults.open){faults.open=false;throw Error('模拟打开失败');}log('模拟系统打开任务链接（演示不会打开真实 Codex）');return true;}
       if(['input','stop-source','copy','quit'].includes(op))return true;
       throw Error('Demo does not implement '+op);
     }}};

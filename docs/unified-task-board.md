@@ -9,15 +9,22 @@ The old completion webview remains hidden for host compatibility. Application
 update notices retain their existing independent update/installation workflow.
 The optional legacy Electron debug shell is not the production native path.
 
-Card identity is source + task + turn. Completion changes the same card to pale
-green and changes its actions from copy/open to acknowledge/open. An older
-unacknowledged turn remains separate when the same conversation starts again.
-Successfully opening a completed task acknowledges only that completion, just
+Card identity is source + task. Turn and event IDs version actions, not rows.
+Completion changes the same card to pale green and changes its actions from
+copy/open to acknowledge/open. If the same conversation starts again before
+confirmation, that card returns to its live state and stays visible; the newest
+completion replaces the old pending completion rather than adding another row.
+After confirmation, the next run shows a normal transient continuation card.
+Distinct tasks and sources never merge, even when their titles match.
+Successfully opening a completed task acknowledges that task's pending completion, just
 like its checkmark. Opening an active, failed or attention task does not acknowledge
 it. Failed opens or acknowledgement saves retain the completion for retry.
 The completion toggle hides records
 without deleting them; re-enabling it restores them. Restart restores the same
-durable inbox without changing its file format.
+durable inbox. Legacy arrays are consolidated by source/task on startup and saved
+in the same file format. The newest event time (or received time for old records)
+wins. Superseded turn IDs are retained in task notice metadata, bounded to 32 per
+task, so delayed older snapshots cannot replace a known newer turn.
 
 ## Visibility
 
@@ -50,8 +57,10 @@ Entry is 220 ms, exit 160 ms, with no pre-entry sleep. The robot receives the
 same native panel-phase and lifecycle events used by the production renderer.
 Card state changes animate locally on the compositor; card acknowledgement has
 a 140 ms receipt gesture. Optional animation never gates notification delivery.
-Resumed and queued events reuse the existing varied work/arrival performances;
-paused events use the existing settling performances. No new art assets needed.
+Resumed events use `performance_companion_panel_resume`: pick up the existing
+card and continue. They cancel superseded completion gestures for that task.
+Queued and paused events keep existing arrival/settling performances. Reused
+rows animate their badge; only newly mounted rows play an entrance transform.
 
 Nudges target the completed card, not the whole window, and acknowledge their
 actual playback to the coordinator. Existing stage/cooldown caps remain in force.
@@ -59,7 +68,11 @@ Reduced motion and disabled board animations suppress these effects. Board
 pointer moves coalesce before IPC; robot dragging retains the unified surface.
 
 Action requests carry card and event identities. Obsolete controls are rejected;
-late attention acknowledgements cannot acknowledge a newer task turn. Persisted
+late attention acknowledgements cannot acknowledge a newer task turn. Completion
+actions revalidate after opening Codex and after saving. If execution restarts
+during a save, the pending record is restored; no new-turn confirmation or filing
+gesture is emitted. Completion save failures retain the in-memory reminder and
+retry the latest inbox snapshot through the serialized action queue. Persisted
 acknowledgements precede UI removal. Lifecycle persistence runs before replacing
 a running card with its terminal state, preventing a brief hide between them.
 
@@ -73,6 +86,13 @@ Against the local static server, run these scripts using Playwright CLI
   timed expiry, manual retention, completion retention, settings, multiple turns,
   individual acknowledgement, four corners, board drag, restart restoration,
   snooze/resume, hover pause, and rapid start-to-completion.
+- `test/task-card-continuation.pw.js`: three repeated runs on the same DOM card,
+  actual continuation gesture, retained running card, legacy duplicate migration,
+  restart after confirmation, delayed open/save races, old completion rejection,
+  persistence retry and distinct tasks with matching titles.
+- `test/task-card-ack-failure.pw.js`: a failed/stopped run carrying an older
+  completion cannot partially acknowledge itself when the inbox write fails;
+  retry clears both durable records together.
 - `test/unified-board-motion.pw.js`: actual start/completion performance state,
   changed robot screenshot pixels, nudge playback, reduced motion, stale phase
   and action rejection, entry/exit phases, and bounded native layout calls.
@@ -109,3 +129,20 @@ Physical mixed-DPI multi-monitor hardware was not available for this run;
 existing layout tests still cover negative coordinates and constrained areas.
 No GitHub release, version bump, installer publication or remote push is part
 of this change.
+
+## Task-card continuation verification (2026-09-17)
+
+- All 308 Node tests pass, including task identity, old-turn rejection,
+  same-turn continuation, legacy inbox consolidation and persistence rollback.
+- Browser checks pass three repeated runs on one DOM node, the production
+  continuation gesture, retention beyond the transient timeout, confirmation
+  and open races, restart migration, save retry, and equal-title task separation.
+- Task-board retention, failure recovery, start/completion pixel motion and
+  1/3/10-row scroll regressions pass. Screenshots for the running and completed
+  versions of the same card were inspected under `output/playwright/continued-*`.
+- Confirming a failure with an older pending completion now rolls back both
+  acknowledgement records if the second save fails, then supports a clean retry.
+- The release build and native 150% DPI smoke pass. The native test verifies
+  one reused card and one latest persisted completion across a rerun; the live
+  Codex connection is healthy and reports one active task in this run.
+- Isolated missing-Codex / uninitialized-home onboarding smoke passes.

@@ -50,6 +50,15 @@ function harness(settings = {}) {
   return { clock, controller, expressions, motions, gazes, active };
 }
 
+test('continuation takes the existing card and cancels obsolete completion choreography',()=>{
+  const h=harness(),emit=(id,kind,turnId,cue)=>h.controller.interact('task-lifecycle',{events:[{id,kind,turnId,taskId:'a',companionCue:cue}]});
+  emit('done','completed','one','panel_stamp');h.clock.advance(200);
+  assert.equal(h.controller.getState().activity.name,'performance_companion_panel_stamp');
+  emit('again','resumed','two','panel_resume');h.clock.advance(200);
+  assert.equal(h.controller.getState().activity.name,'performance_companion_panel_resume');
+  h.clock.advance(2100);assert.notEqual(h.controller.getState().activity?.name,'performance_companion_panel_stamp');h.controller.stop();
+});
+
 test('mouse playback yields to press, drag, task queues and game preference without consuming selection',()=>{
   const {Director}=require('../src/mouse-director');const h=harness();h.clock.advance(1000);
   h.controller.update('idle',0,{quiet:true});h.controller.interact('companion-mode',{active:true});

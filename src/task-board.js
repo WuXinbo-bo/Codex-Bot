@@ -48,6 +48,7 @@
     for(const [id,row] of rows)if(!ids.has(id)){for(const a of row.getAnimations({subtree:true}))a.cancel();row.remove();rows.delete(id);}
     for(const item of next.rows){
       let row=rows.get(item.id);
+      const entering=!row;
       if(!row){row=create(item);rows.set(item.id,row);list.append(row);}
       const changed=row.item?.status!==item.status;
       if(changed)row.actionError='';
@@ -55,11 +56,11 @@
       row.classList.toggle('board-action-error',Boolean(row.actionError));
       const title=row.querySelector('strong');title.textContent=row.actionError||item.title;title.title=row.actionError?`${item.title}\n${row.actionError}`:item.title;
       const status=row.querySelector('.board-status');
-      const label=item.stale?'连接中断，状态待核实':labels[item.status]||labels.unknown;
+      const label=item.stale?'连接中断，状态待核实':item.kind==='resumed'&&item.status==='running'?labels.resumed:labels[item.status]||labels.unknown;
       status.title=label;status.setAttribute('aria-label',label);
       if(row.badgeEvent!==item.eventId||!next.animation||reduced.matches)icon(status,symbols[item.status]||symbols.unknown);
       row.querySelectorAll('button').forEach((button,i)=>{
-        const action=item.actions[i],pending=busy.has(item.id)&&row.pendingAction===action;button.dataset.action=action;button.title=actionLabels[action];button.setAttribute('aria-label',actionLabels[action]);button.setAttribute('aria-busy',String(pending));button.classList.toggle('spinning',pending);button.disabled=busy.has(item.id);icon(button,pending?'loader':actionIcons[action]);
+        const action=item.actions[i],pending=busy.has(item.id)&&row.pendingAction===action;button.dataset.action=action;button.title=actionLabels[action];button.setAttribute('aria-label',actionLabels[action]);button.setAttribute('aria-busy',String(pending));button.classList.toggle('spinning',pending);button.disabled=busy.has(item.id)||item.saving===true;icon(button,pending?'loader':actionIcons[action]);
       });
       if(!seen.has(item.eventId)){
         seen.add(item.eventId);
@@ -67,7 +68,7 @@
           row.badgeEvent=item.eventId;
           icon(status,item.status==='completed'?'stamp':['started','joined','resumed'].includes(item.kind)?'panel-top-open':symbols[item.kind]||symbols[item.status]||'circle-help');
           status.animate([{transform:'scale(.65)',opacity:.4},{transform:'scale(1.15)',opacity:1},{transform:'none',opacity:1}],{duration:750,easing:'ease-out'}).finished.then(()=>{if(row.item?.eventId===item.eventId){row.badgeEvent=null;icon(status,symbols[row.item.status]||'circle-help');}}).catch(()=>{});
-          if(changed){const direction=document.documentElement.dataset.side==='left'?1:-1;row.animate([{transform:`translateX(${direction*12}px) scale(.94,.98) rotate(${direction*1.5}deg)`,opacity:.55},{transform:'none',opacity:1}],{duration:260,easing:'ease-out'});}
+          if(entering){const direction=document.documentElement.dataset.side==='left'?1:-1;row.animate([{transform:`translateX(${direction*12}px) scale(.94,.98) rotate(${direction*1.5}deg)`,opacity:.55},{transform:'none',opacity:1}],{duration:260,easing:'ease-out'});}
         }
       }
     }
