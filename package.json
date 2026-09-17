@@ -1,6 +1,6 @@
 {
   "name": "meta-bot",
-  "version": "0.7.0",
+  "version": "0.7.1",
   "license": "Apache-2.0",
   "private": true,
   "description": "Meta Bot companion for Meta Code and Codex task status",
