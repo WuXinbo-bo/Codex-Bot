@@ -25,7 +25,7 @@ test("cold join, new starts, per-turn completions are independent of the primary
   assert.equal(center.view().indicator.count, 0);
   assert.equal(center.view().unreadCount, 2);
   update([task("a", "running", "two")]);
-  assert.equal(events.at(-1).kind, "started");
+  assert.equal(events.at(-1).kind, "resumed");
 });
 test("timestamp churn, disappearance, reconnection and reordering do not replay events", () => {
   const { events, update } = setup();

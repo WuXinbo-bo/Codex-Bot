@@ -27,6 +27,16 @@ class TaskCenter extends EventEmitter {
     for (const task of snapshot.tasks) {
       const key = keyOf(task); present.add(key);
       const previous = this.entries.get(key);
+      const saved = this.saved[key];
+      let savedTurn = saved?.lastTurnId, savedStatus;
+      try{const event=JSON.parse(saved?.eventId||'[]');savedTurn??=event[0];savedStatus=event[1];}catch{}
+      const previousTurn = previous?.task.turnId || savedTurn;
+      const retiredTurns = [...(saved?.retiredTurns || [])];
+      const differentTurn = Boolean(task.turnId && previousTurn && task.turnId !== previousTurn);
+      // Late snapshots for a superseded turn must not revert the current card.
+      if(differentTurn && (retiredTurns.includes(task.turnId) ||
+        Date.parse(task.eventAt || task.updatedAt) < Date.parse(previous?.task.eventAt || saved?.lastEventAt)))continue;
+      if(differentTurn)retiredTurns.push(previousTurn);
       // Keep a known active turn visible when its evidence becomes inconclusive.
       if (task.status === "unknown" && previous?.task.turnId && task.turnId === previous.task.turnId && isActive(previous.task)) task.trackedActive = true;
       if (task.status === "unknown" && task.trackedActive && task.quiet && task.lastKnownStatus === "running") {
@@ -37,23 +47,24 @@ class TaskCenter extends EventEmitter {
       const eventId = uncertainReminder ? previous.eventId : task.turnId ? eventOf(task) : previous?.task.status === task.status ? previous.eventId : eventOf(task);
       const fresh = !task.stale && snapshot.sources[task.source] === "connected";
       const changed = previous?.eventId !== eventId;
-      const saved = this.saved[key];
       const acknowledged = saved?.eventId === eventId && saved.acknowledged;
       const savedUnread = saved?.eventId === eventId && saved.unread;
       const eventTime = Date.parse(task.eventAt || task.updatedAt);
       const newTerminal = TERMINAL.has(task.status) && (isActive(previous?.task) || (Number.isFinite(eventTime) && eventTime >= this.startedAt));
       const sameTurn = previous && previous.task.turnId === task.turnId;
-      const resumed = fresh && sameTurn && ['paused', 'needs_attention'].includes(previous.task.status) && task.status === 'running';
+      const continuation = differentTurn || sameTurn && previous.continued || !previous && savedTurn===task.turnId && saved?.continued;
+      const resumable=['paused', 'needs_attention', 'completed', 'failed', 'stopped'];
+      const resumed = fresh && task.status === 'running' && (continuation || sameTurn && resumable.includes(previous.task.status) || !previous && savedTurn===task.turnId && resumable.includes(savedStatus));
       const kind = resumed ? 'resumed' : task.status === "running" ? "started" : task.status === "needs_attention" ? "attention" : TERMINAL.has(task.status) ? task.status : ['queued', 'paused'].includes(task.status) ? task.status : null;
       const transitionKey = JSON.stringify([key, task.turnId || '']);
       if (fresh && sameTurn && previous.task.status !== task.status && task.status !== 'unknown' && previous.task.status !== 'unknown') this.transitions.set(transitionKey, (this.transitions.get(transitionKey) || 0) + 1);
       // Poll timestamps are not lifecycle identities: use source, task, turn and type.
-      const lifecycleId = JSON.stringify([task.source, task.id, task.turnId || "", kind, ...(['resumed', 'paused', 'queued', 'attention'].includes(kind) ? [this.transitions.get(transitionKey) || 0] : [])]);
+      const lifecycleId = JSON.stringify([task.source, task.id, task.turnId || "", kind, ...(['resumed', 'paused', 'queued', 'attention', 'completed', 'failed', 'stopped'].includes(kind) ? [this.transitions.get(transitionKey) || 0] : [])]);
       if (fresh && kind && !this.lifecycleSeen.has(lifecycleId)) {
         this.lifecycleSeen.add(lifecycleId);
         const joined = kind === "started" && !this.connectedSources.has(task.source);
         const muted = acknowledged || (saved?.eventId === eventId && saved.snoozedUntil > this.now());
-        if (['started', 'resumed', 'queued', 'paused'].includes(kind) || (!muted && (kind === "attention" || newTerminal))) events.push({ id: lifecycleId, kind: joined ? "joined" : kind, title: task.title || task.id, taskId: key, turnId: task.turnId || "" });
+        if (['started', 'resumed', 'queued', 'paused'].includes(kind) || (!muted && (kind === "attention" || newTerminal))) events.push({ id: lifecycleId, kind: joined ? "joined" : kind, title: task.title || task.id, taskId: key, turnId: task.turnId || "", eventAt: task.eventAt || task.updatedAt });
       }
       let unread = previous?.unread || savedUnread || false;
       let snoozedUntil = changed ? (!previous && saved?.eventId === eventId ? saved.snoozedUntil || 0 : 0) : previous?.snoozedUntil || 0;
@@ -62,9 +73,9 @@ class TaskCenter extends EventEmitter {
       if (!fresh && !previous) unread = false;
       if (acknowledged) unread = false;
       if (fresh && unread && !snoozedUntil && (!previous?.unread || changed || previous.task.stale || previous.snoozedUntil)) notify = true;
-      this.entries.set(key, { key, task, eventId, unread, snoozedUntil, fresh, active: isActive(task), reminderStatus: uncertainReminder ? previous.reminderStatus || previous.task.status : null });
+      this.entries.set(key, { key, task, eventId, unread, snoozedUntil, fresh, continued:Boolean(resumed||continuation), active: isActive(task), reminderStatus: uncertainReminder ? previous.reminderStatus || previous.task.status : null });
       if (fresh && (changed || previous?.unread !== unread || previous?.snoozedUntil !== snoozedUntil)) {
-        this.saved[key] = { eventId, acknowledged: Boolean(acknowledged), unread, snoozedUntil };
+        this.saved[key] = { eventId, acknowledged: Boolean(acknowledged), unread, snoozedUntil, continued:Boolean(resumed||continuation), lastTurnId:task.turnId||previousTurn||'', lastEventAt:task.eventAt||task.updatedAt, retiredTurns:retiredTurns.slice(-32) };
         persist = true;
       }
     }
@@ -83,7 +94,7 @@ class TaskCenter extends EventEmitter {
     if (action === "ack") { entry.unread = false; entry.snoozedUntil = 0; }
     else if (action === "snooze") entry.snoozedUntil = this.now() + 300000;
     else return false;
-    this.saved[key] = { eventId: entry.eventId, acknowledged: !entry.unread, unread: entry.unread, snoozedUntil: entry.snoozedUntil };
+    this.saved[key] = { ...this.saved[key], eventId: entry.eventId, acknowledged: !entry.unread, unread: entry.unread, snoozedUntil: entry.snoozedUntil };
     this.persist(); this.emit("update", this.view(), false); return true;
   }
   tick() {

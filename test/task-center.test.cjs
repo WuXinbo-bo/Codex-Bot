@@ -8,6 +8,29 @@ const os = require("node:os");
 const path = require("node:path");
 
 const base = Date.parse("2026-09-08T00:00:00Z");
+test('reruns emit continuation once, including after acknowledgement and restart',()=>{
+  const first=new TaskCenter({now:()=>base}),events=[];first.on('lifecycle',batch=>events.push(...batch));
+  update(first,[task('running')]);update(first,[task('completed')]);first.action(first.view().tasks[0].key,'ack');
+  const next=new TaskCenter({now:()=>base});next.saved=structuredClone(first.saved);next.on('lifecycle',batch=>events.push(...batch));
+  update(next,[task('running',{turnId:'turn2'})]);update(next,[task('running',{turnId:'turn2'})]);
+  assert.equal(events.filter(e=>e.turnId==='turn2').length,1);assert.equal(events.at(-1).kind,'resumed');
+  update(next,[task('unknown',{turnId:'turn2'})]);update(next,[task('running',{turnId:'turn2'})]);
+  assert.equal(events.filter(e=>e.turnId==='turn2').length,1);
+  update(next,[task('completed',{turnId:'turn1',eventAt:new Date(base+500).toISOString()})]);
+  assert.equal(next.view().tasks[0].task.turnId,'turn2');assert.equal(next.view().tasks[0].task.status,'running');
+  update(next,[task('completed',{turnId:'turn2'})]);assert.equal(events.at(-1).kind,'completed');
+});
+
+test('reopening the same turn emits fresh completion without replaying poll updates',()=>{
+  const center=new TaskCenter({now:()=>base}),events=[];center.on('lifecycle',batch=>events.push(...batch));
+  for(const status of ['running','completed','running','running','completed','completed'])update(center,[task(status)]);
+  assert.equal(events.filter(e=>e.kind==='completed').length,2);
+  assert.equal(events.filter(e=>e.kind==='resumed').length,1);
+  assert.equal(new Set(events.map(e=>e.id)).size,events.length);
+  const restored=new TaskCenter({now:()=>base});restored.saved=structuredClone(center.saved);
+  const resumed=[];restored.on('lifecycle',batch=>resumed.push(...batch));update(restored,[task('running')]);
+  assert.equal(resumed.at(-1).kind,'resumed');
+});
 test('each genuine pause or attention recovery emits resumed, not repeated starts',()=>{
   const center=new TaskCenter({now:()=>base}),events=[];center.on('lifecycle',batch=>events.push(...batch));
   for(const status of ['running','paused','running','running','needs_attention','running','paused','running'])update(center,[task(status)]);
